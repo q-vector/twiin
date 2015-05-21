@@ -1,0 +1,12 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: twiin
+Description: Twiin Was Ink INitially
+Version: @VERSION@
+
+Requires: @TWIIN_REQUIRES@
+Libs: -ltwiin @TWIIN_LIBS@ -L${libdir}
+Cflags: @TWIIN_CFLAGS@ -I${includedir}
