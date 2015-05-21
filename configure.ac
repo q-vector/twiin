@@ -3,10 +3,6 @@ AC_INIT([twiin], [0.1.0])
 AM_INIT_AUTOMAKE([twiin], [0.1.0])
 
 # Check for options.
-AC_ARG_ENABLE(cairomm, AC_HELP_STRING([--enable-cairomm],
-   [Compile CAIROMM support (default=yes)]), , enable_cairomm=yes)
-AM_CONDITIONAL(ENABLE_CAIROMM, test x$enable_cairomm = xyes)
-
 AC_ARG_ENABLE(gtkmm, AC_HELP_STRING([--enable-gtkmm],
    [Compile GTKMM support (default=yes)]), , enable_gtkmm=yes)
 AM_CONDITIONAL(ENABLE_GTKMM, test x$enable_gtkmm = xyes)
@@ -21,17 +17,10 @@ AC_CHECK_LIBM
 
 # Checks for libraries.
 PKG_CHECK_MODULES([DENISE], [denise])
-TWIIN_REQUIRES="$TWIIN_REQUIRES denise"
-TWIIN_CFLAGS="$TWIIN_CFLAGS $DENISE_CFLAGS"
-TWIIN_LIBS="$TWIIN_LIBS $DENISE_LIBS"
-
-if test x"$enable_cairomm" = xyes
-then
-   PKG_CHECK_MODULES([CAIROMM_1_0], [cairomm-1.0])
-   TWIIN_REQUIRES="$TWINN_REQUIRES cairomm-1.0"
-   TWIIN_CFLAGS="$CAIROMM_1_0_CFLAGS $TWIIN_CFLAGS"
-   TWIIN_LIBS="$CAIROMM_1_0_LIBS $TWIIN_LIBS"
-fi
+PKG_CHECK_MODULES([CAIROMM_1_0], [cairomm-1.0])
+TWIIN_REQUIRES="$TWIIN_REQUIRES denise cairomm-1.0"
+TWIIN_CFLAGS="$TWIIN_CFLAGS $DENISE_CFLAGS $CAIROMM_1_0_CFLAGS"
+TWIIN_LIBS="$TWIIN_LIBS $DENISE_LIBS $CAIROMM_1_0_LIBS"
 
 if test x"$enable_gtkmm" = xyes
 then
