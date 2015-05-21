@@ -218,6 +218,20 @@ namespace twiin
 
       public:
 
+         class Varname : public string
+         {
+
+            public:
+
+               Varname (const string& str);
+
+               Varname (const Varname& varname);
+
+               string
+               get_string () const;
+
+         };
+
          class Stage : public twiin::Stage
          {
 
@@ -232,14 +246,11 @@ namespace twiin
                set<Dtime>
                valid_time_set;
 
-               map<Nwp_Element, Nc_File*>
+               map<Varname, Nc_File*>
                nc_file_ptr_map;
 
-               map<Nwp_Element, Integer>
+               map<Varname, Integer>
                varid_map;
-
-               map<Nwp_Element, string>
-               varname_map;
 
                void
                fill_valid_time_set ();
@@ -247,7 +258,7 @@ namespace twiin
             public:
 
                Stage (const twiin::Stage& stage,
-                      const map<Nwp_Element, string>& file_path_map);
+                      const map<Varname, string>& file_path_map);
 
                ~Stage ();
 
@@ -294,12 +305,15 @@ namespace twiin
          const Stage
          stage_5;
 
+         static string
+         get_nc_varname (const Varname& varname);
+
          const Stage&
          get_model_stage (const twiin::Stage& stage) const;
 
-         Model (const map<Nwp_Element, string>& file_path_3_map,
-                const map<Nwp_Element, string>& file_path_4_map,
-                const map<Nwp_Element, string>& file_path_5_map);
+         Model (const map<Varname, string>& file_path_3_map,
+                const map<Varname, string>& file_path_4_map,
+                const map<Varname, string>& file_path_5_map);
 
          ~Model ();
 

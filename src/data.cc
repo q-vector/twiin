@@ -405,6 +405,22 @@ Terrain::cairo (const RefPtr<Context>& cr,
    delete raster_ptr;
 }
 
+Model::Varname::Varname (const string& str)
+   : string (str)
+{
+}
+
+Model::Varname::Varname (const Model::Varname& varname)
+   : string (varname)
+{
+}
+
+string
+Model::Varname::get_string () const
+{
+   return *this;
+}
+
 void
 Model::Stage::fill_valid_time_set ()
 {
@@ -456,29 +472,23 @@ Model::Stage::fill_valid_time_set ()
 }
 
 Model::Stage::Stage (const twiin::Stage& stage,
-                     const map<Nwp_Element, string>& file_path_map)
+                     const map<Model::Varname, string>& file_path_map)
    : twiin::Stage (stage)
 {
 
    int ret;
    int varid;
 
-   varname_map[TEMPERATURE] = "temp";
-   varname_map[DEW_POINT] = "field17";
-   varname_map[ZONAL_WIND] = "x-wind";
-   varname_map[MERIDIONAL_WIND] = "y-wind";
-   varname_map[MEAN_SEA_LEVEL_PRESSURE] = "p";
-
-   typedef map<Nwp_Element, string>::const_iterator Iterator;
+   typedef map<Model::Varname, string>::const_iterator Iterator;
    for (Iterator iterator = file_path_map.begin ();
         iterator != file_path_map.end (); iterator++)
    {
 
-      const Nwp_Element& nwp_element = iterator->first;
+      const Model::Varname& varname = iterator->first;
       const string& file_path = iterator->second;
 
-      nc_file_ptr_map.insert (make_pair (nwp_element, new Nc_File (file_path)));
-      const Nc_File& nc_file = *(nc_file_ptr_map.at (nwp_element));
+      nc_file_ptr_map.insert (make_pair (varname, new Nc_File (file_path)));
+      const Nc_File& nc_file = *(nc_file_ptr_map.at (varname));
       const Integer nc_id = nc_file.get_nc_id ();
 
       const bool first = (iterator == file_path_map.begin ());
@@ -488,9 +498,11 @@ Model::Stage::Stage (const twiin::Stage& stage,
          this->tuple_longitude = nc_file.get_coordinate_tuple ("longitude");
       }
 
-      ret = nc_inq_varid (nc_id, varname_map[nwp_element].c_str (), &varid);
-      if (ret != NC_NOERR) { throw Exception ("nc_inq_varid " + nwp_element); }
-      varid_map[nwp_element] = varid;
+      const string& nc_varname = Model::get_nc_varname (varname);
+
+      ret = nc_inq_varid (nc_id, nc_varname.c_str (), &varid);
+      if (ret != NC_NOERR) { throw Exception ("nc_inq_varid " + nc_varname); }
+      varid_map[varname] = varid;
 
    }
 
@@ -500,7 +512,7 @@ Model::Stage::Stage (const twiin::Stage& stage,
 
 Model::Stage::~Stage ()
 {
-   typedef map<Nwp_Element, Nc_File*>::iterator Iterator;
+   typedef map<Model::Varname, Nc_File*>::iterator Iterator;
    for (Iterator iterator = nc_file_ptr_map.begin ();
         iterator != nc_file_ptr_map.end (); iterator++)
    {
@@ -626,9 +638,20 @@ Model::Stage::evaluate (const Nwp_Element& nwp_element,
 
       default:
       {
-         const Nc_File& nc_file = *(nc_file_ptr_map.at (nwp_element));
+
+         Varname varname ("");
+         switch (nwp_element)
+         {
+            case TEMPERATURE:             varname = string ("temp"); break;
+            case DEW_POINT:               varname = string ("dewpt"); break;
+            case MEAN_SEA_LEVEL_PRESSURE: varname = string ("mslp"); break;
+            case ZONAL_WIND:              varname = string ("xwind"); break;
+            case MERIDIONAL_WIND:         varname = string ("ywind"); break;
+         }
+
+         const Nc_File& nc_file = *(nc_file_ptr_map.at (varname));
          const Integer nc_id = nc_file.get_nc_id ();
-         const Integer varid = varid_map.at (nwp_element);
+         const Integer varid = varid_map.at (varname);
          ret = nc_get_var1 (nc_id, varid, index, &datum);
          if (ret != NC_NOERR)
          {
@@ -651,14 +674,13 @@ Model::Stage::get_color (const Product& product,
 {
 
    // vertical index
-   const Integer k = 0;
    const Color transparent (0, 0, 0, 0);
-
    const Real& latitude = lat_long.latitude;
    const Real& longitude = lat_long.longitude;
 
    if (product == "T")
    {
+      const Integer k = 0;
       const Real t = evaluate (TEMPERATURE, latitude, longitude, k, l);
       const Real hue = Domain_1D (35 + K, 10 + K).normalize (t) * 0.833;
       return Color::hsb (hue, 0.8, 0.8);
@@ -666,6 +688,7 @@ Model::Stage::get_color (const Product& product,
    else
    if (product == "TD")
    {
+      const Integer k = 0;
       const Real t_d = evaluate (DEW_POINT, latitude, longitude, k, l);
       const Real hue = Domain_1D (20 + K, -5 + K).normalize (t_d) * 0.833;
       return Color::hsb (hue, 0.8, 0.8);
@@ -673,6 +696,7 @@ Model::Stage::get_color (const Product& product,
    else
    if (product == "RH")
    {
+      const Integer k = 0;
       const Real rh = evaluate (RELATIVE_HUMIDITY, latitude, longitude, k, l);
       const Real hue = (rh < 0.5 ? 0.08 : 0.35);
       const Real saturation = std::min ((fabs (rh - 0.5) * 2), 1.0);
@@ -681,6 +705,7 @@ Model::Stage::get_color (const Product& product,
    else
    if (product == "FFDI")
    {
+      const Integer k = 0;
       const Ffdi_Color_Chooser ffdi_color_chooser (0.7);
       const Real ffdi = evaluate (FFDI, latitude, longitude, k, l);
       return ffdi_color_chooser.get_color (ffdi);
@@ -688,7 +713,7 @@ Model::Stage::get_color (const Product& product,
    else
    if (product == "WIND")
    {
-
+      const Integer k = 0;
       const Real u = evaluate (ZONAL_WIND, latitude, longitude, 0, l);
       const Real v = evaluate (MERIDIONAL_WIND, latitude, longitude, 0, l);
       const Real speed = sqrt (u*u + v*v);
@@ -701,6 +726,7 @@ Model::Stage::get_color (const Product& product,
    else
    if (product == "VORTICITY")
    {
+      const Integer k = 0;
       const Real z = evaluate (RELATIVE_VORTICITY, latitude, longitude, k, l);
       const Real hue = (z < 0 ? 0.667 : 0.000);
       const Real modified_z = (log10 (fabs (z)) + 4) / 3;
@@ -710,6 +736,7 @@ Model::Stage::get_color (const Product& product,
    else
    if (product == "MSLP")
    {
+      const Integer k = 0;
       const Real mslp = evaluate (MEAN_SEA_LEVEL_PRESSURE, latitude, longitude, k, l);
       const Real hue = Domain_1D (990e2, 1025e2).normalize (mslp) * 0.833;
       return Color::hsb (hue, 0.8, 0.8);
@@ -717,6 +744,7 @@ Model::Stage::get_color (const Product& product,
    else
    if (product == "THETA_E")
    {
+      const Integer k = 0;
       const Real theta_e = evaluate (THETA_E, latitude, longitude, k, l);
       const Real hue = Domain_1D (65 + K, 5 + K).normalize (theta_e) * 0.833;
       return Color::hsb (hue, 0.8, 0.8);
@@ -726,6 +754,23 @@ Model::Stage::get_color (const Product& product,
       return transparent;
    }
 
+}
+
+string
+Model::get_nc_varname (const Varname& varname)
+{
+   if (varname == "temp") { return "temp"; }
+   if (varname == "dewpt") { return "field17"; }
+   if (varname == "xwind") { return "x-wind"; }
+   if (varname == "ywind") { return "y-wind"; }
+   if (varname == "zwind") { return "dz_dt"; }
+   if (varname == "mslp") { return "p"; }
+   if (varname == "prho") { return "p"; }
+   if (varname == "ptheta") { return "p"; }
+   if (varname == "prcp8p5") { return "precip"; }
+   if (varname == "spechum") { return "q"; }
+   if (varname == "theta") { return "theta"; }
+   throw Exception ("invalid varname: " + varname);
 }
 
 const Model::Stage&
@@ -738,9 +783,9 @@ Model::get_model_stage (const twiin::Stage& stage) const
    if (stage == "STAGE_5") { return stage_5; }
 }
 
-Model::Model (const map<Nwp_Element, string>& file_path_3_map,
-              const map<Nwp_Element, string>& file_path_4_map,
-              const map<Nwp_Element, string>& file_path_5_map)
+Model::Model (const map<Model::Varname, string>& file_path_3_map,
+              const map<Model::Varname, string>& file_path_4_map,
+              const map<Model::Varname, string>& file_path_5_map)
    : stage_3 (twiin::Stage ("STAGE_3"), file_path_3_map),
      stage_4 (twiin::Stage ("STAGE_4"), file_path_4_map),
      stage_5 (twiin::Stage ("STAGE_5"), file_path_5_map)

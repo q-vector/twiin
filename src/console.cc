@@ -302,26 +302,24 @@ main (int argc,
    const string lsm_5_file_path (argv[6]);
    const string station_file_path (argv[7]);
 
-   map<Nwp_Element, string> model_file_path_3_map;
-   map<Nwp_Element, string> model_file_path_4_map;
-   map<Nwp_Element, string> model_file_path_5_map;
-   model_file_path_3_map.insert (make_pair (TEMPERATURE, string (argv[8])));
-   model_file_path_3_map.insert (make_pair (DEW_POINT, string (argv[9])));
-   model_file_path_3_map.insert (make_pair (ZONAL_WIND, string (argv[10])));
-   model_file_path_3_map.insert (make_pair (MERIDIONAL_WIND, string (argv[11])));
-   model_file_path_3_map.insert (make_pair (MEAN_SEA_LEVEL_PRESSURE, string (argv[12])));
-
-   model_file_path_4_map.insert (make_pair (TEMPERATURE, string (argv[13])));
-   model_file_path_4_map.insert (make_pair (DEW_POINT, string (argv[14])));
-   model_file_path_4_map.insert (make_pair (ZONAL_WIND, string (argv[15])));
-   model_file_path_4_map.insert (make_pair (MERIDIONAL_WIND, string (argv[16])));
-   model_file_path_4_map.insert (make_pair (MEAN_SEA_LEVEL_PRESSURE, string (argv[17])));
-
-   model_file_path_5_map.insert (make_pair (TEMPERATURE, string (argv[18])));
-   model_file_path_5_map.insert (make_pair (DEW_POINT, string (argv[19])));
-   model_file_path_5_map.insert (make_pair (ZONAL_WIND, string (argv[20])));
-   model_file_path_5_map.insert (make_pair (MERIDIONAL_WIND, string (argv[21])));
-   model_file_path_5_map.insert (make_pair (MEAN_SEA_LEVEL_PRESSURE, string (argv[22])));
+   map<Model::Varname, string> model_file_path_3_map;
+   map<Model::Varname, string> model_file_path_4_map;
+   map<Model::Varname, string> model_file_path_5_map;
+   model_file_path_3_map.insert (make_pair (Model::Varname ("temp"), string (argv[8])));
+   model_file_path_3_map.insert (make_pair (Model::Varname ("dewpt"), string (argv[9])));
+   model_file_path_3_map.insert (make_pair (Model::Varname ("xwind"), string (argv[10])));
+   model_file_path_3_map.insert (make_pair (Model::Varname ("ywind"), string (argv[11])));
+   model_file_path_3_map.insert (make_pair (Model::Varname ("mslp"), string (argv[12])));
+   model_file_path_4_map.insert (make_pair (Model::Varname ("temp"), string (argv[13])));
+   model_file_path_4_map.insert (make_pair (Model::Varname ("dewpt"), string (argv[14])));
+   model_file_path_4_map.insert (make_pair (Model::Varname ("xwind"), string (argv[15])));
+   model_file_path_4_map.insert (make_pair (Model::Varname ("ywind"), string (argv[16])));
+   model_file_path_4_map.insert (make_pair (Model::Varname ("mslp"), string (argv[17])));
+   model_file_path_5_map.insert (make_pair (Model::Varname ("temp"), string (argv[18])));
+   model_file_path_5_map.insert (make_pair (Model::Varname ("dewpt"), string (argv[19])));
+   model_file_path_5_map.insert (make_pair (Model::Varname ("xwind"), string (argv[20])));
+   model_file_path_5_map.insert (make_pair (Model::Varname ("ywind"), string (argv[21])));
+   model_file_path_5_map.insert (make_pair (Model::Varname ("mslp"), string (argv[22])));
 
    const string product_str (argv[23]);
    const string stage_str (argv[24]);
