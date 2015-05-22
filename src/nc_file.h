@@ -21,6 +21,9 @@ namespace twiin
 
       public:
 
+         const string
+         file_path;
+
          Nc_File (const string& file_path);
 
          ~Nc_File ();

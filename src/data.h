@@ -110,109 +110,6 @@ namespace twiin
 
    };
 
-   class Terrain
-   {
-
-      private:
-
-         class Stage : public twiin::Stage
-         {
-
-            private:
-
-               Nc_File
-               orog_file;
-
-               Nc_File
-               lsm_file;
-
-               const Tuple
-               tuple_latitude;
-
-               const Tuple
-               tuple_longitude;
-
-               int
-               orog_varid;
-
-               int
-               lsm_varid;
-
-               void
-               acquire_ij (size_t& i,
-                           size_t& j,
-                           const Real latitude,
-                           const Real longitude) const;
-
-            public:
-
-               Stage (const twiin::Stage& stage,
-                      const string& orog_file_path,
-                      const string& lsm_file_path);
-
-               ~Stage ();
-
-               bool
-               out_of_bounds (const Real latitude,
-                              const Real longitude) const;
-
-               Real
-               get_orog (const size_t& i,
-                         const size_t& j) const;
-               Real
-               get_lsm (const size_t& i,
-                        const size_t& j) const;
-
-               Real
-               get_orog (const Real latitude,
-                         const Real longitude) const;
-
-               Real
-               get_lsm (const Real latitude,
-                        const Real longitude) const;
-
-               void
-               acquire_orog_lsm (Real& orog,
-                                 Real& lsm,
-                                 const Real latitude,
-                                 const Real longitude) const;
-
-         };
-
-         const Stage
-         stage_3;
-
-         const Stage
-         stage_4;
-
-         const Stage
-         stage_5;
-
-         const Stage&
-         get_terrain_stage (const twiin::Stage& stage) const;
-
-      public:
-
-         Terrain (const string& orog_3_file_path,
-                  const string& lsm_3_file_path,
-                  const string& orog_4_file_path,
-                  const string& lsm_4_file_path,
-                  const string& orog_5_file_path,
-                  const string& lsm_5_file_path);
-
-         Raster*
-         get_raster_ptr (const Size_2D& size_2d,
-                         const Transform_2D& transform,
-                         const twiin::Stage& stage) const;
-
-         void
-         cairo (const RefPtr<Context>& cr,
-                const Transform_2D& transform,
-                const Size_2D& size_2d,
-                const twiin::Stage& stage) const;
-
-   };
-
    class Model
    {
 
@@ -232,10 +129,116 @@ namespace twiin
 
          };
 
+         class Terrain
+         {
+
+            public:
+
+               class Stage : public twiin::Stage
+               {
+
+                  private:
+
+                     Nc_File
+                     orog_file;
+
+                     Nc_File
+                     lsm_file;
+
+                     const Tuple
+                     tuple_latitude;
+
+                     const Tuple
+                     tuple_longitude;
+
+                     int
+                     orog_varid;
+
+                     int
+                     lsm_varid;
+
+                     void
+                     acquire_ij (size_t& i,
+                                 size_t& j,
+                                 const Real latitude,
+                                 const Real longitude) const;
+
+                  public:
+
+                     Stage (const twiin::Stage& stage,
+                            const string& orog_file_path,
+                            const string& lsm_file_path);
+
+                     ~Stage ();
+
+                     bool
+                     out_of_bounds (const Real latitude,
+                                    const Real longitude) const;
+
+                     Real
+                     get_orog (const size_t& i,
+                               const size_t& j) const;
+                     Real
+                     get_lsm (const size_t& i,
+                              const size_t& j) const;
+
+                     Real
+                     get_orog (const Real latitude,
+                               const Real longitude) const;
+
+                     Real
+                     get_lsm (const Real latitude,
+                              const Real longitude) const;
+
+                     void
+                     acquire_orog_lsm (Real& orog,
+                                       Real& lsm,
+                                       const Real latitude,
+                                       const Real longitude) const;
+
+               };
+
+               const Stage
+               stage_3;
+
+               const Stage
+               stage_4;
+
+               const Stage
+               stage_5;
+
+               const Stage&
+               get_terrain_stage (const twiin::Stage& stage) const;
+
+            public:
+
+               Terrain (const string& orog_3_file_path,
+                        const string& lsm_3_file_path,
+                        const string& orog_4_file_path,
+                        const string& lsm_4_file_path,
+                        const string& orog_5_file_path,
+                        const string& lsm_5_file_path);
+
+               Raster*
+               get_raster_ptr (const Size_2D& size_2d,
+                               const Transform_2D& transform,
+                               const twiin::Stage& stage) const;
+
+               void
+               cairo (const RefPtr<Context>& cr,
+                      const Transform_2D& transform,
+                      const Size_2D& size_2d,
+                      const twiin::Stage& stage) const;
+
+         };
+
          class Stage : public twiin::Stage
          {
 
             private:
+
+               const Model&
+               model;
 
                Tuple
                tuple_latitude;
@@ -257,7 +260,8 @@ namespace twiin
 
             public:
 
-               Stage (const twiin::Stage& stage,
+               Stage (const Model& model,
+                      const twiin::Stage& stage,
                       const map<Varname, string>& file_path_map);
 
                ~Stage ();
@@ -286,11 +290,53 @@ namespace twiin
                          const size_t k,
                          const size_t l) const;
 
+               Real
+               evaluate_raw (const string& varname,
+                             const size_t i,
+                             const size_t j,
+                             const size_t k,
+                             const size_t l) const;
+
                Color
                get_color (const Product& product,
                           const Lat_Long& lat_long,
                           const Real z,
                           const Integer l) const;
+
+         };
+
+         class Vertical_Coefficients
+         {
+
+            private:
+
+               Tuple
+               A_theta;
+
+               Tuple
+               B_theta;
+
+               Tuple
+               A_rho;
+
+               Tuple
+               B_rho;
+
+            public:
+
+               Vertical_Coefficients (const string& file_path);
+
+               const Tuple&
+               get_A_theta () const;
+
+               const Tuple&
+               get_B_theta () const;
+
+               const Tuple&
+               get_A_rho () const;
+
+               const Tuple&
+               get_B_rho () const;
 
          };
 
@@ -305,13 +351,40 @@ namespace twiin
          const Stage
          stage_5;
 
+         const Terrain
+         terrain;
+
+         const Vertical_Coefficients
+         vertical_coefficients;
+
          static string
          get_nc_varname (const Varname& varname);
+
+         const Real
+         get_z (const Integer k,
+                const Real topography,
+                const Tuple& A,
+                const Tuple& B) const;
+
+         const Integer
+         get_k (const Real z,
+                const Real topography,
+                const Tuple& A,
+                const Tuple& B,
+                Integer start_k = -1,
+                Integer end_k = -1) const;
 
          const Stage&
          get_model_stage (const twiin::Stage& stage) const;
 
-         Model (const map<Varname, string>& file_path_3_map,
+         Model (const string& vertical_coefficients_file_path,
+                const string& orog_3_file_path,
+                const string& lsm_3_file_path,
+                const string& orog_4_file_path,
+                const string& lsm_4_file_path,
+                const string& orog_5_file_path,
+                const string& lsm_5_file_path,
+                const map<Varname, string>& file_path_3_map,
                 const map<Varname, string>& file_path_4_map,
                 const map<Varname, string>& file_path_5_map);
 
@@ -322,6 +395,7 @@ namespace twiin
                          const Dtime& dtime,
                          const Size_2D& size_2d,
                          const Transform_2D& transform,
+                         const Level& level,
                          const twiin::Stage& stage) const;
 
          Real
@@ -329,7 +403,7 @@ namespace twiin
                    const Real latitude,
                    const Real longitude,
                    const size_t k,
-                   const Dtime& dtim,
+                   const Dtime& dtime,
                    const twiin::Stage& stage) const;
 
    };

@@ -5,17 +5,17 @@ using namespace denise;
 using namespace twiin;
 
 Nc_File::Nc_File (const string& file_path)
+   : file_path (file_path)
 {
    int ret = nc_open (file_path.c_str (), NC_NOWRITE, &nc_id);
    if (ret != NC_NOERR) { throw Exception ("nc_open " + file_path); }
-
+cout << nc_id << " " << file_path << endl;
 }
 
 Nc_File::~Nc_File ()
 {
    int ret = nc_close (nc_id);
    if (ret != NC_NOERR) { throw Exception ("nc_close"); }
-
 }
 
 int

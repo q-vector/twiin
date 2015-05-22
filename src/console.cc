@@ -139,6 +139,7 @@ Console::on_key_pressed (const Dkey_Event& event)
 {
 
    if (Time_Canvas::on_key_pressed (event)) { return true; }
+   if (Level_Canvas::on_key_pressed (event)) { return true; }
 
    switch (event.value)
    {
@@ -180,22 +181,29 @@ Console::Console (Gtk::Window& gtk_window,
                   const string& product_str)
    : Map_Console (gtk_window, size_2d, zoom_tokens),
      Time_Canvas (*this, 12),
-     display (display),
+     Level_Canvas (*this, 12),
      product_panel (*this, 12),
+     display (display),
      stage (stage_str),
      product (product_str)
 {
 
    time_chooser.get_signal ().connect (
       sigc::mem_fun (*this, &Console::render_queue_draw));
+   //level_panel.get_signal ().connect (
+   //   sigc::mem_fun (*this, &Console::render_queue_draw));
 
    product_panel.get_signal ().connect (
       sigc::mem_fun (*this, &Console::set_product));
 
-   product_panel.set_hidable (true);
+   level_panel.set_level (Level ("500m"));
 
+   product_panel.set_hidable (true);
    time_chooser.set_hidable (true);
+   level_panel.set_hidable (true);
+
    register_widget (time_chooser);
+   register_widget (level_panel);
    register_widget (product_panel);
 
    product_panel.add_product ("Raw", Product ("T"));
@@ -230,7 +238,7 @@ Console::pack ()
    const Real button_height = font_size * 2;
 
    const Real lp_width = width * 0.06;
-   const Real lp_height = height - title_height - 4*margin - 2*button_height; 
+   const Real lp_height = (height - title_height - 2 * margin);
    const Real lp_anchor_x = width - lp_width - margin;
    const Real lp_anchor_y = 2*margin + button_height + title_height;
    const Point_2D lp_anchor (lp_anchor_x, lp_anchor_y);
@@ -251,8 +259,13 @@ Console::pack ()
    const Real pp_anchor_y = height - pp_height - margin;
    const Point_2D pp_anchor (pp_anchor_x, pp_anchor_y);
 
+cout << "tc pack " << tc_anchor << " " << tc_width << " " << tc_height << endl;
    time_chooser.being_packed (tc_anchor, tc_width, tc_height);
    time_chooser.pack ();
+
+cout << "lp pack " << lp_anchor << " " << lp_width << " " << lp_height << endl;
+   level_panel.being_packed (lp_anchor, lp_width, lp_height);
+   level_panel.pack ();
 
    product_panel.being_packed (pp_anchor, pp_width, pp_height);
    product_panel.pack ();
@@ -285,8 +298,9 @@ Console::render_image_buffer (const RefPtr<Context>& cr)
    const Size_2D& size_2d = get_size_2d ();
    const Transform_2D& transform = get_transform ();
    const Dtime& dtime = get_time_chooser ().get_time ();
+   const Level& level = get_level_panel ().get_level ();
 
-   display.cairo (cr, transform, size_2d, dtime, stage, product);
+   display.cairo (cr, transform, size_2d, dtime, level, stage, product);
 }
 
 int
@@ -294,35 +308,42 @@ main (int argc,
       char** argv)
 {
 
-   const string orog_3_file_path (argv[1]);
-   const string lsm_3_file_path (argv[2]);
-   const string orog_4_file_path (argv[3]);
-   const string lsm_4_file_path (argv[4]);
-   const string orog_5_file_path (argv[5]);
-   const string lsm_5_file_path (argv[6]);
-   const string station_file_path (argv[7]);
+   const string vertical_coefficients_file_path (argv[1]);
+   const string orog_3_file_path (argv[2]);
+   const string lsm_3_file_path (argv[3]);
+   const string orog_4_file_path (argv[4]);
+   const string lsm_4_file_path (argv[5]);
+   const string orog_5_file_path (argv[6]);
+   const string lsm_5_file_path (argv[7]);
+   const string station_file_path (argv[8]);
 
    map<Model::Varname, string> model_file_path_3_map;
    map<Model::Varname, string> model_file_path_4_map;
    map<Model::Varname, string> model_file_path_5_map;
-   model_file_path_3_map.insert (make_pair (Model::Varname ("temp"), string (argv[8])));
-   model_file_path_3_map.insert (make_pair (Model::Varname ("dewpt"), string (argv[9])));
-   model_file_path_3_map.insert (make_pair (Model::Varname ("xwind"), string (argv[10])));
-   model_file_path_3_map.insert (make_pair (Model::Varname ("ywind"), string (argv[11])));
-   model_file_path_3_map.insert (make_pair (Model::Varname ("mslp"), string (argv[12])));
-   model_file_path_4_map.insert (make_pair (Model::Varname ("temp"), string (argv[13])));
-   model_file_path_4_map.insert (make_pair (Model::Varname ("dewpt"), string (argv[14])));
-   model_file_path_4_map.insert (make_pair (Model::Varname ("xwind"), string (argv[15])));
-   model_file_path_4_map.insert (make_pair (Model::Varname ("ywind"), string (argv[16])));
-   model_file_path_4_map.insert (make_pair (Model::Varname ("mslp"), string (argv[17])));
-   model_file_path_5_map.insert (make_pair (Model::Varname ("temp"), string (argv[18])));
-   model_file_path_5_map.insert (make_pair (Model::Varname ("dewpt"), string (argv[19])));
-   model_file_path_5_map.insert (make_pair (Model::Varname ("xwind"), string (argv[20])));
-   model_file_path_5_map.insert (make_pair (Model::Varname ("ywind"), string (argv[21])));
-   model_file_path_5_map.insert (make_pair (Model::Varname ("mslp"), string (argv[22])));
+   model_file_path_3_map.insert (make_pair (Model::Varname ("temp"), string (argv[9])));
+   model_file_path_3_map.insert (make_pair (Model::Varname ("dewpt"), string (argv[10])));
+   model_file_path_3_map.insert (make_pair (Model::Varname ("xwind"), string (argv[11])));
+   model_file_path_3_map.insert (make_pair (Model::Varname ("ywind"), string (argv[12])));
+   model_file_path_3_map.insert (make_pair (Model::Varname ("mslp"), string (argv[13])));
+   model_file_path_3_map.insert (make_pair (Model::Varname ("ml_prho"), string (argv[14])));
+   model_file_path_3_map.insert (make_pair (Model::Varname ("ml_ptheta"), string (argv[15])));
+   model_file_path_3_map.insert (make_pair (Model::Varname ("ml_theta"), string (argv[16])));
+   model_file_path_3_map.insert (make_pair (Model::Varname ("ml_spechum"), string (argv[17])));
+   model_file_path_3_map.insert (make_pair (Model::Varname ("ml_xwind"), string (argv[18])));
+   model_file_path_3_map.insert (make_pair (Model::Varname ("ml_ywind"), string (argv[19])));
+   model_file_path_4_map.insert (make_pair (Model::Varname ("temp"), string (argv[20])));
+   model_file_path_4_map.insert (make_pair (Model::Varname ("dewpt"), string (argv[21])));
+   model_file_path_4_map.insert (make_pair (Model::Varname ("xwind"), string (argv[22])));
+   model_file_path_4_map.insert (make_pair (Model::Varname ("ywind"), string (argv[23])));
+   model_file_path_4_map.insert (make_pair (Model::Varname ("mslp"), string (argv[24])));
+   model_file_path_5_map.insert (make_pair (Model::Varname ("temp"), string (argv[25])));
+   model_file_path_5_map.insert (make_pair (Model::Varname ("dewpt"), string (argv[26])));
+   model_file_path_5_map.insert (make_pair (Model::Varname ("xwind"), string (argv[27])));
+   model_file_path_5_map.insert (make_pair (Model::Varname ("ywind"), string (argv[28])));
+   model_file_path_5_map.insert (make_pair (Model::Varname ("mslp"), string (argv[29])));
 
-   const string product_str (argv[23]);
-   const string stage_str (argv[24]);
+   const string product_str (argv[30]);
+   const string stage_str (argv[31]);
 
    try
    {
@@ -336,10 +357,10 @@ main (int argc,
       zoom_tokens.push_back ("Stage3/LAMBERT_CONIC_SOUTH:3000:-33.5:150.5");
       zoom_tokens.push_back ("Stage4/LAMBERT_CONIC_SOUTH:1200:-33.75:150.5");
       zoom_tokens.push_back ("Stage5/LAMBERT_CONIC_SOUTH:380:-33.7:150.55");
-      const Display display (orog_3_file_path, lsm_3_file_path,
-         orog_4_file_path, lsm_4_file_path, orog_5_file_path,
-         lsm_5_file_path, station_file_path, model_file_path_3_map,
-         model_file_path_4_map, model_file_path_5_map);
+      const Display display (vertical_coefficients_file_path,
+         orog_3_file_path, lsm_3_file_path, orog_4_file_path, lsm_4_file_path,
+         orog_5_file_path, lsm_5_file_path, station_file_path,
+         model_file_path_3_map, model_file_path_4_map, model_file_path_5_map);
       Console console (gtk_window, size_2d, zoom_tokens,
          display, stage_str, product_str);
       gtk_window.add (console);

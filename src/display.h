@@ -23,9 +23,6 @@ namespace twiin
 
       private:
 
-         const Terrain
-         terrain;
-
          const Station::Map
          station_map;
 
@@ -38,6 +35,7 @@ namespace twiin
                        const Transform_2D& transform,
                        const Size_2D& size_2d,
                        const Dtime& dtime,
+                       const Level& level,
                        const twiin::Stage& stage) const;
 
          void
@@ -49,7 +47,8 @@ namespace twiin
 
       public:
 
-         Display (const string& orog_3_file_path,
+         Display (const string& vertical_coefficients_file_path,
+                  const string& orog_3_file_path,
                   const string& lsm_3_file_path,
                   const string& orog_4_file_path,
                   const string& lsm_4_file_path,
@@ -70,6 +69,7 @@ namespace twiin
                 const Transform_2D& transform,
                 const Size_2D& size_2d,
                 const Dtime& dtime,
+                const Level& level,
                 const twiin::Stage& stage,
                 const Product product) const;
 

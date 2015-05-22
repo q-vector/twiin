@@ -17,7 +17,8 @@ namespace twiin
 {
 
    class Console : public Map_Console,
-                   public Time_Canvas
+                   public Time_Canvas,
+                   public Level_Canvas
    {
 
       private:

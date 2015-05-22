@@ -11,11 +11,11 @@ Display::render_model (const Product& product,
                        const Transform_2D& transform,
                        const Size_2D& size_2d,
                        const Dtime& dtime,
+                       const Level& level,
                        const twiin::Stage& stage) const
 {
-
    Raster* raster_ptr = model.get_raster_ptr (product,
-      dtime, size_2d, transform, stage);
+      dtime, size_2d, transform, level, stage);
    raster_ptr->blit (cr);
    delete raster_ptr;
 }
@@ -70,7 +70,8 @@ Display::render_wind_barbs (const RefPtr<Context>& cr,
 
 }
 
-Display::Display (const string& orog_3_file_path,
+Display::Display (const string& vertical_coefficients_file_path,
+                  const string& orog_3_file_path,
                   const string& lsm_3_file_path,
                   const string& orog_4_file_path,
                   const string& lsm_4_file_path,
@@ -80,11 +81,14 @@ Display::Display (const string& orog_3_file_path,
                   const std::map<Model::Varname, string>& model_file_path_3_map,
                   const std::map<Model::Varname, string>& model_file_path_4_map,
                   const std::map<Model::Varname, string>& model_file_path_5_map)
-   : terrain (orog_3_file_path, lsm_3_file_path,
-              orog_4_file_path, lsm_4_file_path,
-              orog_5_file_path, lsm_5_file_path),
-     station_map (station_file_path),
-     model (model_file_path_3_map, model_file_path_4_map, model_file_path_5_map)
+   : station_map (station_file_path),
+     model (vertical_coefficients_file_path,
+            orog_3_file_path, lsm_3_file_path,
+            orog_4_file_path, lsm_4_file_path,
+            orog_5_file_path, lsm_5_file_path,
+            model_file_path_3_map,
+            model_file_path_4_map,
+            model_file_path_5_map)
 
 {
 }
@@ -104,6 +108,7 @@ Display::cairo (const RefPtr<Context>& cr,
                 const Transform_2D& transform,
                 const Size_2D& size_2d,
                 const Dtime& dtime,
+                const Level& level,
                 const Stage& stage,
                 const Product product) const
 {
@@ -115,11 +120,12 @@ Display::cairo (const RefPtr<Context>& cr,
 
    if (product == "TERRAIN")
    {
-      terrain.cairo (cr, transform, size_2d, stage);
+      model.terrain.cairo (cr, transform, size_2d, stage);
    }
    else
    {
-      render_model (product, cr, transform, size_2d, dtime, stage);
+      model.terrain.cairo (cr, transform, size_2d, stage);
+//      render_model (product, cr, transform, size_2d, dtime, level, stage);
    }
 
    render_wind_barbs (cr, transform, size_2d, dtime, stage);
