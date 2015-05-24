@@ -1,4 +1,4 @@
-INCLUDES        = -I$(top_builddir) -I$(top_srcdir)
+AM_CPPFLAGS        = -I$(top_builddir) -I$(top_srcdir)
 
 noinst_HEADERS  = console.h data.h display.h nc_file.h
 bin_PROGRAMS    = twiin-cmd
