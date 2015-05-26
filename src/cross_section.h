@@ -58,6 +58,12 @@ namespace twiin
 
          };
 
+         Multi_Journey
+         multi_journey;
+
+         Domain_1D
+         domain_z;
+
          Product_Panel
          product_panel;
 
@@ -69,6 +75,18 @@ namespace twiin
 
          Product
          product;
+
+         Real
+         margin_l;
+
+         Real
+         margin_r;
+
+         Real
+         margin_t;
+
+         Real
+         margin_b;
 
          Tokens
          get_tokens (const Marker& marker) const;
@@ -94,6 +112,9 @@ namespace twiin
 
          void
          pack ();
+
+         void
+         reset_transform ();
 
          void
          set_product (const Product& product);

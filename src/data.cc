@@ -810,10 +810,10 @@ Model::Stage::get_color (const Product& product,
       model.terrain.get_terrain_stage (*this);
 
    const Real topography = terrain_stage.get_orog (latitude, longitude);
-   if (z < topography) { return transparent; }
 
    if (product == "THETA")
    {
+      if (z < topography) { return transparent; }
       const Real theta = evaluate (THETA, latitude, longitude, z, l);
       const Real hue = Domain_1D (60 + K, 0 + K).normalize (theta) * 0.833;
       return Color::hsb (hue, 0.8, 0.8);
@@ -821,6 +821,7 @@ Model::Stage::get_color (const Product& product,
    else
    if (product == "T")
    {
+      if (z < topography) { return transparent; }
       const Real t = evaluate (TEMPERATURE, latitude, longitude, z, l);
       const Real hue = Domain_1D (35 + K, 10 + K).normalize (t) * 0.833;
       return Color::hsb (hue, 0.8, 0.8);
@@ -828,6 +829,7 @@ Model::Stage::get_color (const Product& product,
    else
    if (product == "TD")
    {
+      if (z < topography) { return transparent; }
       const Real t_d = evaluate (DEW_POINT, latitude, longitude, z, l);
       const Real hue = Domain_1D (20 + K, -5 + K).normalize (t_d) * 0.833;
       return Color::hsb (hue, 0.8, 0.8);
@@ -835,6 +837,7 @@ Model::Stage::get_color (const Product& product,
    else
    if (product == "RH")
    {
+      if (z < topography) { return transparent; }
       const Real rh = evaluate (RELATIVE_HUMIDITY, latitude, longitude, z, l);
       const Real hue = (rh < 0.5 ? 0.08 : 0.35);
       const Real saturation = std::min ((fabs (rh - 0.5) * 2), 1.0);
@@ -851,6 +854,7 @@ Model::Stage::get_color (const Product& product,
    else
    if (product == "WIND")
    {
+      if (z < topography) { return transparent; }
       const Real u = evaluate (ZONAL_WIND, latitude, longitude, z, l);
       const Real v = evaluate (MERIDIONAL_WIND, latitude, longitude, z, l);
       const Real speed = sqrt (u*u + v*v);
@@ -862,6 +866,7 @@ Model::Stage::get_color (const Product& product,
    else
    if (product == "VORTICITY")
    {
+      if (z < topography) { return transparent; }
       const Real zeta = evaluate (RELATIVE_VORTICITY, latitude, longitude, z, l);
       const Real hue = (zeta < 0 ? 0.667 : 0.000);
       const Real modified_zeta = (log10 (fabs (zeta)) + 4) / 3;
@@ -880,6 +885,7 @@ Model::Stage::get_color (const Product& product,
    else
    if (product == "THETA_E")
    {
+      if (z < topography) { return transparent; }
       const Real theta_e = evaluate (THETA_E, latitude, longitude, z, l);
       const Real hue = Domain_1D (65 + K, 5 + K).normalize (theta_e) * 0.833;
       return Color::hsb (hue, 0.8, 0.8);

@@ -99,7 +99,8 @@ Cross_Section::Cross_Section (Gtk::Window& gtk_window,
      product_panel (*this, 12),
      display (display),
      stage (stage_str),
-     product (product_str)
+     product (product_str),
+     domain_z (0, 5000)
 {
 
    time_chooser.get_signal ().connect (
@@ -130,6 +131,12 @@ Cross_Section::Cross_Section (Gtk::Window& gtk_window,
    time_chooser.set_shape (Time_Chooser::Shape (time_set));
    time_chooser.set_leap (1);
 
+   const Lat_Long lat_long_a (-30.5, 145.5);
+   const Lat_Long lat_long_b (-37.5, 159.5);
+   multi_journey.push_back (lat_long_a);
+   multi_journey.push_back (lat_long_b);
+   multi_journey.standardize (LAT_LONG_PACIFIC);
+
    pack ();
 
 }
@@ -142,8 +149,10 @@ void
 Cross_Section::pack ()
 {
 
+   reset_transform ();
+
    const Real title_height = title.get_height ();
-   const Real margin = title_height * 0.15;
+   const Real margin = title_height * 0.2;
    const Real font_size = title_height * 0.3;
    const Real button_height = font_size * 2;
 
@@ -165,6 +174,37 @@ Cross_Section::pack ()
    product_panel.being_packed (pp_anchor, pp_width, pp_height);
    product_panel.pack ();
 
+   this->margin_l = 4 * margin + tc_width;
+   this->margin_r = 4 * margin;
+   this->margin_t = title_height + 4 * margin;
+   this->margin_b = 4 * margin + pp_height;
+
+}
+
+void
+Cross_Section::reset_transform ()
+{
+
+   const Real top_z = 5000;
+   const Real bottom_z = 0;
+
+   const Geodesy geodesy;
+   const Tuple& tuple_x = multi_journey.get_tuple_x (geodesy);
+   const Domain_1D domain_z (top_z, bottom_z);
+   const Domain_1D domain_x (tuple_x.front (), tuple_x.back ());
+   const Domain_2D domain_2d (domain_x, domain_z);
+
+   const Real w = width - margin_l - margin_r;
+   const Real h = height - margin_t - margin_b;
+   const Point_2D p (margin_l, margin_t);
+
+   Console_2D::reset_transform ();
+   const Real span_x = domain_x.get_span ();
+   const Real span_z = domain_z.get_span ();
+   Affine_Transform_2D& transform = get_affine_transform ();
+   transform.scale (w / span_x, h / span_z);
+   transform.translate (0, height);
+   transform.translate (margin_l, -margin_b);
 
 }
 
@@ -193,13 +233,73 @@ Cross_Section::render_image_buffer (const RefPtr<Context>& cr)
 {
 
    const Size_2D& size_2d = get_size_2d ();
-   const Transform_2D& transform = get_transform ();
    const Dtime& dtime = get_time_chooser ().get_time ();
 
    cr->save ();
-   Color (0.47, 0.85, 0.47).cairo (cr);
+   //Color::hsb (0.67, 0.67, 0.85).cairo (cr);
+   Color::hsb (0.0, 0.0, 1.0).cairo (cr);
+   cr->paint ();
 
-cout << "render image buffer" << endl;
+   const Simple_Mesh_2D ma0 (Color (0, 0, 0, 0.05), 1e8, 10);
+   const Simple_Mesh_2D ma1 (Color (0, 0, 0, 0.1), 1e8, 100);
+   const Simple_Mesh_2D ma2 (Color (0, 0, 0, 0.4), 1e8, 1000);
+
+   const Affine_Transform_2D& transform = get_affine_transform ();
+
+   const Geodesy geodesy;
+   const Tuple& tuple_x = multi_journey.get_tuple_x (geodesy);
+cout << "tuple_x = " << tuple_x << endl;
+   const Domain_1D domain_x (tuple_x.front (), tuple_x.back ());
+   const Domain_2D domain_2d (domain_x, domain_z);
+   const Mesh_2D mesh_2d (domain_2d, ma2);
+
+   const Index_2D i2d (margin_l, margin_t);
+   const Size_2D s2d (size_2d.i-margin_l-margin_r, size_2d.j-margin_t-margin_b);
+
+   Real x, z;
+   const Model& model = display.get_model ();
+
+   if (s2d.i > 0 && s2d.j > 0)
+   {
+
+      const Box_2D box_2d (i2d, s2d);
+      Raster* raster_ptr = new Raster (box_2d);
+      Raster& raster = *raster_ptr;
+
+      for (Integer i = i2d.i; i < i2d.i + s2d.i; i++)
+      {
+
+         transform.reverse (x, z, Real (i), 0);
+         const Lat_Long lat_long = multi_journey.get_lat_long (x, geodesy);
+         const Real latitude = lat_long.latitude;
+         const Real longitude = lat_long.latitude;
+
+         for (Integer j = i2d.j; j < i2d.j + s2d.j; j++)
+         {
+            transform.reverse (x, z, Real (i), Real (j));
+            const Real datum = model.evaluate (THETA,
+               latitude, longitude, z, dtime, stage);
+            const Real hue = Domain_1D (60 + K, 0 + K).normalize (datum)*0.833;
+            const Color& color = Color::hsb (hue, 0.8, 0.8);
+            raster.set_pixel (i - i2d.i, j - i2d.j, color);
+         }
+
+      }
+
+      raster.blit (cr);
+      delete raster_ptr;
+
+   }
+
+   cr->set_line_width (2);
+   mesh_2d.render (cr, transform, Size_2D (2, 2));
+   Color (0, 0, 0, 0.3).cairo (cr);
+
+//   mesh_2d.render_label_x (cr, transform, 0, 1050e2,
+//      "%.0f", NUMBER_REAL, 'c', 't', 5);
+//   mesh_2d.render_label_y (cr, transform, 0, 0,
+//      "%.0f", NUMBER_REAL, 'r', 'c', 5);
+
    cr->restore ();
 
 }
