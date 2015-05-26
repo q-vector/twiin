@@ -25,6 +25,7 @@ Display::render_wind_barbs (const RefPtr<Context>& cr,
                             const Transform_2D& transform,
                             const Size_2D& size_2d,
                             const Dtime& dtime,
+                            const Level& level,
                             const Stage& stage) const
 {
 
@@ -47,6 +48,7 @@ Display::render_wind_barbs (const RefPtr<Context>& cr,
    const Color wind_barb_color (0.0, 0.0, 0.0, 0.5);
    wind_barb_color.cairo (cr);
 
+   const Real z = level.value;
    const Model::Stage& model_stage = model.get_model_stage (stage);
 
    for (point.x = start_x; point.x < width; point.x += h)
@@ -56,11 +58,15 @@ Display::render_wind_barbs (const RefPtr<Context>& cr,
 
          transform.reverse (latitude, longitude, point.x, point.y);
          if (model_stage.out_of_bounds (latitude, longitude)) { continue; }
-         Real u = model.evaluate (ZONAL_WIND, latitude, longitude, 0, dtime, stage);
-         Real v = model.evaluate (MERIDIONAL_WIND, latitude, longitude, 0, dtime, stage);
+
+         Real u = model.evaluate (ZONAL_WIND, latitude,
+            longitude, z, dtime, stage);
+         Real v = model.evaluate (MERIDIONAL_WIND, latitude,
+            longitude, z, dtime, stage);
+         transform.transform_uv (u, v, latitude, longitude);
+         if (gsl_isnan (u) || gsl_isnan (v)) { continue; }
 
          const bool nh = (latitude > 0);
-         transform.transform_uv (u, v, latitude, longitude);
          const Wind_Barb wind_barb (Wind (u, v), wind_barb_size, nh, nan, ct);
          wind_barb.cairo (cr, point);
          cr->fill ();
@@ -78,9 +84,9 @@ Display::Display (const string& vertical_coefficients_file_path,
                   const string& orog_5_file_path,
                   const string& lsm_5_file_path,
                   const string& station_file_path,
-                  const std::map<Model::Varname, string>& model_file_path_3_map,
-                  const std::map<Model::Varname, string>& model_file_path_4_map,
-                  const std::map<Model::Varname, string>& model_file_path_5_map)
+                  const Model::Stage::File_Path_Map& model_file_path_3_map,
+                  const Model::Stage::File_Path_Map& model_file_path_4_map,
+                  const Model::Stage::File_Path_Map& model_file_path_5_map)
    : station_map (station_file_path),
      model (vertical_coefficients_file_path,
             orog_3_file_path, lsm_3_file_path,
@@ -124,11 +130,11 @@ Display::cairo (const RefPtr<Context>& cr,
    }
    else
    {
-      model.terrain.cairo (cr, transform, size_2d, stage);
-//      render_model (product, cr, transform, size_2d, dtime, level, stage);
+//      model.terrain.cairo (cr, transform, size_2d, stage);
+      render_model (product, cr, transform, size_2d, dtime, level, stage);
    }
 
-   render_wind_barbs (cr, transform, size_2d, dtime, stage);
+   render_wind_barbs (cr, transform, size_2d, dtime, level, stage);
 
    // Stage 3/4/5 Frames
    station_map.render_stages (cr, transform);

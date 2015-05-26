@@ -260,9 +260,20 @@ namespace twiin
 
             public:
 
+               class File_Path_Map : public map<Varname, string>
+               {
+
+                  public:
+
+                     void
+                     insert (const Varname& varname,
+                             const string& file_path);
+
+               };
+
                Stage (const Model& model,
                       const twiin::Stage& stage,
-                      const map<Varname, string>& file_path_map);
+                      const File_Path_Map& file_path_map);
 
                ~Stage ();
 
@@ -275,6 +286,13 @@ namespace twiin
                bool
                out_of_bounds (const Real latitude,
                               const Real longitude) const;
+
+               Real
+               evaluate (const Nwp_Element& nwp_element,
+                         const Real latitude,
+                         const Real longitude,
+                         const Real z,
+                         const size_t l) const;
 
                Real
                evaluate (const Nwp_Element& nwp_element,
@@ -300,8 +318,8 @@ namespace twiin
                Color
                get_color (const Product& product,
                           const Lat_Long& lat_long,
-                          const Real z,
-                          const Integer l) const;
+                          const Level& level,
+                          const size_t l) const;
 
          };
 
@@ -384,9 +402,9 @@ namespace twiin
                 const string& lsm_4_file_path,
                 const string& orog_5_file_path,
                 const string& lsm_5_file_path,
-                const map<Varname, string>& file_path_3_map,
-                const map<Varname, string>& file_path_4_map,
-                const map<Varname, string>& file_path_5_map);
+                const Stage::File_Path_Map& file_path_3_map,
+                const Stage::File_Path_Map& file_path_4_map,
+                const Stage::File_Path_Map& file_path_5_map);
 
          ~Model ();
 
@@ -403,6 +421,14 @@ namespace twiin
                    const Real latitude,
                    const Real longitude,
                    const size_t k,
+                   const Dtime& dtime,
+                   const twiin::Stage& stage) const;
+
+         Real
+         evaluate (const Nwp_Element& nwp_element,
+                   const Real latitude,
+                   const Real longitude,
+                   const Real z,
                    const Dtime& dtime,
                    const twiin::Stage& stage) const;
 

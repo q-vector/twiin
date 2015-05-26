@@ -1,14 +1,16 @@
 AM_CPPFLAGS        = -I$(top_builddir) -I$(top_srcdir)
 
-noinst_HEADERS  = console.h data.h display.h nc_file.h
+noinst_HEADERS  = console.h cross_section.h data.h display.h nc_file.h
 bin_PROGRAMS    = twiin-cmd
 
 if ENABLE_GTKMM
-   bin_PROGRAMS += twiin
+   bin_PROGRAMS += twiin twiin-cc
 endif
 
 #twiin_LDADD    	= $(top_builddir)/twiin/libtwiin.la
 twiin_SOURCES		= console.cc data.cc display.cc nc_file.cc
-#tinfox_wmo_LDADD	= $(top_builddir)/tinfox/libtinfox.la
+#twiin_cc_LDADD    	= $(top_builddir)/twiin/libtwiin.la
+twiin_cc_SOURCES	= cross_section.cc data.cc display.cc nc_file.cc
+#twiin_cmd_LDADD	= $(top_builddir)/twiin/libtwiin.la
 twiin_cmd_SOURCES	= main.cc data.cc display.cc nc_file.cc
 

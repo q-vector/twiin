@@ -1,5 +1,5 @@
-#ifndef CONSOLE_H
-#define CONSOLE_H
+#ifndef CROSS_SECTION_H
+#define CROSS_SECTION_H
 
 #include <iostream>
 #include <cairommconfig.h>
@@ -16,9 +16,8 @@ using namespace Cairo;
 namespace twiin
 {
 
-   class Console : public Map_Console,
-                   public Time_Canvas,
-                   public Level_Canvas
+   class Cross_Section : public Console_2D,
+                         public Time_Canvas
    {
 
       private:
@@ -36,8 +35,8 @@ namespace twiin
 
             private:
 
-               Console&
-               console;
+               Cross_Section&
+               cross_section;
 
                Signal
                signal;
@@ -47,7 +46,7 @@ namespace twiin
 
             public:
 
-               Product_Panel (Console& console,
+               Product_Panel (Cross_Section& console,
                               const Real font_size = 12);
 
                void
@@ -71,9 +70,6 @@ namespace twiin
          Product
          product;
 
-         Level
-         level;
-
          Tokens
          get_tokens (const Marker& marker) const;
 
@@ -86,29 +82,21 @@ namespace twiin
          void
          unify_drawers (const bool expand);
 
-         void
-         process_popup_menu (const string& popup_menu_str);
-
       public:
 
-         Console (Gtk::Window& gtk_window,
-                  const Size_2D& size_2d,
-                  const Tokens& zoom_tokens,
-                  const Display& display,
-                  const string& stage_str,
-                  const string& product_str,
-                  const string& level_str);
+         Cross_Section (Gtk::Window& gtk_window,
+                        const Size_2D& size_2d,
+                        const Display& display,
+                        const string& stage_str,
+                        const string& product_str);
 
-         ~Console ();
+         ~Cross_Section ();
 
          void
          pack ();
 
          void
          set_product (const Product& product);
-
-         void
-         set_level (const Level& level);
 
          virtual void
          render_queue_draw ();
@@ -120,4 +108,4 @@ namespace twiin
 
 };
 
-#endif /* CONSOLE_H */
+#endif /* CROSS_SECTION_H */

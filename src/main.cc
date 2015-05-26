@@ -21,27 +21,34 @@ main (int argc,
    const string lsm_5_file_path (argv[7]);
    const string station_file_path (argv[8]);
 
-   map<Model::Varname, string> model_file_path_3_map;
-   map<Model::Varname, string> model_file_path_4_map;
-   map<Model::Varname, string> model_file_path_5_map;
-   model_file_path_3_map.insert (make_pair (Model::Varname ("temp"), string (argv[9])));
-   model_file_path_3_map.insert (make_pair (Model::Varname ("dewpt"), string (argv[10])));
-   model_file_path_3_map.insert (make_pair (Model::Varname ("xwind"), string (argv[11])));
-   model_file_path_3_map.insert (make_pair (Model::Varname ("ywind"), string (argv[12])));
-   model_file_path_3_map.insert (make_pair (Model::Varname ("mslp"), string (argv[13])));
-   model_file_path_4_map.insert (make_pair (Model::Varname ("temp"), string (argv[14])));
-   model_file_path_4_map.insert (make_pair (Model::Varname ("dewpt"), string (argv[15])));
-   model_file_path_4_map.insert (make_pair (Model::Varname ("xwind"), string (argv[16])));
-   model_file_path_4_map.insert (make_pair (Model::Varname ("ywind"), string (argv[17])));
-   model_file_path_4_map.insert (make_pair (Model::Varname ("mslp"), string (argv[18])));
-   model_file_path_5_map.insert (make_pair (Model::Varname ("temp"), string (argv[19])));
-   model_file_path_5_map.insert (make_pair (Model::Varname ("dewpt"), string (argv[20])));
-   model_file_path_5_map.insert (make_pair (Model::Varname ("xwind"), string (argv[21])));
-   model_file_path_5_map.insert (make_pair (Model::Varname ("ywind"), string (argv[22])));
-   model_file_path_5_map.insert (make_pair (Model::Varname ("mslp"), string (argv[23])));
+   Model::Stage::File_Path_Map model_file_path_3_map;
+   Model::Stage::File_Path_Map model_file_path_4_map;
+   Model::Stage::File_Path_Map model_file_path_5_map;
+   model_file_path_3_map.insert (string ("temp"), argv[9]);
+   model_file_path_3_map.insert (string ("dewpt"), argv[10]);
+   model_file_path_3_map.insert (string ("xwind"), argv[11]);
+   model_file_path_3_map.insert (string ("ywind"), argv[12]);
+   model_file_path_3_map.insert (string ("mslp"), argv[13]);
+   model_file_path_3_map.insert (string ("ml_prho"), argv[14]);
+   model_file_path_3_map.insert (string ("ml_ptheta"), argv[15]);
+   model_file_path_3_map.insert (string ("ml_theta"), argv[16]);
+   model_file_path_3_map.insert (string ("ml_spechum"), argv[17]);
+   model_file_path_3_map.insert (string ("ml_xwind"), argv[18]);
+   model_file_path_3_map.insert (string ("ml_ywind"), argv[19]);
+   model_file_path_4_map.insert (string ("temp"), argv[20]);
+   model_file_path_4_map.insert (string ("dewpt"), argv[21]);
+   model_file_path_4_map.insert (string ("xwind"), argv[22]);
+   model_file_path_4_map.insert (string ("ywind"), argv[23]);
+   model_file_path_4_map.insert (string ("mslp"), argv[24]);
+   model_file_path_5_map.insert (string ("temp"), argv[25]);
+   model_file_path_5_map.insert (string ("dewpt"), argv[26]);
+   model_file_path_5_map.insert (string ("xwind"), argv[27]);
+   model_file_path_5_map.insert (string ("ywind"), argv[28]);
+   model_file_path_5_map.insert (string ("mslp"), argv[29]);
 
-   const string product_str (argv[24]);
-   const string stage_str (argv[25]);
+   const string product_str (argv[30]);
+   const string stage_str (argv[31]);
+   const string level_str (argv[32]);
 
    try
    {
