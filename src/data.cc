@@ -225,6 +225,10 @@ Model::Terrain::Stage::acquire_ij (size_t& i,
 {
    i = Grid_nD::get_nearest_node (tuple_latitude, GSL_NAN, latitude);
    j = Grid_nD::get_nearest_node (tuple_longitude, GSL_NAN, longitude);
+if (i > 10000 || j > 10000)
+{
+   cout << "wow " << latitude << " " << longitude << " " << i << " " << j << endl;
+}
 }
 
 Model::Terrain::Stage::Stage (const twiin::Stage& stage,
@@ -275,7 +279,7 @@ Model::Terrain::Stage::get_orog (const size_t& i,
 
    const Integer ncid = orog_file.get_nc_id ();
    int ret = nc_get_var1 (ncid, orog_varid, index, &datum);
-   if (ret != NC_NOERR) { throw Exception ("nc_get_var1 orog"); }
+   if (ret != NC_NOERR) { cout << "i,j = " << i << " " << j << endl; throw Exception ("nc_get_var1 orog"); }
    return Real (datum);
 
 }

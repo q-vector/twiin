@@ -131,13 +131,14 @@ Cross_Section::Cross_Section (Gtk::Window& gtk_window,
    time_chooser.set_shape (Time_Chooser::Shape (time_set));
    time_chooser.set_leap (1);
 
-   const Lat_Long lat_long_a (-30.5, 145.5);
-   const Lat_Long lat_long_b (-37.5, 159.5);
+   const Lat_Long lat_long_a (-40.5, 142.5);
+   const Lat_Long lat_long_b (-29.5, 156.5);
    multi_journey.push_back (lat_long_a);
    multi_journey.push_back (lat_long_b);
    multi_journey.standardize (LAT_LONG_PACIFIC);
 
    pack ();
+   reset_transform ();
 
 }
 
@@ -148,8 +149,6 @@ Cross_Section::~Cross_Section ()
 void
 Cross_Section::pack ()
 {
-
-   reset_transform ();
 
    const Real title_height = title.get_height ();
    const Real margin = title_height * 0.2;
@@ -266,21 +265,30 @@ cout << "tuple_x = " << tuple_x << endl;
       Raster* raster_ptr = new Raster (box_2d);
       Raster& raster = *raster_ptr;
 
+      Color color;
+      const Model::Terrain::Stage& terrain_stage =
+         model.terrain.get_terrain_stage (stage);
+
       for (Integer i = i2d.i; i < i2d.i + s2d.i; i++)
       {
 
          transform.reverse (x, z, Real (i), 0);
          const Lat_Long lat_long = multi_journey.get_lat_long (x, geodesy);
          const Real latitude = lat_long.latitude;
-         const Real longitude = lat_long.latitude;
+         const Real longitude = lat_long.longitude;
+         const Real topography = terrain_stage.get_orog (latitude, longitude);
 
          for (Integer j = i2d.j; j < i2d.j + s2d.j; j++)
          {
             transform.reverse (x, z, Real (i), Real (j));
-            const Real datum = model.evaluate (THETA,
-               latitude, longitude, z, dtime, stage);
-            const Real hue = Domain_1D (60 + K, 0 + K).normalize (datum)*0.833;
-            const Color& color = Color::hsb (hue, 0.8, 0.8);
+            if (z < topography) { color = Color::hsb (0.0, 0.0, 0.0); }
+            else
+            {
+               const Real datum = model.evaluate (THETA,
+                  latitude, longitude, z, dtime, stage);
+               const Real hue = Domain_1D (60+K, 0+K).normalize (datum)*0.833;
+               color = Color::hsb (hue, 0.8, 0.8);
+            }
             raster.set_pixel (i - i2d.i, j - i2d.j, color);
          }
 

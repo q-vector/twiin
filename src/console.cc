@@ -125,6 +125,11 @@ Console::get_tokens (const Marker& marker) const
    else
    if (product == "TERRAIN")
    {
+      const Model::Terrain::Stage& terrain_stage =
+         model.terrain.get_terrain_stage (stage);
+      const Real datum = terrain_stage.get_orog (latitude, longitude);
+      if (gsl_isnan (datum)) { return Map_Console::get_tokens (marker); }
+      tokens.push_back (string_render ("%.2fm", datum));
    }
    else
    if (product == "VORTICITY")
