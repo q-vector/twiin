@@ -225,10 +225,6 @@ Model::Terrain::Stage::acquire_ij (size_t& i,
 {
    i = Grid_nD::get_nearest_node (tuple_latitude, GSL_NAN, latitude);
    j = Grid_nD::get_nearest_node (tuple_longitude, GSL_NAN, longitude);
-if (i > 10000 || j > 10000)
-{
-   cout << "wow " << latitude << " " << longitude << " " << i << " " << j << endl;
-}
 }
 
 Model::Terrain::Stage::Stage (const twiin::Stage& stage,
