@@ -1,5 +1,5 @@
 #include <denise/dstring.h>
-#include "cross_section.h"
+#include "display.h"
 
 using namespace std;
 using namespace denise;
@@ -39,15 +39,21 @@ main (int argc,
    model_file_path_4_map.insert (string ("xwind"), argv[22]);
    model_file_path_4_map.insert (string ("ywind"), argv[23]);
    model_file_path_4_map.insert (string ("mslp"), argv[24]);
-   model_file_path_5_map.insert (string ("temp"), argv[25]);
-   model_file_path_5_map.insert (string ("dewpt"), argv[26]);
-   model_file_path_5_map.insert (string ("xwind"), argv[27]);
-   model_file_path_5_map.insert (string ("ywind"), argv[28]);
-   model_file_path_5_map.insert (string ("mslp"), argv[29]);
+   model_file_path_4_map.insert (string ("ml_prho"), argv[25]);
+   model_file_path_4_map.insert (string ("ml_ptheta"), argv[26]);
+   model_file_path_4_map.insert (string ("ml_theta"), argv[27]);
+   model_file_path_4_map.insert (string ("ml_spechum"), argv[28]);
+   model_file_path_4_map.insert (string ("ml_xwind"), argv[29]);
+   model_file_path_4_map.insert (string ("ml_ywind"), argv[30]);
+   model_file_path_5_map.insert (string ("temp"), argv[31]);
+   model_file_path_5_map.insert (string ("dewpt"), argv[32]);
+   model_file_path_5_map.insert (string ("xwind"), argv[33]);
+   model_file_path_5_map.insert (string ("ywind"), argv[34]);
+   model_file_path_5_map.insert (string ("mslp"), argv[35]);
 
-   const string product_str (argv[30]);
-   const string stage_str (argv[31]);
-   const string level_str (argv[32]);
+   const string product_str (argv[36]);
+   const string stage_str (argv[37]);
+   const string level_str (argv[38]);
 
    try
    {
@@ -70,8 +76,8 @@ main (int argc,
          model.terrain.get_terrain_stage (stage);
 
       Multi_Journey multi_journey;
-      const Lat_Long lat_long_a (-47.0, 133.0);
-      const Lat_Long lat_long_b (-21.0, 161.5);
+      const Lat_Long lat_long_a (-38.5, 443.0);
+      const Lat_Long lat_long_b (-28.0, 157.0);
       multi_journey.push_back (lat_long_a);
       multi_journey.push_back (lat_long_b);
       const Geodesy geodesy;

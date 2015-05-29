@@ -76,26 +76,10 @@ Display::render_wind_barbs (const RefPtr<Context>& cr,
 
 }
 
-Display::Display (const string& vertical_coefficients_file_path,
-                  const string& orog_3_file_path,
-                  const string& lsm_3_file_path,
-                  const string& orog_4_file_path,
-                  const string& lsm_4_file_path,
-                  const string& orog_5_file_path,
-                  const string& lsm_5_file_path,
-                  const string& station_file_path,
-                  const Model::Stage::File_Path_Map& model_file_path_3_map,
-                  const Model::Stage::File_Path_Map& model_file_path_4_map,
-                  const Model::Stage::File_Path_Map& model_file_path_5_map)
+Display::Display (const string& station_file_path,
+                  const string& model_config_file_path)
    : station_map (station_file_path),
-     model (vertical_coefficients_file_path,
-            orog_3_file_path, lsm_3_file_path,
-            orog_4_file_path, lsm_4_file_path,
-            orog_5_file_path, lsm_5_file_path,
-            model_file_path_3_map,
-            model_file_path_4_map,
-            model_file_path_5_map)
-
+     model (model_config_file_path)
 {
 }
 
