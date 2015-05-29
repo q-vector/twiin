@@ -216,6 +216,12 @@ Model::Varname::get_string () const
    return *this;
 }
 
+void
+Model::File_Path_Map::insert (const Varname& varname,
+                                     const string& file_path)
+{
+   map<Varname, string>::insert (make_pair (varname, file_path));
+}
 
 void
 Model::Terrain::Stage::acquire_ij (size_t& i,
@@ -227,26 +233,55 @@ Model::Terrain::Stage::acquire_ij (size_t& i,
    j = Grid_nD::get_nearest_node (tuple_longitude, GSL_NAN, longitude);
 }
 
-Model::Terrain::Stage::Stage (const twiin::Stage& stage,
-                              const string& orog_file_path,
-                              const string& lsm_file_path)
-   : twiin::Stage (stage),
-     orog_file (orog_file_path),
-     lsm_file (lsm_file_path),
-     tuple_latitude (orog_file.get_coordinate_tuple ("latitude")),
-     tuple_longitude (orog_file.get_coordinate_tuple ("longitude"))
+Model::Terrain::Stage::Stage (const Model& model,
+                              const twiin::Stage& stage)
+   : model (model),
+     twiin::Stage (stage)
+{
+}
+
+Model::Terrain::Stage::Stage (const Model& model,
+                              const twiin::Stage& stage,
+                              const File_Path_Map& file_path_map)
+   : model (model),
+     twiin::Stage (stage)
+{
+   init (file_path_map);
+}
+
+void
+Model::Terrain::Stage::init (const File_Path_Map& file_path_map)
 {
 
    int ret;
-   const size_t n = tuple_latitude.size () * tuple_longitude.size ();
+   int varid;
 
-   const Integer orog_ncid = orog_file.get_nc_id ();
-   const Integer lsm_ncid = lsm_file.get_nc_id ();
+   typedef map<Model::Varname, string>::const_iterator Iterator;
+   for (Iterator iterator = file_path_map.begin ();
+        iterator != file_path_map.end (); iterator++)
+   {
 
-   ret = nc_inq_varid (orog_ncid, "ht", &orog_varid);
-   if (ret != NC_NOERR) { throw Exception ("nc_inq_varid orog"); }
-   ret = nc_inq_varid (lsm_ncid, "lsm", &lsm_varid);
-   if (ret != NC_NOERR) { throw Exception ("nc_inq_varid lsm"); }
+      const Model::Varname& varname = iterator->first;
+      const string& file_path = iterator->second;
+
+      nc_file_ptr_map.insert (make_pair (varname, new Nc_File (file_path)));
+      const Nc_File& nc_file = *(nc_file_ptr_map.at (varname));
+      const Integer nc_id = nc_file.get_nc_id ();
+
+      const bool first = (iterator == file_path_map.begin ());
+      if (first)
+      {
+         this->tuple_latitude = nc_file.get_coordinate_tuple ("latitude");
+         this->tuple_longitude = nc_file.get_coordinate_tuple ("longitude");
+      }
+
+      const string& nc_varname = Model::get_nc_varname (varname);
+
+      ret = nc_inq_varid (nc_id, nc_varname.c_str (), &varid);
+      if (ret != NC_NOERR) { throw Exception ("nc_inq_varid " + nc_varname); }
+      varid_map[varname] = varid;
+
+   }
 
 }
 
@@ -264,77 +299,32 @@ Model::Terrain::Stage::out_of_bounds (const Real latitude,
           longitude > tuple_longitude.back ();
 }
 
-
 Real
-Model::Terrain::Stage::get_orog (const size_t& i,
+Model::Terrain::Stage::evaluate (const Varname& varname,
+                                 const size_t& i,
                                  const size_t& j) const
 {
 
    float datum;
    size_t index[] = { 0, 0, i, j };
 
-   const Integer ncid = orog_file.get_nc_id ();
-   int ret = nc_get_var1 (ncid, orog_varid, index, &datum);
-   if (ret != NC_NOERR) { cout << "i,j = " << i << " " << j << endl; throw Exception ("nc_get_var1 orog"); }
-   return Real (datum);
-
-}
-
-Real
-Model::Terrain::Stage::get_lsm (const size_t& i,
-                                const size_t& j) const
-{
-
-   float datum;
-   size_t index[] = { 0, 0, i, j };
-
-   const Integer ncid = lsm_file.get_nc_id ();
-   int ret = nc_get_var1 (ncid, lsm_varid, index, &datum);
-   if (ret != NC_NOERR) { throw Exception ("nc_get_var1 lsm"); }
-   return Real (datum);
-
-}
-
-void
-Model::Terrain::Stage::acquire_orog_lsm (Real& orog,
-                                         Real& lsm,
-                                         const Real latitude,
-                                         const Real longitude) const
-{
-
-   int ret;
-   float datum;
-   size_t index[] = { 0, 0, 0, 0 };
-   acquire_ij (index[2], index[3], latitude, longitude);
-
-   const Integer orog_ncid = orog_file.get_nc_id ();
-   ret = nc_get_var1 (orog_ncid, orog_varid, index, &datum);
+   const Nc_File& nc_file = *(nc_file_ptr_map.at (varname));
+   const Integer ncid = nc_file.get_nc_id ();
+   const Integer varid = varid_map.at (varname);
+   int ret = nc_get_var1 (ncid, varid, index, &datum);
    if (ret != NC_NOERR) { throw Exception ("nc_get_var1 orog"); }
-   orog = Real (datum);
-
-   const Integer lsm_ncid = lsm_file.get_nc_id ();
-   ret = nc_get_var1 (lsm_ncid, lsm_varid, index, &datum);
-   if (ret != NC_NOERR) { throw Exception ("nc_get_var1 lsm"); }
-   lsm = Real (datum);
+   return Real (datum);
 
 }
 
 Real
-Model::Terrain::Stage::get_orog (const Real latitude,
+Model::Terrain::Stage::evaluate (const Varname& varname,
+                                 const Real latitude,
                                  const Real longitude) const
 {
    size_t i, j;
    acquire_ij (i, j, latitude, longitude);
-   return get_orog (i, j);
-}
-
-Real
-Model::Terrain::Stage::get_lsm (const Real latitude,
-                                const Real longitude) const
-{
-   size_t i, j;
-   acquire_ij (i, j, latitude, longitude);
-   return get_lsm (i, j);
+   return evaluate (varname, i, j);
 }
 
 const Model::Terrain::Stage&
@@ -347,16 +337,31 @@ Model::Terrain::get_terrain_stage (const twiin::Stage& stage) const
    if (stage == "STAGE_5") { return stage_5; }
 }
 
-Model::Terrain::Terrain (const string& orog_3_file_path,
-                         const string& lsm_3_file_path,
-                         const string& orog_4_file_path,
-                         const string& lsm_4_file_path,
-                         const string& orog_5_file_path,
-                         const string& lsm_5_file_path)
-   : stage_3 (twiin::Stage ("STAGE_3"), orog_3_file_path, lsm_3_file_path),
-     stage_4 (twiin::Stage ("STAGE_4"), orog_4_file_path, lsm_4_file_path),
-     stage_5 (twiin::Stage ("STAGE_5"), orog_5_file_path, lsm_5_file_path)
+Model::Terrain::Terrain (const Model& model)
+   : stage_3 (model, twiin::Stage ("STAGE_3")),
+     stage_4 (model, twiin::Stage ("STAGE_4")),
+     stage_5 (model, twiin::Stage ("STAGE_5"))
 {
+}
+
+Model::Terrain::Terrain (const Model& model,
+                         const Model::File_Path_Map& file_path_3_map,
+                         const Model::File_Path_Map& file_path_4_map,
+                         const Model::File_Path_Map& file_path_5_map)
+   : stage_3 (model, twiin::Stage ("STAGE_3"), file_path_3_map),
+     stage_4 (model, twiin::Stage ("STAGE_4"), file_path_4_map),
+     stage_5 (model, twiin::Stage ("STAGE_5"), file_path_5_map)
+{
+}
+
+void
+Model::Terrain::init (const Model::File_Path_Map& file_path_3_map,
+                      const Model::File_Path_Map& file_path_4_map,
+                      const Model::File_Path_Map& file_path_5_map)
+{
+   stage_3.init (file_path_3_map);
+   stage_4.init (file_path_4_map);
+   stage_5.init (file_path_5_map);
 }
 
 Raster*
@@ -393,7 +398,8 @@ Model::Terrain::get_raster_ptr (const Size_2D& size_2d,
             continue;
          }
 
-         terrain_stage.acquire_orog_lsm (orog, lsm, latitude, longitude);
+         const Real orog = terrain_stage.evaluate (Varname ("orog"), latitude, longitude);
+         const Real lsm = terrain_stage.evaluate (Varname ("lsm"), latitude, longitude);
          const Real h = std::min (std::max (orog / 2000.0, 0.0), 1.0);
 
          const bool land = (lsm > 0.5);
@@ -471,19 +477,36 @@ Model::Stage::fill_valid_time_set ()
 
 }
 
-void
-Model::Stage::File_Path_Map::insert (const Varname& varname,
-                                     const string& file_path)
+Model::Stage::Stage (const Model& model,
+                     const twiin::Stage& stage)
+   : twiin::Stage (stage),
+     model (model)
 {
-   map<Varname, string>::insert (make_pair (varname, file_path));
 }
-
 
 Model::Stage::Stage (const Model& model,
                      const twiin::Stage& stage,
-                     const Model::Stage::File_Path_Map& file_path_map)
+                     const File_Path_Map& file_path_map)
    : twiin::Stage (stage),
      model (model)
+{
+   init (file_path_map);
+}
+
+Model::Stage::~Stage ()
+{
+   typedef map<Model::Varname, Nc_File*>::iterator Iterator;
+   for (Iterator iterator = nc_file_ptr_map.begin ();
+        iterator != nc_file_ptr_map.end (); iterator++)
+   {
+      Nc_File* nc_file_ptr = iterator->second;
+      delete nc_file_ptr;
+   }
+
+}
+
+void
+Model::Stage::init (const Model::File_Path_Map& file_path_map)
 {
 
    int ret;
@@ -517,18 +540,6 @@ Model::Stage::Stage (const Model& model,
    }
 
    fill_valid_time_set ();
-
-}
-
-Model::Stage::~Stage ()
-{
-   typedef map<Model::Varname, Nc_File*>::iterator Iterator;
-   for (Iterator iterator = nc_file_ptr_map.begin ();
-        iterator != nc_file_ptr_map.end (); iterator++)
-   {
-      Nc_File* nc_file_ptr = iterator->second;
-      delete nc_file_ptr;
-   }
 
 }
 
@@ -570,7 +581,7 @@ Model::Stage::evaluate (const Nwp_Element& nwp_element,
 
    const Model::Terrain::Stage& terrain_stage =
       model.terrain.get_terrain_stage (*this);
-   const Real topography = terrain_stage.get_orog (latitude, longitude);
+   const Real topography = terrain_stage.evaluate (Varname ("orog"), latitude, longitude);
    if (z < topography) { return GSL_NAN; }
 
    const Tuple& A = model.vertical_coefficients.get_A_rho ();
@@ -809,7 +820,7 @@ Model::Stage::get_color (const Product& product,
    const Model::Terrain::Stage& terrain_stage =
       model.terrain.get_terrain_stage (*this);
 
-   const Real topography = terrain_stage.get_orog (latitude, longitude);
+   const Real topography = terrain_stage.evaluate (Varname ("orog"), latitude, longitude);
 
    if (product == "THETA")
    {
@@ -897,7 +908,17 @@ Model::Stage::get_color (const Product& product,
 
 }
 
+Model::Vertical_Coefficients::Vertical_Coefficients ()
+{
+}
+
 Model::Vertical_Coefficients::Vertical_Coefficients (const string& file_path)
+{
+   init (file_path);
+}
+
+void
+Model::Vertical_Coefficients::init (const string& file_path)
 {
 
    string input_string;
@@ -1018,6 +1039,126 @@ Model::get_model_stage (const twiin::Stage& stage) const
    if (stage == "STAGE_5") { return stage_5; }
 }
 
+Model::Model (const string& model_config_file_path)
+   : terrain (*this),
+     stage_3 (*this, twiin::Stage("STAGE_3")),
+     stage_4 (*this, twiin::Stage("STAGE_3")),
+     stage_5 (*this, twiin::Stage("STAGE_5"))
+{
+
+   string input_string;
+   ifstream file (model_config_file_path);
+
+   map<string, string> dictionary;
+
+   Model::File_Path_Map terrain_file_path_3_map;
+   Model::File_Path_Map terrain_file_path_4_map;
+   Model::File_Path_Map terrain_file_path_5_map;
+   Model::File_Path_Map model_file_path_3_map;
+   Model::File_Path_Map model_file_path_4_map;
+   Model::File_Path_Map model_file_path_5_map;
+   string vertical_coefficients_file_path;
+
+   while (getline (file, input_string))
+   {
+
+      if (input_string.size () == 0) { continue; }
+      if (input_string.c_str ()[0] == '#') { continue; }
+
+      size_t found;
+      for (auto iterator = dictionary.begin ();
+           iterator != dictionary.end (); iterator++)
+      {
+         const string variable ("$" + iterator->first);
+         while ((found = input_string.find (variable)) != string::npos)
+         {
+            input_string.replace (found, variable.length (), iterator->second);
+         }
+      }
+      cout << input_string << endl;
+
+      const Tokens variable_tokens (input_string, "=");
+      if (variable_tokens.size () == 2)
+      {
+         const string& variable = get_trimmed (variable_tokens[0]);
+         const string& value = get_trimmed (variable_tokens[1]);
+         dictionary.insert (make_pair (variable, value));
+         continue;
+      }
+
+      const Tokens ab_tokens (input_string, ":");
+      if (ab_tokens[0] == "AB" && ab_tokens.size () == 2)
+      {
+         vertical_coefficients_file_path = get_trimmied (ab_tokens[1]);
+         continue;
+      }
+
+      const Tokens model_argument_tokens (input_string, ":");
+      if (model_argument_tokens[0].substr (0, 5) == "stage" &&
+          model_argument_tokens.size () == 3)
+      {
+         const string& stage_str = get_trimmed (model_argument_tokens[0]);
+         const string& var_str = get_trimmed (model_argument_tokens[1]);
+         const string& file_path = get_trimmed (model_argument_tokens[2]);
+
+         if (stage_str == "STAGE_3")
+         {
+            if (var_str == "orog" || var_str == "lsm")
+            {
+               terrain_file_path_3_map.insert (make_pair (var_str, file_path));
+            }
+            else
+            {
+               model_file_path_3_map.insert (make_pair (var_str, file_path));
+            }
+         }
+         else
+         if (stage_str == "STAGE_4")
+         {
+            if (var_str == "orog" || var_str == "lsm")
+            {
+               terrain_file_path_4_map.insert (make_pair (var_str, file_path));
+            }
+            else
+            {
+               model_file_path_4_map.insert (make_pair (var_str, file_path));
+            }
+         }
+         else
+         if (stage_str == "STAGE_5")
+         {
+            if (var_str == "orog" || var_str == "lsm")
+            {
+               terrain_file_path_5_map.insert (make_pair (var_str, file_path));
+            }
+            else
+            {
+               model_file_path_5_map.insert (make_pair (var_str, file_path));
+            }
+         }
+
+         continue;
+
+      }
+ 
+   }
+
+   file.close ();
+
+
+   vertical_coefficients.init (vertical_coefficients_file_path);
+
+   terrain.init (terrain_file_path_3_map,
+      terrain_file_path_4_map, terrain_file_path_5_map);
+
+   stage_3.init (model_file_path_3_map);
+   stage_4.init (model_file_path_4_map);
+   stage_5.init (model_file_path_5_map);
+
+
+
+}
+
 Model::Model (const string& vertical_coefficients_file_path,
               const string& orog_3_file_path,
               const string& lsm_3_file_path,
@@ -1025,13 +1166,11 @@ Model::Model (const string& vertical_coefficients_file_path,
               const string& lsm_4_file_path,
               const string& orog_5_file_path,
               const string& lsm_5_file_path,
-              const Model::Stage::File_Path_Map& file_path_3_map,
-              const Model::Stage::File_Path_Map& file_path_4_map,
-              const Model::Stage::File_Path_Map& file_path_5_map)
+              const Model::File_Path_Map& file_path_3_map,
+              const Model::File_Path_Map& file_path_4_map,
+              const Model::File_Path_Map& file_path_5_map)
    : vertical_coefficients (vertical_coefficients_file_path),
-     terrain (orog_3_file_path, lsm_3_file_path,
-              orog_4_file_path, lsm_4_file_path,
-              orog_5_file_path, lsm_5_file_path),
+     terrain (*this, file_path_3_map, file_path_4_map, file_path_5_map),
      stage_3 (*this, twiin::Stage ("STAGE_3"), file_path_3_map),
      stage_4 (*this, twiin::Stage ("STAGE_4"), file_path_4_map),
      stage_5 (*this, twiin::Stage ("STAGE_5"), file_path_5_map)

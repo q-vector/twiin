@@ -48,17 +48,8 @@ namespace twiin
 
       public:
 
-         Display (const string& vertical_coefficients_file_path,
-                  const string& orog_3_file_path,
-                  const string& lsm_3_file_path,
-                  const string& orog_4_file_path,
-                  const string& lsm_4_file_path,
-                  const string& orog_5_file_path,
-                  const string& lsm_5_file_path,
-                  const string& station_file_path,
-                  const Model::Stage::File_Path_Map& mdoel_file_path_3_map,
-                  const Model::Stage::File_Path_Map& mdoel_file_path_4_map,
-                  const Model::Stage::File_Path_Map& mdoel_file_path_5_map);
+         Display (const string& station_file_path,
+                  const string& model_config_file_path);
 
          ~Display ();
 

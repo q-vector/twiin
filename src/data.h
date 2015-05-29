@@ -129,6 +129,17 @@ namespace twiin
 
          };
 
+         class File_Path_Map : public map<Varname, string>
+         {
+
+            public:
+
+               void
+               insert (const Varname& varname,
+                       const string& file_path);
+
+         };
+
          class Terrain
          {
 
@@ -139,23 +150,20 @@ namespace twiin
 
                   private:
 
-                     Nc_File
-                     orog_file;
+                     const Model&
+                     model;
 
-                     Nc_File
-                     lsm_file;
-
-                     const Tuple
+                     Tuple
                      tuple_latitude;
 
-                     const Tuple
+                     Tuple
                      tuple_longitude;
 
-                     int
-                     orog_varid;
+                     map<Varname, Nc_File*>
+                     nc_file_ptr_map;
 
-                     int
-                     lsm_varid;
+                     map<Varname, Integer>
+                     varid_map;
 
                      void
                      acquire_ij (size_t& i,
@@ -165,46 +173,41 @@ namespace twiin
 
                   public:
 
-                     Stage (const twiin::Stage& stage,
-                            const string& orog_file_path,
-                            const string& lsm_file_path);
+                     Stage (const Model& model,
+                            const twiin::Stage& stage);
+
+                     Stage (const Model& model,
+                            const twiin::Stage& stage,
+                            const File_Path_Map& file_path_map);
 
                      ~Stage ();
+
+                     void
+                     init (const File_Path_Map& file_path_map);
 
                      bool
                      out_of_bounds (const Real latitude,
                                     const Real longitude) const;
 
                      Real
-                     get_orog (const size_t& i,
+                     evaluate (const Varname& varname,
+                               const size_t& i,
                                const size_t& j) const;
-                     Real
-                     get_lsm (const size_t& i,
-                              const size_t& j) const;
 
                      Real
-                     get_orog (const Real latitude,
+                     evaluate (const Varname& varname, 
+                               const Real latitude,
                                const Real longitude) const;
-
-                     Real
-                     get_lsm (const Real latitude,
-                              const Real longitude) const;
-
-                     void
-                     acquire_orog_lsm (Real& orog,
-                                       Real& lsm,
-                                       const Real latitude,
-                                       const Real longitude) const;
 
                };
 
-               const Stage
+               Stage
                stage_3;
 
-               const Stage
+               Stage
                stage_4;
 
-               const Stage
+               Stage
                stage_5;
 
                const Stage&
@@ -212,12 +215,17 @@ namespace twiin
 
             public:
 
-               Terrain (const string& orog_3_file_path,
-                        const string& lsm_3_file_path,
-                        const string& orog_4_file_path,
-                        const string& lsm_4_file_path,
-                        const string& orog_5_file_path,
-                        const string& lsm_5_file_path);
+               Terrain (const Model& model);
+
+               Terrain (const Model& model,
+                        const Model::File_Path_Map& file_path_3_map,
+                        const Model::File_Path_Map& file_path_4_map,
+                        const Model::File_Path_Map& file_path_5_map);
+
+               void
+               init (const Model::File_Path_Map& file_path_3_map,
+                     const Model::File_Path_Map& file_path_4_map,
+                     const Model::File_Path_Map& file_path_5_map);
 
                Raster*
                get_raster_ptr (const Size_2D& size_2d,
@@ -260,22 +268,17 @@ namespace twiin
 
             public:
 
-               class File_Path_Map : public map<Varname, string>
-               {
-
-                  public:
-
-                     void
-                     insert (const Varname& varname,
-                             const string& file_path);
-
-               };
+               Stage (const Model& model,
+                      const twiin::Stage& stage);
 
                Stage (const Model& model,
                       const twiin::Stage& stage,
                       const File_Path_Map& file_path_map);
 
                ~Stage ();
+
+               void
+               init (const File_Path_Map& file_path_map);
 
                const set<Dtime>&
                get_valid_time_set () const;
@@ -342,7 +345,12 @@ namespace twiin
 
             public:
 
+               Vertical_Coefficients ();
+
                Vertical_Coefficients (const string& file_path);
+
+               void
+               init (const string& file_path);
 
                const Tuple&
                get_A_theta () const;
@@ -360,19 +368,19 @@ namespace twiin
 
       public:
 
-         const Stage
+         Stage
          stage_3;
 
-         const Stage
+         Stage
          stage_4;
 
-         const Stage
+         Stage
          stage_5;
 
-         const Terrain
+         Terrain
          terrain;
 
-         const Vertical_Coefficients
+         Vertical_Coefficients
          vertical_coefficients;
 
          static string
@@ -395,6 +403,8 @@ namespace twiin
          const Stage&
          get_model_stage (const twiin::Stage& stage) const;
 
+         Model (const string& model_config_file_path);
+
          Model (const string& vertical_coefficients_file_path,
                 const string& orog_3_file_path,
                 const string& lsm_3_file_path,
@@ -402,9 +412,9 @@ namespace twiin
                 const string& lsm_4_file_path,
                 const string& orog_5_file_path,
                 const string& lsm_5_file_path,
-                const Stage::File_Path_Map& file_path_3_map,
-                const Stage::File_Path_Map& file_path_4_map,
-                const Stage::File_Path_Map& file_path_5_map);
+                const Model::File_Path_Map& file_path_3_map,
+                const Model::File_Path_Map& file_path_4_map,
+                const Model::File_Path_Map& file_path_5_map);
 
          ~Model ();
 
