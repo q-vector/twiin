@@ -126,8 +126,8 @@ Cross_Section::Cross_Section (Gtk::Window& gtk_window,
    product_panel.add_product ("Misc", Product ("TERRAIN"));
 
    const Model& model = display.get_model ();
-   const Model::Stage& model_stage = model.get_model_stage (stage);
-   const set<Dtime>& time_set = model_stage.get_valid_time_set ();
+   const Model::Uppers::Stage& uppers_stage = model.uppers.get_uppers_stage (stage);
+   const set<Dtime>& time_set = uppers_stage.get_valid_time_set ();
    time_chooser.set_shape (Time_Chooser::Shape (time_set));
    time_chooser.set_leap (1);
 
@@ -247,7 +247,6 @@ Cross_Section::render_image_buffer (const RefPtr<Context>& cr)
 
    const Geodesy geodesy;
    const Tuple& tuple_x = multi_journey.get_tuple_x (geodesy);
-cout << "tuple_x = " << tuple_x << endl;
    const Domain_1D domain_x (tuple_x.front (), tuple_x.back ());
    const Domain_2D domain_2d (domain_x, domain_z);
    const Mesh_2D mesh_2d (domain_2d, ma2);
@@ -276,7 +275,7 @@ cout << "tuple_x = " << tuple_x << endl;
          const Lat_Long lat_long = multi_journey.get_lat_long (x, geodesy);
          const Real latitude = lat_long.latitude;
          const Real longitude = lat_long.longitude;
-         const Real topography = terrain_stage.get_orog (latitude, longitude);
+         const Real topography = terrain_stage.evaluate (string ("orog"), latitude, longitude);
 
          for (Integer j = i2d.j; j < i2d.j + s2d.j; j++)
          {
@@ -317,43 +316,11 @@ main (int argc,
       char** argv)
 {
 
-   const string vertical_coefficients_file_path (argv[1]);
-   const string orog_3_file_path (argv[2]);
-   const string lsm_3_file_path (argv[3]);
-   const string orog_4_file_path (argv[4]);
-   const string lsm_4_file_path (argv[5]);
-   const string orog_5_file_path (argv[6]);
-   const string lsm_5_file_path (argv[7]);
-   const string station_file_path (argv[8]);
-
-   Model::Stage::File_Path_Map model_file_path_3_map;
-   Model::Stage::File_Path_Map model_file_path_4_map;
-   Model::Stage::File_Path_Map model_file_path_5_map;
-   model_file_path_3_map.insert (string ("temp"), argv[9]);
-   model_file_path_3_map.insert (string ("dewpt"), argv[10]);
-   model_file_path_3_map.insert (string ("xwind"), argv[11]);
-   model_file_path_3_map.insert (string ("ywind"), argv[12]);
-   model_file_path_3_map.insert (string ("mslp"), argv[13]);
-   model_file_path_3_map.insert (string ("ml_prho"), argv[14]);
-   model_file_path_3_map.insert (string ("ml_ptheta"), argv[15]);
-   model_file_path_3_map.insert (string ("ml_theta"), argv[16]);
-   model_file_path_3_map.insert (string ("ml_spechum"), argv[17]);
-   model_file_path_3_map.insert (string ("ml_xwind"), argv[18]);
-   model_file_path_3_map.insert (string ("ml_ywind"), argv[19]);
-   model_file_path_4_map.insert (string ("temp"), argv[20]);
-   model_file_path_4_map.insert (string ("dewpt"), argv[21]);
-   model_file_path_4_map.insert (string ("xwind"), argv[22]);
-   model_file_path_4_map.insert (string ("ywind"), argv[23]);
-   model_file_path_4_map.insert (string ("mslp"), argv[24]);
-   model_file_path_5_map.insert (string ("temp"), argv[25]);
-   model_file_path_5_map.insert (string ("dewpt"), argv[26]);
-   model_file_path_5_map.insert (string ("xwind"), argv[27]);
-   model_file_path_5_map.insert (string ("ywind"), argv[28]);
-   model_file_path_5_map.insert (string ("mslp"), argv[29]);
-
-   const string product_str (argv[30]);
-   const string stage_str (argv[31]);
-   const string level_str (argv[32]);
+   const string station_file_path (argv[1]);
+   const string model_config_file_path (argv[2]);
+   const string product_str (argv[3]);
+   const string stage_str (argv[4]);
+   const string level_str (argv[5]);
 
    try
    {
@@ -362,10 +329,7 @@ main (int argc,
       Gtk::Window gtk_window;
 
       const Size_2D size_2d (1280, 720);
-      const Display display (vertical_coefficients_file_path,
-         orog_3_file_path, lsm_3_file_path, orog_4_file_path, lsm_4_file_path,
-         orog_5_file_path, lsm_5_file_path, station_file_path,
-         model_file_path_3_map, model_file_path_4_map, model_file_path_5_map);
+      const Display display (station_file_path, model_config_file_path);
 
       Cross_Section cross_section (gtk_window, size_2d,
          display, stage_str, product_str);

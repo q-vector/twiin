@@ -1,3 +1,4 @@
+#include <denise/dstring.h>
 #include "data.h"
 
 using namespace std;
@@ -218,7 +219,7 @@ Model::Varname::get_string () const
 
 void
 Model::File_Path_Map::insert (const Varname& varname,
-                                     const string& file_path)
+                              const string& file_path)
 {
    map<Varname, string>::insert (make_pair (varname, file_path));
 }
@@ -231,6 +232,12 @@ Model::Terrain::Stage::acquire_ij (size_t& i,
 {
    i = Grid_nD::get_nearest_node (tuple_latitude, GSL_NAN, latitude);
    j = Grid_nD::get_nearest_node (tuple_longitude, GSL_NAN, longitude);
+}
+
+Model::Terrain::Stage::Stage (const Model::Terrain::Stage& stage)
+   : model (stage.model),
+     twiin::Stage (stage)
+{
 }
 
 Model::Terrain::Stage::Stage (const Model& model,
@@ -330,38 +337,42 @@ Model::Terrain::Stage::evaluate (const Varname& varname,
 const Model::Terrain::Stage&
 Model::Terrain::get_terrain_stage (const twiin::Stage& stage) const
 {
-   if (stage == "STAGE_3") { return stage_3; }
-   else
-   if (stage == "STAGE_4") { return stage_4; }
-   else
-   if (stage == "STAGE_5") { return stage_5; }
+   return terrain_stage_map.at (stage);
+}
+
+Model::Terrain::Stage&
+Model::Terrain::get_terrain_stage (const twiin::Stage& stage)
+{
+   return terrain_stage_map.at (stage);
 }
 
 Model::Terrain::Terrain (const Model& model)
-   : stage_3 (model, twiin::Stage ("STAGE_3")),
-     stage_4 (model, twiin::Stage ("STAGE_4")),
-     stage_5 (model, twiin::Stage ("STAGE_5"))
-{
-}
-
-Model::Terrain::Terrain (const Model& model,
-                         const Model::File_Path_Map& file_path_3_map,
-                         const Model::File_Path_Map& file_path_4_map,
-                         const Model::File_Path_Map& file_path_5_map)
-   : stage_3 (model, twiin::Stage ("STAGE_3"), file_path_3_map),
-     stage_4 (model, twiin::Stage ("STAGE_4"), file_path_4_map),
-     stage_5 (model, twiin::Stage ("STAGE_5"), file_path_5_map)
+   : model (model)
 {
 }
 
 void
-Model::Terrain::init (const Model::File_Path_Map& file_path_3_map,
-                      const Model::File_Path_Map& file_path_4_map,
-                      const Model::File_Path_Map& file_path_5_map)
+Model::Terrain::init (const Tokens& stage_tokens)
 {
-   stage_3.init (file_path_3_map);
-   stage_4.init (file_path_4_map);
-   stage_5.init (file_path_5_map);
+
+   vector<twiin::Stage> twiin_stage_vector;
+
+   for (auto iterator = stage_tokens.begin ();
+        iterator != stage_tokens.end (); iterator++)
+   {
+      twiin::Stage twiin_stage (*(iterator));
+      Model::Terrain::Stage terrain_stage (model, twiin_stage);
+      terrain_stage_map.insert (make_pair (twiin_stage, terrain_stage));
+   }
+
+}
+
+void
+Model::Terrain::init (const twiin::Stage& twiin_stage,
+                      const Model::File_Path_Map& file_path_map)
+{
+   Model::Terrain::Stage& terrain_stage = terrain_stage_map.at (twiin_stage);
+   terrain_stage.init (file_path_map);
 }
 
 Raster*
@@ -427,8 +438,9 @@ Model::Terrain::cairo (const RefPtr<Context>& cr,
    raster_ptr->blit (cr);
    delete raster_ptr;
 }
+
 void
-Model::Stage::fill_valid_time_set ()
+Model::Uppers::Stage::fill_valid_time_set ()
 {
 
    int ret, dim_id, varid;
@@ -477,36 +489,44 @@ Model::Stage::fill_valid_time_set ()
 
 }
 
-Model::Stage::Stage (const Model& model,
-                     const twiin::Stage& stage)
-   : twiin::Stage (stage),
-     model (model)
+void
+Model::Uppers::Stage::acquire_ij (size_t& i,
+                                  size_t& j,
+                                  const Real latitude,
+                                  const Real longitude) const
+{
+   i = Grid_nD::get_nearest_node (tuple_latitude, GSL_NAN, latitude);
+   j = Grid_nD::get_nearest_node (tuple_longitude, GSL_NAN, longitude);
+}
+
+Model::Uppers::Stage::Stage (const Model::Uppers::Stage& stage)
+   : model (stage.model),
+     twiin::Stage (stage)
 {
 }
 
-Model::Stage::Stage (const Model& model,
-                     const twiin::Stage& stage,
-                     const File_Path_Map& file_path_map)
-   : twiin::Stage (stage),
-     model (model)
+Model::Uppers::Stage::Stage (const Model& model,
+                             const twiin::Stage& stage)
+   : model (model),
+     twiin::Stage (stage)
+{
+}
+
+Model::Uppers::Stage::Stage (const Model& model,
+                             const twiin::Stage& stage,
+                             const File_Path_Map& file_path_map)
+   : model (model),
+     twiin::Stage (stage)
 {
    init (file_path_map);
 }
 
-Model::Stage::~Stage ()
+Model::Uppers::Stage::~Stage ()
 {
-   typedef map<Model::Varname, Nc_File*>::iterator Iterator;
-   for (Iterator iterator = nc_file_ptr_map.begin ();
-        iterator != nc_file_ptr_map.end (); iterator++)
-   {
-      Nc_File* nc_file_ptr = iterator->second;
-      delete nc_file_ptr;
-   }
-
 }
 
 void
-Model::Stage::init (const Model::File_Path_Map& file_path_map)
+Model::Uppers::Stage::init (const File_Path_Map& file_path_map)
 {
 
    int ret;
@@ -544,21 +564,21 @@ Model::Stage::init (const Model::File_Path_Map& file_path_map)
 }
 
 const set<Dtime>&
-Model::Stage::get_valid_time_set () const
+Model::Uppers::Stage::get_valid_time_set () const
 {
    return valid_time_set;
 }
-
-Integer
-Model::Stage::get_l (const Dtime& dtime) const
+ 
+size_t
+Model::Uppers::Stage::get_l (const Dtime& dtime) const
 {
    const set<Dtime>::const_iterator begin = valid_time_set.begin ();
    return std::distance (begin, valid_time_set.find (dtime));
 }
 
 bool
-Model::Stage::out_of_bounds (const Real latitude,
-                             const Real longitude) const
+Model::Uppers::Stage::out_of_bounds (const Real latitude,
+                                     const Real longitude) const
 {
    return latitude < tuple_latitude.front () ||
           latitude > tuple_latitude.back () ||
@@ -566,12 +586,13 @@ Model::Stage::out_of_bounds (const Real latitude,
           longitude > tuple_longitude.back ();
 }
 
+
 Real
-Model::Stage::evaluate (const Nwp_Element& nwp_element,
-                        const Real latitude,
-                        const Real longitude,
-                        const Real z,
-                        const size_t l) const
+Model::Uppers::Stage::evaluate (const Nwp_Element& nwp_element,
+                                const Real latitude,
+                                const Real longitude,
+                                const Real z,
+                                const size_t l) const
 {
 
    const Real& x = latitude;
@@ -596,11 +617,11 @@ Model::Stage::evaluate (const Nwp_Element& nwp_element,
 }
 
 Real
-Model::Stage::evaluate (const Nwp_Element& nwp_element,
-                        const Real latitude,
-                        const Real longitude,
-                        const size_t k,
-                        const size_t l) const
+Model::Uppers::Stage::evaluate (const Nwp_Element& nwp_element,
+                                const Real latitude,
+                                const Real longitude,
+                                const size_t k,
+                                const size_t l) const
 {
 
    const Real& x = latitude;
@@ -613,11 +634,11 @@ Model::Stage::evaluate (const Nwp_Element& nwp_element,
 }
 
 Real
-Model::Stage::evaluate (const Nwp_Element& nwp_element,
-                        const size_t i,
-                        const size_t j,
-                        const size_t k,
-                        const size_t l) const
+Model::Uppers::Stage::evaluate (const Nwp_Element& nwp_element,
+                                const size_t i,
+                                const size_t j,
+                                const size_t k,
+                                const size_t l) const
 {
 
    int ret;
@@ -640,29 +661,11 @@ Model::Stage::evaluate (const Nwp_Element& nwp_element,
          break;
       };
 
-      case WIND_SPEED:
-      {
-         const Real u = evaluate (ZONAL_WIND, i, j, k, l);
-         const Real v = evaluate (MERIDIONAL_WIND, i, j, k, l);
-         datum = sqrt (u*u + v*v);
-         break;
-      };
-
       case RELATIVE_HUMIDITY:
       {
          const Real t = evaluate (TEMPERATURE, i, j, k, l);
          const Real t_d = evaluate (DEW_POINT, i, j, k, l);
          datum = Moisture::get_rh (t - K, t_d - K, WATER);
-         break;
-      };
-
-      case FFDI:
-      {
-         const Real t = evaluate (TEMPERATURE, i, j, k, l);
-         const Real t_d = evaluate (DEW_POINT, i, j, k, l);
-         const Real rh = Moisture::get_rh (t - K, t_d - K, WATER);
-         const Real speed = evaluate (WIND_SPEED, i, j, k, l);
-         datum = Fire::get_ffdi (t - K, rh * 100, speed * 3.6);
          break;
       };
 
@@ -783,11 +786,11 @@ Model::Stage::evaluate (const Nwp_Element& nwp_element,
 }
 
 Real
-Model::Stage::evaluate_raw (const string& varname,
-                            const size_t i,
-                            const size_t j,
-                            const size_t k,
-                            const size_t l) const
+Model::Uppers::Stage::evaluate_raw (const string& varname,
+                                    const size_t i,
+                                    const size_t j,
+                                    const size_t k,
+                                    const size_t l) const
 {
 
    int ret;
@@ -805,10 +808,10 @@ Model::Stage::evaluate_raw (const string& varname,
 }
 
 Color
-Model::Stage::get_color (const Product& product,
-                         const Lat_Long& lat_long,
-                         const Level& level,
-                         const size_t l) const
+Model::Uppers::Stage::get_color (const Product& product,
+                                 const Lat_Long& lat_long,
+                                 const Level& level,
+                                 const size_t l) const
 {
 
    // vertical index
@@ -857,9 +860,15 @@ Model::Stage::get_color (const Product& product,
    else
    if (product == "FFDI")
    {
-      const size_t k = 0;
+      const size_t k = -1;
       const Ffdi_Color_Chooser ffdi_color_chooser (0.7);
-      const Real ffdi = evaluate (FFDI, latitude, longitude, k, l);
+      const Real t = evaluate (TEMPERATURE, latitude, longitude, k, l);
+      const Real t_d = evaluate (DEW_POINT, latitude, longitude, k, l);
+      const Real rh = Moisture::get_rh (t - K, t_d - K, WATER);
+      const Real u = evaluate (ZONAL_WIND, latitude, longitude, k, l);
+      const Real v = evaluate (MERIDIONAL_WIND, latitude, longitude, k, l);
+      const Real speed = sqrt (u*u + v*v);
+      const Real ffdi = Fire::get_ffdi (t - K, rh * 100, speed * 3.6);
       return ffdi_color_chooser.get_color (ffdi);
    }
    else
@@ -905,6 +914,99 @@ Model::Stage::get_color (const Product& product,
    {
       return transparent;
    }
+
+}
+
+const Model::Uppers::Stage&
+Model::Uppers::get_uppers_stage (const twiin::Stage& stage) const
+{
+   return uppers_stage_map.at (stage);
+}
+
+Model::Uppers::Stage&
+Model::Uppers::get_uppers_stage (const twiin::Stage& stage)
+{
+   return uppers_stage_map.at (stage);
+}
+
+Model::Uppers::Uppers (const Model& model)
+   : model (model)
+{
+}
+
+void
+Model::Uppers::init (const Tokens& stage_tokens)
+{
+
+   vector<twiin::Stage> twiin_stage_vector;
+
+   for (auto iterator = stage_tokens.begin ();
+        iterator != stage_tokens.end (); iterator++)
+   {
+      twiin::Stage twiin_stage (*(iterator));
+      Model::Uppers::Stage uppers_stage (model, twiin_stage);
+      uppers_stage_map.insert (make_pair (twiin_stage, uppers_stage));
+   }
+
+}
+
+void
+Model::Uppers::init (const twiin::Stage& twiin_stage,
+                     const Model::File_Path_Map& file_path_map)
+{
+   Model::Uppers::Stage& uppers_stage = uppers_stage_map.at (twiin_stage);
+   uppers_stage.init (file_path_map);
+}
+
+Raster*
+Model::Uppers::get_raster_ptr (const Size_2D& size_2d,
+                               const Transform_2D& transform,
+                               const twiin::Stage& stage,
+                               const Product& product,
+                               const Dtime& dtime,
+                               const Level& level) const
+{
+
+   Raster* raster_ptr = new Raster (size_2d);
+   Raster& raster = *raster_ptr;
+
+   const Model::Uppers::Stage& uppers_stage = get_uppers_stage (stage);
+   const size_t l = uppers_stage.get_l (dtime);
+cout << dtime.get_string () << " " << l << endl;
+
+   Lat_Long lat_long;
+   Real& latitude = lat_long.latitude;
+   Real& longitude = lat_long.longitude;
+
+   const Real z = level.value;
+   const Color transparent (0, 0, 0, 0);
+
+   for (Integer i = 0; i < size_2d.i; i++)
+   {
+
+      const Real x = Real (i); 
+
+      for (Integer j = 0; j < size_2d.j; j++)
+      {
+
+         const Real y = Real (j); 
+         transform.reverse (latitude, longitude, x, y);
+
+         if (uppers_stage.out_of_bounds (latitude, longitude))
+         {
+            raster.set_pixel (i, j, transparent);
+            continue;
+         }
+
+         const Color& color = uppers_stage.get_color (
+            product, lat_long, level, l);
+         raster.set_pixel (i, j, color);
+
+      }
+
+   }
+
+   return raster_ptr;
 
 }
 
@@ -969,6 +1071,8 @@ Model::Vertical_Coefficients::get_B_rho () const
 string
 Model::get_nc_varname (const Varname& varname)
 {
+   if (varname == "orog") { return "ht"; }
+   if (varname == "lsm") { return "lsm"; }
    if (varname == "temp") { return "temp"; }
    if (varname == "dewpt") { return "field17"; }
    if (varname == "xwind") { return "x-wind"; }
@@ -1029,21 +1133,9 @@ Model::get_k (const Real z,
 }
 
 
-const Model::Stage&
-Model::get_model_stage (const twiin::Stage& stage) const
-{
-   if (stage == "STAGE_3") { return stage_3; }
-   else
-   if (stage == "STAGE_4") { return stage_4; }
-   else
-   if (stage == "STAGE_5") { return stage_5; }
-}
-
 Model::Model (const string& model_config_file_path)
    : terrain (*this),
-     stage_3 (*this, twiin::Stage("STAGE_3")),
-     stage_4 (*this, twiin::Stage("STAGE_3")),
-     stage_5 (*this, twiin::Stage("STAGE_5"))
+     uppers (*this)
 {
 
    string input_string;
@@ -1089,27 +1181,27 @@ Model::Model (const string& model_config_file_path)
       const Tokens ab_tokens (input_string, ":");
       if (ab_tokens[0] == "AB" && ab_tokens.size () == 2)
       {
-         vertical_coefficients_file_path = get_trimmied (ab_tokens[1]);
+         vertical_coefficients_file_path = get_trimmed (ab_tokens[1]);
          continue;
       }
 
       const Tokens model_argument_tokens (input_string, ":");
-      if (model_argument_tokens[0].substr (0, 5) == "stage" &&
+      if (model_argument_tokens[0].substr (0, 5) == "STAGE" &&
           model_argument_tokens.size () == 3)
       {
          const string& stage_str = get_trimmed (model_argument_tokens[0]);
-         const string& var_str = get_trimmed (model_argument_tokens[1]);
+         const string& var_str = (get_trimmed (model_argument_tokens[1]));
          const string& file_path = get_trimmed (model_argument_tokens[2]);
 
          if (stage_str == "STAGE_3")
          {
             if (var_str == "orog" || var_str == "lsm")
             {
-               terrain_file_path_3_map.insert (make_pair (var_str, file_path));
+               terrain_file_path_3_map.insert (var_str, file_path);
             }
             else
             {
-               model_file_path_3_map.insert (make_pair (var_str, file_path));
+               model_file_path_3_map.insert (var_str, file_path);
             }
          }
          else
@@ -1117,11 +1209,11 @@ Model::Model (const string& model_config_file_path)
          {
             if (var_str == "orog" || var_str == "lsm")
             {
-               terrain_file_path_4_map.insert (make_pair (var_str, file_path));
+               terrain_file_path_4_map.insert (var_str, file_path);
             }
             else
             {
-               model_file_path_4_map.insert (make_pair (var_str, file_path));
+               model_file_path_4_map.insert (var_str, file_path);
             }
          }
          else
@@ -1129,11 +1221,11 @@ Model::Model (const string& model_config_file_path)
          {
             if (var_str == "orog" || var_str == "lsm")
             {
-               terrain_file_path_5_map.insert (make_pair (var_str, file_path));
+               terrain_file_path_5_map.insert (var_str, file_path);
             }
             else
             {
-               model_file_path_5_map.insert (make_pair (var_str, file_path));
+               model_file_path_5_map.insert (var_str, file_path);
             }
          }
 
@@ -1145,92 +1237,24 @@ Model::Model (const string& model_config_file_path)
 
    file.close ();
 
-
    vertical_coefficients.init (vertical_coefficients_file_path);
 
-   terrain.init (terrain_file_path_3_map,
-      terrain_file_path_4_map, terrain_file_path_5_map);
+   const Tokens stage_tokens ("STAGE_3 STAGE_4 STAGE_5");
 
-   stage_3.init (model_file_path_3_map);
-   stage_4.init (model_file_path_4_map);
-   stage_5.init (model_file_path_5_map);
+   terrain.init (stage_tokens);
+   terrain.init (string ("STAGE_3"), terrain_file_path_3_map);
+   terrain.init (string ("STAGE_4"), terrain_file_path_4_map);
+   terrain.init (string ("STAGE_5"), terrain_file_path_5_map);
 
+   uppers.init (stage_tokens);
+   uppers.init (string ("STAGE_3"), model_file_path_3_map);
+   uppers.init (string ("STAGE_4"), model_file_path_4_map);
+   uppers.init (string ("STAGE_5"), model_file_path_5_map);
 
-
-}
-
-Model::Model (const string& vertical_coefficients_file_path,
-              const string& orog_3_file_path,
-              const string& lsm_3_file_path,
-              const string& orog_4_file_path,
-              const string& lsm_4_file_path,
-              const string& orog_5_file_path,
-              const string& lsm_5_file_path,
-              const Model::File_Path_Map& file_path_3_map,
-              const Model::File_Path_Map& file_path_4_map,
-              const Model::File_Path_Map& file_path_5_map)
-   : vertical_coefficients (vertical_coefficients_file_path),
-     terrain (*this, file_path_3_map, file_path_4_map, file_path_5_map),
-     stage_3 (*this, twiin::Stage ("STAGE_3"), file_path_3_map),
-     stage_4 (*this, twiin::Stage ("STAGE_4"), file_path_4_map),
-     stage_5 (*this, twiin::Stage ("STAGE_5"), file_path_5_map)
-{
 }
 
 Model::~Model ()
 {
-}
-
-Raster*
-Model::get_raster_ptr (const Product& product,
-                       const Dtime& dtime,
-                       const Size_2D& size_2d,
-                       const Transform_2D& transform,
-                       const Level& level,
-                       const twiin::Stage& stage) const
-{
-
-   Raster* raster_ptr = new Raster (size_2d);
-   Raster& raster = *raster_ptr;
-
-   const Model::Stage& model_stage = get_model_stage (stage);
-   const Integer l = model_stage.get_l (dtime);
-cout << dtime.get_string () << " " << l << endl;
-
-   Lat_Long lat_long;
-   Real& latitude = lat_long.latitude;
-   Real& longitude = lat_long.longitude;
-
-   const Real z = level.value;
-   const Color transparent (0, 0, 0, 0);
-
-   for (Integer i = 0; i < size_2d.i; i++)
-   {
-
-      const Real x = Real (i); 
-
-      for (Integer j = 0; j < size_2d.j; j++)
-      {
-
-         const Real y = Real (j); 
-         transform.reverse (latitude, longitude, x, y);
-
-         if (model_stage.out_of_bounds (latitude, longitude))
-         {
-            raster.set_pixel (i, j, transparent);
-            continue;
-         }
-
-         const Color& color = model_stage.get_color (
-            product, lat_long, level, l);
-         raster.set_pixel (i, j, color);
-
-      }
-
-   }
-
-   return raster_ptr;
-
 }
 
 Real
@@ -1241,9 +1265,9 @@ Model::evaluate (const Nwp_Element& nwp_element,
 		 const Dtime& dtime,
                  const twiin::Stage& stage) const
 {
-   const Model::Stage& model_stage = get_model_stage (stage);
-   const Integer l = model_stage.get_l (dtime);
-   return model_stage.evaluate (nwp_element, latitude, longitude, k, l);
+   const Model::Uppers::Stage& uppers_stage = uppers.get_uppers_stage (stage);
+   const Integer l = uppers_stage.get_l (dtime);
+   return uppers_stage.evaluate (nwp_element, latitude, longitude, k, l);
 }
 
 Real
@@ -1254,7 +1278,8 @@ Model::evaluate (const Nwp_Element& nwp_element,
                  const Dtime& dtime,
                  const twiin::Stage& stage) const
 {
-   const Model::Stage& model_stage = get_model_stage (stage);
-   const Integer l = model_stage.get_l (dtime);
-   return model_stage.evaluate (nwp_element, latitude, longitude, z, l);
+   const Model::Uppers::Stage& uppers_stage = uppers.get_uppers_stage (stage);
+   const Integer l = uppers_stage.get_l (dtime);
+   return uppers_stage.evaluate (nwp_element, latitude, longitude, z, l);
 }
+

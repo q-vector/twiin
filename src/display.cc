@@ -14,8 +14,8 @@ Display::render_model (const Product& product,
                        const Level& level,
                        const twiin::Stage& stage) const
 {
-   Raster* raster_ptr = model.get_raster_ptr (product,
-      dtime, size_2d, transform, level, stage);
+   Raster* raster_ptr = model.uppers.get_raster_ptr (size_2d,
+      transform, stage, product, dtime, level);
    raster_ptr->blit (cr);
    delete raster_ptr;
 }
@@ -49,7 +49,8 @@ Display::render_wind_barbs (const RefPtr<Context>& cr,
    wind_barb_color.cairo (cr);
 
    const Real z = level.value;
-   const Model::Stage& model_stage = model.get_model_stage (stage);
+   const Model::Uppers::Stage& uppers_stage =
+      model.uppers.get_uppers_stage (stage);
 
    for (point.x = start_x; point.x < width; point.x += h)
    {
@@ -57,7 +58,7 @@ Display::render_wind_barbs (const RefPtr<Context>& cr,
       {
 
          transform.reverse (latitude, longitude, point.x, point.y);
-         if (model_stage.out_of_bounds (latitude, longitude)) { continue; }
+         if (uppers_stage.out_of_bounds (latitude, longitude)) { continue; }
 
          Real u = model.evaluate (ZONAL_WIND, latitude,
             longitude, z, dtime, stage);
