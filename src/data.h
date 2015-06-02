@@ -148,7 +148,7 @@ namespace twiin
                class Stage : public twiin::Stage
                {
 
-                  private:
+                  protected:
 
                      const Model&
                      model;
@@ -184,7 +184,7 @@ namespace twiin
 
                      ~Stage ();
 
-                     void
+                     virtual void
                      init (const File_Path_Map& file_path_map);
 
                      bool
@@ -201,95 +201,59 @@ namespace twiin
                                const Real latitude,
                                const Real longitude) const;
 
+                     Raster*
+                     get_raster_ptr (const Size_2D& size_2d,
+                                     const Transform_2D& transform) const;
+
                };
 
                const Model&
                model;
 
                map<twiin::Stage, Terrain::Stage>
-               terrain_stage_map;
+               stage_map;
 
-               const Stage&
-               get_terrain_stage (const twiin::Stage& stage) const;
+               virtual const Stage&
+               get_stage (const twiin::Stage& stage) const;
 
-               Stage&
-               get_terrain_stage (const twiin::Stage& stage);
+               virtual Stage&
+               get_stage (const twiin::Stage& stage);
 
             public:
 
                Terrain (const Model& model);
 
-               void
+               virtual void
                init (const Tokens& stage_tokens);
 
-               void
-               init (const twiin::Stage& twiin_stage,
-                     const Model::File_Path_Map& file_path_map);
-
-               Raster*
-               get_raster_ptr (const Size_2D& size_2d,
-                               const Transform_2D& transform,
-                               const twiin::Stage& stage) const;
-
-               void
-               cairo (const RefPtr<Context>& cr,
-                      const Transform_2D& transform,
-                      const Size_2D& size_2d,
-                      const twiin::Stage& stage) const;
+               virtual void
+               init2 (const twiin::Stage& twiin_stage,
+                      const Model::File_Path_Map& file_path_map);
 
          };
 
-         class Uppers
+         class Surface : public Terrain
          {
 
             public:
 
-               class Stage : public twiin::Stage
+               class Stage : public Terrain::Stage
                {
 
-                  private:
-
-                     const Model&
-                     model;
-
-                     Tuple
-                     tuple_latitude;
-
-                     Tuple
-                     tuple_longitude;
+                  protected:
 
                      set<Dtime>
                      valid_time_set;
 
-                     map<Varname, Nc_File*>
-                     nc_file_ptr_map;
-
-                     map<Varname, Integer>
-                     varid_map;
-
                      void
                      fill_valid_time_set ();
 
-                     void
-                     acquire_ij (size_t& i,
-                                 size_t& j,
-                                 const Real latitude,
-                                 const Real longitude) const;
-
                   public:
-
-                     Stage (const Stage& stage);
 
                      Stage (const Model& model,
                             const twiin::Stage& stage);
 
-                     Stage (const Model& model,
-                            const twiin::Stage& stage,
-                            const File_Path_Map& file_path_map);
-
-                     ~Stage ();
-
-                     void
+                     virtual void
                      init (const File_Path_Map& file_path_map);
 
                      const set<Dtime>&
@@ -298,9 +262,72 @@ namespace twiin
                      size_t
                      get_l (const Dtime& dtime) const;
 
-                     bool
-                     out_of_bounds (const Real latitude,
-                                    const Real longitude) const;
+                     Real
+                     evaluate (const Nwp_Element& nwp_element,
+                               const Real latitude,
+                               const Real longitude,
+                               const size_t l) const;
+                               
+                     Real
+                     evaluate (const Nwp_Element& nwp_element,
+                               const size_t i,
+                               const size_t j,
+                               const size_t l) const;
+
+                     Real
+                     evaluate_raw (const string& varname,
+                                   const size_t i,
+                                   const size_t j,
+                                   const size_t l) const;
+
+                     Raster*
+                     get_raster_ptr (const Size_2D& size_2d,
+                                     const Transform_2D& transform,
+                                     const Product& product,
+                                     const Dtime& dtime) const;
+
+                     Color
+                     get_color (const Product& product,
+                                const Lat_Long& lat_long,
+                                const size_t l) const;
+
+
+               };
+
+               map<twiin::Stage, Surface::Stage>
+               stage_map;
+
+               virtual const Stage&
+               get_stage (const twiin::Stage& stage) const;
+
+               virtual Stage&
+               get_stage (const twiin::Stage& stage);
+
+            public:
+
+               Surface (const Model& model);
+
+               virtual void
+               init (const Tokens& stage_tokens);
+
+               virtual void
+               init2 (const twiin::Stage& twiin_stage,
+                      const Model::File_Path_Map& file_path_map);
+
+         };
+
+         class Uppers : public Surface
+         {
+
+            public:
+
+               class Stage : public Surface::Stage
+               {
+
+                  public:
+
+                     Stage (const Model& model,
+                            const twiin::Stage& stage);
 
                      Real
                      evaluate (const Nwp_Element& nwp_element,
@@ -330,6 +357,13 @@ namespace twiin
                                    const size_t k,
                                    const size_t l) const;
 
+                     Raster*
+                     get_raster_ptr (const Size_2D& size_2d,
+                                     const Transform_2D& transform,
+                                     const Product& product,
+                                     const Dtime& dtime,
+                                     const Level& level) const;
+
                      Color
                      get_color (const Product& product,
                                 const Lat_Long& lat_long,
@@ -339,36 +373,25 @@ namespace twiin
 
                };
 
-               const Model&
-               model;
-
                map<twiin::Stage, Uppers::Stage>
-               uppers_stage_map;
+               stage_map;
 
-               const Stage&
-               get_uppers_stage (const twiin::Stage& stage) const;
+               virtual const Stage&
+               get_stage (const twiin::Stage& stage) const;
 
-               Stage&
-               get_uppers_stage (const twiin::Stage& stage);
+               virtual Stage&
+               get_stage (const twiin::Stage& stage);
 
             public:
 
                Uppers (const Model& model);
 
-               void
+               virtual void
                init (const Tokens& stage_tokens);
 
-               void
-               init (const twiin::Stage& twiin_stage,
-                     const Model::File_Path_Map& file_path_map);
-
-               Raster*
-               get_raster_ptr (const Size_2D& size_2d,
-                               const Transform_2D& transform,
-                               const twiin::Stage& stage,
-                               const Product& product,
-                               const Dtime& dtime,
-                               const Level& level) const;
+               virtual void
+               init2 (const twiin::Stage& twiin_stage,
+                      const Model::File_Path_Map& file_path_map);
 
          };
 
@@ -420,6 +443,9 @@ namespace twiin
          Uppers
          uppers;
 
+         Surface
+         surface;
+
          Vertical_Coefficients
          vertical_coefficients;
 
@@ -444,6 +470,11 @@ namespace twiin
 
          ~Model ();
 
+         bool
+         out_of_bounds (const Real latitude,
+                        const Real longitude,
+                        const twiin::Stage& stage) const;
+
          Real
          evaluate (const Nwp_Element& nwp_element,
                    const Real latitude,
@@ -459,6 +490,11 @@ namespace twiin
                    const Real z,
                    const Dtime& dtime,
                    const twiin::Stage& stage) const;
+
+         const set<Dtime>&
+         get_valid_time_set (const Product& product,
+                             const twiin::Stage& stage,
+                             const Level& level) const;
 
    };
 

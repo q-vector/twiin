@@ -45,11 +45,10 @@ Console::get_tokens (const Marker& marker) const
    const string& lat_long_str = lat_long.get_string ("false", "%.3f\u00b0");
 
    const Model& model = display.get_model ();
-   const Model::Uppers::Stage& uppers_stage = model.uppers.get_uppers_stage (stage);
    const Real latitude = marker.x;
    const Real longitude = marker.y;
 
-   if (uppers_stage.out_of_bounds (latitude, longitude))
+   if (model.out_of_bounds (latitude, longitude, stage))
    {
       return Map_Console::get_tokens (marker);
    }
@@ -116,7 +115,6 @@ Console::get_tokens (const Marker& marker) const
    else
    if (product == "FFDI")
    {
-      const size_t k = -1;
       const Real t = model.evaluate (TEMPERATURE, latitude, longitude, z, dtime, stage);
       const Real t_d = model.evaluate (DEW_POINT, latitude, longitude, z, dtime, stage);
       const Real u = model.evaluate (ZONAL_WIND, latitude, longitude, z, dtime, stage);
@@ -131,8 +129,9 @@ Console::get_tokens (const Marker& marker) const
    if (product == "TERRAIN")
    {
       const Model::Terrain::Stage& terrain_stage =
-         model.terrain.get_terrain_stage (stage);
-      const Real datum = terrain_stage.evaluate (string ("orog"), latitude, longitude);
+         model.terrain.get_stage (stage);
+      const Real datum = terrain_stage.evaluate (
+         string ("orog"), latitude, longitude);
       if (gsl_isnan (datum)) { return Map_Console::get_tokens (marker); }
       tokens.push_back (string_render ("%.2fm", datum));
    }
@@ -257,8 +256,7 @@ Console::Console (Gtk::Window& gtk_window,
    product_panel.add_product ("Misc", Product ("TERRAIN"));
 
    const Model& model = display.get_model ();
-   const Model::Uppers::Stage& uppers_stage = model.uppers.get_uppers_stage (stage);
-   const set<Dtime>& time_set = uppers_stage.get_valid_time_set ();
+   const set<Dtime>& time_set = model.get_valid_time_set (product, stage, level);
    time_chooser.set_shape (Time_Chooser::Shape (time_set));
    time_chooser.set_leap (1);
 

@@ -51,21 +51,20 @@ main (int argc,
       {
 
          const twiin::Stage stage (*i);
-         const Model::Uppers::Stage& uppers_stage = model.uppers.get_uppers_stage (stage);
-         const set<Dtime>& valid_time_set = uppers_stage.get_valid_time_set ();
-
          const Transform_2D& transform = *(transform_ptr_map[stage]);
 
-         for (set<Dtime>::const_iterator j = valid_time_set.begin ();
-              j != valid_time_set.end (); j++)
+         for (Tokens::const_iterator j = product_tokens.begin ();
+              j != product_tokens.end (); j++)
          {
 
-            const Dtime& dtime = *(j);
+            const Product product (*j);
+            const set<Dtime>& valid_time_set = model.get_valid_time_set (product, stage, level);
 
-            for (Tokens::const_iterator k = product_tokens.begin ();
-                 k != product_tokens.end (); k++)
+            for (set<Dtime>::const_iterator k = valid_time_set.begin ();
+                 k != valid_time_set.end (); k++)
             {
-               const Product product (*k);
+
+               const Dtime& dtime = *(k);
 
                const string& time_string = dtime.get_string ("%Y%m%d%H%M");
                const string png_file_path = stage + "_" +

@@ -30,13 +30,13 @@ namespace twiin
          model;
 
          void
-         render_model (const Product& product,
-                       const RefPtr<Context>& cr,
-                       const Transform_2D& transform,
-                       const Size_2D& size_2d,
-                       const Dtime& dtime,
-                       const Level& level,
-                       const twiin::Stage& stage) const;
+         render_product (const Product& product,
+                         const RefPtr<Context>& cr,
+                         const Transform_2D& transform,
+                         const Size_2D& size_2d,
+                         const Dtime& dtime,
+                         const Level& level,
+                         const twiin::Stage& stage) const;
 
          void
          render_wind_barbs (const RefPtr<Context>& cr,

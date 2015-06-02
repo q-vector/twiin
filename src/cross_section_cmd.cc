@@ -27,12 +27,13 @@ main (int argc,
       const Product product (product_str);
       const Affine_Transform_2D transform ();
 
+      const Level level (level_str);
       const Model& model = display.get_model ();
-      const Model::Uppers::Stage& uppers_stage = model.uppers.get_uppers_stage (stage);
-      const set<Dtime>& valid_time_set = uppers_stage.get_valid_time_set ();
+      const set<Dtime>& valid_time_set =
+         model.get_valid_time_set (product, stage, level);
 
       const Model::Terrain::Stage& terrain_stage =
-         model.terrain.get_terrain_stage (stage);
+         model.terrain.get_stage (stage);
 
       Multi_Journey multi_journey;
       const Lat_Long lat_long_a (-38.5, 443.0);
@@ -68,7 +69,6 @@ main (int argc,
          RefPtr<ImageSurface> surface = ImageSurface::create (
             FORMAT_ARGB32, size_2d.i, size_2d.j);
          RefPtr<Context> cr = Context::create (surface);
-
 
          cr->save ();
          //Color::hsb (0.67, 0.67, 0.85).cairo (cr);

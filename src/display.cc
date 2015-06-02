@@ -6,18 +6,60 @@ using namespace Cairo;
 using namespace twiin;
 
 void
-Display::render_model (const Product& product,
-                       const RefPtr<Context>& cr,
-                       const Transform_2D& transform,
-                       const Size_2D& size_2d,
-                       const Dtime& dtime,
-                       const Level& level,
-                       const twiin::Stage& stage) const
+Display::render_product (const Product& product,
+                         const RefPtr<Context>& cr,
+                         const Transform_2D& transform,
+                         const Size_2D& size_2d,
+                         const Dtime& dtime,
+                         const Level& level,
+                         const twiin::Stage& stage) const
 {
-   Raster* raster_ptr = model.uppers.get_raster_ptr (size_2d,
-      transform, stage, product, dtime, level);
-   raster_ptr->blit (cr);
+
+   Raster* raster_ptr = NULL;
+
+   if (product == "TERRAIN")
+   {
+      const Model::Terrain::Stage& terrain_stage = model.terrain.get_stage (stage);
+      raster_ptr = terrain_stage.get_raster_ptr (size_2d, transform);
+   }
+   else
+   if (product == "WIND" ||
+       product == "VORTICITY" ||
+       product == "THETA_E")
+   {
+      if (gsl_isnan (level.value))
+      {
+         const Model::Surface::Stage& surface_stage = model.surface.get_stage (stage);
+         raster_ptr = surface_stage.get_raster_ptr (size_2d, transform, product, dtime);
+      }
+      else
+      {
+         const Model::Uppers::Stage& uppers_stage = model.uppers.get_stage (stage);
+         raster_ptr = uppers_stage.get_raster_ptr (size_2d,
+            transform, product, dtime, level);
+      }
+   }
+   else
+   if (product == "T" ||
+       product == "TD" ||
+       product == "RH" ||
+       product == "FFDI" ||
+       product == "MSLP")
+   {
+      const Model::Surface::Stage& surface_stage = model.surface.get_stage (stage);
+      raster_ptr = surface_stage.get_raster_ptr (size_2d, transform, product, dtime);
+   }
+   else
+   if (product == "THETA")
+   {
+      const Model::Uppers::Stage& uppers_stage = model.uppers.get_stage (stage);
+      raster_ptr = uppers_stage.get_raster_ptr (size_2d,
+         transform, product, dtime, level);
+   }
+
+   if (raster_ptr != NULL) { raster_ptr->blit (cr); }
    delete raster_ptr;
+
 }
 
 void
@@ -49,8 +91,6 @@ Display::render_wind_barbs (const RefPtr<Context>& cr,
    wind_barb_color.cairo (cr);
 
    const Real z = level.value;
-   const Model::Uppers::Stage& uppers_stage =
-      model.uppers.get_uppers_stage (stage);
 
    for (point.x = start_x; point.x < width; point.x += h)
    {
@@ -58,7 +98,7 @@ Display::render_wind_barbs (const RefPtr<Context>& cr,
       {
 
          transform.reverse (latitude, longitude, point.x, point.y);
-         if (uppers_stage.out_of_bounds (latitude, longitude)) { continue; }
+         if (model.out_of_bounds (latitude, longitude, stage)) { continue; }
 
          Real u = model.evaluate (ZONAL_WIND, latitude,
             longitude, z, dtime, stage);
@@ -109,16 +149,7 @@ Display::cairo (const RefPtr<Context>& cr,
    Color (0.86, 0.85, 0.47).cairo (cr);
    cr->paint();
 
-   if (product == "TERRAIN")
-   {
-      model.terrain.cairo (cr, transform, size_2d, stage);
-   }
-   else
-   {
-//      model.terrain.cairo (cr, transform, size_2d, stage);
-      render_model (product, cr, transform, size_2d, dtime, level, stage);
-   }
-
+   render_product (product, cr, transform, size_2d, dtime, level, stage);
    render_wind_barbs (cr, transform, size_2d, dtime, level, stage);
 
    // Stage 3/4/5 Frames

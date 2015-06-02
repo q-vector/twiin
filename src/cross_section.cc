@@ -103,6 +103,8 @@ Cross_Section::Cross_Section (Gtk::Window& gtk_window,
      domain_z (0, 5000)
 {
 
+   const Level level;
+
    time_chooser.get_signal ().connect (
       sigc::mem_fun (*this, &Cross_Section::render_queue_draw));
    product_panel.get_signal ().connect (
@@ -126,8 +128,7 @@ Cross_Section::Cross_Section (Gtk::Window& gtk_window,
    product_panel.add_product ("Misc", Product ("TERRAIN"));
 
    const Model& model = display.get_model ();
-   const Model::Uppers::Stage& uppers_stage = model.uppers.get_uppers_stage (stage);
-   const set<Dtime>& time_set = uppers_stage.get_valid_time_set ();
+   const set<Dtime>& time_set = model.get_valid_time_set (product, stage, level);
    time_chooser.set_shape (Time_Chooser::Shape (time_set));
    time_chooser.set_leap (1);
 
@@ -266,7 +267,7 @@ Cross_Section::render_image_buffer (const RefPtr<Context>& cr)
 
       Color color;
       const Model::Terrain::Stage& terrain_stage =
-         model.terrain.get_terrain_stage (stage);
+         model.terrain.get_stage (stage);
 
       for (Integer i = i2d.i; i < i2d.i + s2d.i; i++)
       {
