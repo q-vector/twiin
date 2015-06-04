@@ -49,7 +49,7 @@ namespace twiin
       public:
 
          Display (const string& station_file_path,
-                  const string& model_config_file_path);
+                  const string& data_config_file_path);
 
          ~Display ();
 

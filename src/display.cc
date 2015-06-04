@@ -118,9 +118,9 @@ Display::render_wind_barbs (const RefPtr<Context>& cr,
 }
 
 Display::Display (const string& station_file_path,
-                  const string& model_config_file_path)
+                  const string& data_config_file_path)
    : station_map (station_file_path),
-     model (model_config_file_path)
+     model (data_model_config_file_path)
 {
 }
 
