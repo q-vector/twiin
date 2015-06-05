@@ -1,4 +1,5 @@
 #include <denise/dstring.h>
+#include <denise/nwp.h>
 #include "data.h"
 
 using namespace std;
@@ -222,14 +223,16 @@ Model::File_Path_Map::insert (const Varname& varname,
                               const string& file_path)
 {
    map<Varname, string>::insert (make_pair (varname, file_path));
+cout << "insert " << varname << " " << file_path << endl;
 }
 
 void
 Model::Terrain::Stage::acquire_ij (size_t& i,
                                    size_t& j,
-                                   const Real latitude,
-                                   const Real longitude) const
+                                   const Lat_Long& lat_long) const
 {
+   const Real& latitude = lat_long.latitude;
+   const Real& longitude = lat_long.longitude;
    i = Grid_nD::get_nearest_node (tuple_latitude, GSL_NAN, latitude);
    j = Grid_nD::get_nearest_node (tuple_longitude, GSL_NAN, longitude);
 }
@@ -297,13 +300,12 @@ Model::Terrain::Stage::~Stage ()
 }
 
 bool
-Model::Terrain::Stage::out_of_bounds (const Real latitude,
-                                      const Real longitude) const
+Model::Terrain::Stage::out_of_bounds (const Lat_Long& lat_long) const
 {
-   return latitude < tuple_latitude.front () ||
-          latitude > tuple_latitude.back () ||
-          longitude < tuple_longitude.front () ||
-          longitude > tuple_longitude.back ();
+   return lat_long.latitude < tuple_latitude.front () ||
+          lat_long.latitude > tuple_latitude.back () ||
+          lat_long.longitude < tuple_longitude.front () ||
+          lat_long.longitude > tuple_longitude.back ();
 }
 
 Real
@@ -326,63 +328,27 @@ Model::Terrain::Stage::evaluate (const Varname& varname,
 
 Real
 Model::Terrain::Stage::evaluate (const Varname& varname,
-                                 const Real latitude,
-                                 const Real longitude) const
+                                 const Lat_Long& lat_long) const
 {
    size_t i, j;
-   acquire_ij (i, j, latitude, longitude);
+   acquire_ij (i, j, lat_long);
    return evaluate (varname, i, j);
 }
 
-Raster*
-Model::Terrain::Stage::get_raster_ptr (const Size_2D& size_2d,
-                                       const Transform_2D& transform) const
+Real
+Model::Terrain::Stage::get_topography (const Lat_Long& lat_long) const
 {
+   size_t i, j;
+   acquire_ij (i, j, lat_long);
+   return get_topography (i, j);
+}
 
-   Raster* raster_ptr = new Raster (size_2d);
-   Raster& raster = *raster_ptr;
-
-   Lat_Long lat_long;
-   Real& latitude = lat_long.latitude;
-   Real& longitude = lat_long.longitude;
-
-   Real orog, lsm;
-   const Color transparent (0, 0, 0, 0);
-
-   for (Integer i = 0; i < size_2d.i; i++)
-   {
-
-      const Real x = Real (i); 
-
-      for (Integer j = 0; j < size_2d.j; j++)
-      {
-
-         const Real y = Real (j); 
-         transform.reverse (latitude, longitude, x, y);
-
-         if (out_of_bounds (latitude, longitude))
-         {
-            raster.set_pixel (i, j, transparent);
-            continue;
-         }
-
-         const Real orog = evaluate (Varname ("orog"), latitude, longitude);
-         const Real lsm = evaluate (Varname ("lsm"), latitude, longitude);
-         const Real h = std::min (std::max (orog / 2000.0, 0.0), 1.0);
-
-         const bool land = (lsm > 0.5);
-         const Real hue = (land ? 0.4 - h * 0.4 : 0.67);
-         const Real brightness = h * 0.7 + 0.28;
-
-         const Color& color = Color::hsb (hue, 0.34, brightness);
-         raster.set_pixel (i, j, color);
-
-      }
-
-   }
-
-   return raster_ptr;
-
+Real
+Model::Terrain::Stage::get_topography (const size_t i,
+                                       const size_t j) const
+{
+   const Model::Terrain::Stage& terrain_stage = model.terrain.get_stage (*this);
+   return terrain_stage.evaluate (Varname ("orog"), i, j);
 }
 
 const Model::Terrain::Stage&
@@ -505,18 +471,12 @@ Model::Surface::Stage::get_l (const Dtime& dtime) const
 
 Real
 Model::Surface::Stage::evaluate (const Nwp_Element& nwp_element,
-                                 const Real latitude,
-                                 const Real longitude,
+                                 const Lat_Long& lat_long,
                                  const size_t l) const
 {
-
-   const Real& x = latitude;
-   const Real& y = longitude;
-   const size_t i = Grid_nD::get_nearest_node (tuple_latitude, GSL_NAN, x);
-   const size_t j = Grid_nD::get_nearest_node (tuple_longitude, GSL_NAN, y);
-
+   size_t i, j;
+   acquire_ij (i, j, lat_long);
    return evaluate (nwp_element, i, j, l);
-
 }
 
 Real
@@ -532,27 +492,22 @@ Model::Surface::Stage::evaluate (const Nwp_Element& nwp_element,
    switch (nwp_element)
    {
 
-      case TEMPERATURE:
+      case RH:
       {
-         return evaluate_raw ("temp", i, j, l);
-      };
-
-      case RELATIVE_HUMIDITY:
-      {
-         const Real t = evaluate (TEMPERATURE, i, j, l);
-         const Real t_d = evaluate (DEW_POINT, i, j, l);
+         const Real t = evaluate (T, i, j, l);
+         const Real t_d = evaluate (TD, i, j, l);
          datum = Moisture::get_rh (t - K, t_d - K, WATER);
          break;
       };
 
-      case RELATIVE_VORTICITY:
+      case ZETA:
       {
          if (i <= 0 || i >= tuple_latitude.size () - 1 ||
              j <= 0 || j >= tuple_longitude.size () - 1) { return GSL_NAN; }
-         const Real upper_u = evaluate (ZONAL_WIND, i+1, j, l);
-         const Real lower_u = evaluate (ZONAL_WIND, i-1, j, l);
-         const Real upper_v = evaluate (MERIDIONAL_WIND, i, j+1, l);
-         const Real lower_v = evaluate (MERIDIONAL_WIND, i, j-1, l);
+         const Real upper_u = evaluate (U, i+1, j, l);
+         const Real lower_u = evaluate (U, i-1, j, l);
+         const Real upper_v = evaluate (V, i, j+1, l);
+         const Real lower_v = evaluate (V, i, j-1, l);
          const Real du = upper_u - lower_u;
          const Real dv = upper_v - lower_v;
          const Real longitude = tuple_latitude[j];
@@ -565,89 +520,51 @@ Model::Surface::Stage::evaluate (const Nwp_Element& nwp_element,
          break;
       };
 
+      case THETA:
+      {
+         const Real t = evaluate (T, i, j, l);
+         const Real mslp = evaluate (MSLP, i, j, l);
+         const Real topography = get_topography (i, j);
+         const Real surface_p = mslp - 11.76 * topography;
+         datum = Thermo_Point::t_p (t - K, surface_p).get_theta () + K;
+         break;
+      };
+
       case THETA_E:
       {
          typedef Thermo_Point Tp;
-         const Real t = evaluate (TEMPERATURE, i, j, l);
-         const Real t_d = evaluate (DEW_POINT, i, j, l);
-         const Real mslp = evaluate (MEAN_SEA_LEVEL_PRESSURE, i, j, l);
-         //const Real orog = terrain.get_orog (i, j);
-         //const Real surface_p = mslp - 11.76 * orog;
-         const Real surface_p = mslp;
+         const Real t = evaluate (T, i, j, l);
+         const Real t_d = evaluate (TD, i, j, l);
+         const Real mslp = evaluate (MSLP, i, j, l);
+         const Real topography = get_topography (i, j);
+         const Real surface_p = mslp - 11.76 * topography;
          datum = Tp::normand (t - K, t_d - K, surface_p).get_theta_e () + K;
          break;
+      };
+
+      case FFDI:
+      {
+         const Real t = evaluate (T, lat_long, l);
+         const Real t_d = evaluate (TD, lat_long, l);
+         const Real rh = Moisture::get_rh (t - K, t_d - K, WATER);
+         const Real u = evaluate (U, lat_long, l);
+         const Real v = evaluate (V, lat_long, l);
+         const Real speed = sqrt (u*u + v*v);
+         datum = Fire::get_ffdi (t - K, rh * 100, speed * 3.6);
       };
 
       default:
       {
 
-         // We know kow this should be a direct read from the files
-         //    given nwp_element
-
-         // TEMPERATURE -> temp
-         // MEAN_SEA_LEVEL_PRESSURE -> mslp
-         // DEW_POINT -> dewpt
-
-         // ZONAL_WIND -> xwind or ml_xwind
-         // MERIDIONAL_WIND -> ywind or ml_ywind
-         // VERTICAL_VELOCITY -> ml_zwind
-
-         // THETA -> ml_theta
-         // SPECIFIC_HUMIDITY -> ml_spechum
-
          Varname varname ("");
 
          switch (nwp_element)
          {
-
-            case TEMPERATURE:
-            {
-               varname = string ("temp");
-               break;
-            }
-
-            case DEW_POINT:
-            {
-               varname = string ("dewpt");
-               break;
-            }
-
-            case MEAN_SEA_LEVEL_PRESSURE:
-            {
-               varname = string ("mslp");
-               break;
-            }
-
-            case ZONAL_WIND:
-            {
-               varname = string ("xwind");
-               break;
-            }
-
-            case MERIDIONAL_WIND:
-            {
-               varname = string ("ywind");
-               break;
-            }
-
-            case VERTICAL_VELOCITY:
-            {
-               varname = string ("ml_zwind");
-               break;
-            }
-
-            case THETA:
-            {
-               varname = string ("ml_theta");
-               break;
-            }
-
-            case SPECIFIC_HUMIDITY:
-            {
-               varname = string ("ml_spechum");
-               break;
-            }
-
+            case T: { varname = string ("temp"); break; }
+            case TD: { varname = string ("dewpt"); break; }
+            case MSLP: { varname = string ("mslp"); break; }
+            case U: { varname = string ("xwind"); break; }
+            case V: { varname = string ("ywind"); break; }
          }
 
          datum = evaluate_raw (varname, i, j, l);
@@ -682,52 +599,6 @@ Model::Surface::Stage::evaluate_raw (const string& varname,
 
 }
 
-Raster*
-Model::Surface::Stage::get_raster_ptr (const Size_2D& size_2d,
-                                       const Transform_2D& transform,
-                                       const Product& product,
-                                       const Dtime& dtime) const
-{
-
-   Raster* raster_ptr = new Raster (size_2d);
-   Raster& raster = *raster_ptr;
-
-   const size_t l = get_l (dtime);
-
-   Lat_Long lat_long;
-   Real& latitude = lat_long.latitude;
-   Real& longitude = lat_long.longitude;
-
-   const Color transparent (0, 0, 0, 0);
-
-   for (Integer i = 0; i < size_2d.i; i++)
-   {
-
-      const Real x = Real (i); 
-
-      for (Integer j = 0; j < size_2d.j; j++)
-      {
-
-         const Real y = Real (j); 
-         transform.reverse (latitude, longitude, x, y);
-
-         if (out_of_bounds (latitude, longitude))
-         {
-            raster.set_pixel (i, j, transparent);
-            continue;
-         }
-
-         const Color& color = get_color (product, lat_long, l);
-         raster.set_pixel (i, j, color);
-
-      }
-
-   }
-
-   return raster_ptr;
-
-}
-
 Color
 Model::Surface::Stage::get_color (const Product& product,
                                   const Lat_Long& lat_long,
@@ -736,26 +607,24 @@ Model::Surface::Stage::get_color (const Product& product,
 
    // vertical index
    const Color transparent (0, 0, 0, 0);
-   const Real& latitude = lat_long.latitude;
-   const Real& longitude = lat_long.longitude;
 
    if (product == "T")
    {
-      const Real t = evaluate (TEMPERATURE, latitude, longitude, l);
+      const Real t = evaluate (T, lat_long, l);
       const Real hue = Domain_1D (35 + K, 10 + K).normalize (t) * 0.833;
       return Color::hsb (hue, 0.8, 0.8);
    }
    else
    if (product == "TD")
    {
-      const Real t_d = evaluate (DEW_POINT, latitude, longitude, l);
+      const Real t_d = evaluate (TD, lat_long, l);
       const Real hue = Domain_1D (20 + K, -5 + K).normalize (t_d) * 0.833;
       return Color::hsb (hue, 0.8, 0.8);
    }
    else
    if (product == "RH")
    {
-      const Real rh = evaluate (RELATIVE_HUMIDITY, latitude, longitude, l);
+      const Real rh = evaluate (RH, lat_long, l);
       const Real hue = (rh < 0.5 ? 0.08 : 0.35);
       const Real saturation = std::min ((fabs (rh - 0.5) * 2), 1.0);
       return Color::hsb (hue, saturation, 1, 0.4);
@@ -764,20 +633,14 @@ Model::Surface::Stage::get_color (const Product& product,
    if (product == "FFDI")
    {
       const Ffdi_Color_Chooser ffdi_color_chooser (0.7);
-      const Real t = evaluate (TEMPERATURE, latitude, longitude, l);
-      const Real t_d = evaluate (DEW_POINT, latitude, longitude, l);
-      const Real rh = Moisture::get_rh (t - K, t_d - K, WATER);
-      const Real u = evaluate (ZONAL_WIND, latitude, longitude, l);
-      const Real v = evaluate (MERIDIONAL_WIND, latitude, longitude, l);
-      const Real speed = sqrt (u*u + v*v);
-      const Real ffdi = Fire::get_ffdi (t - K, rh * 100, speed * 3.6);
+      const Real ffdi = evaluate (FFDI, lat_long, l);
       return ffdi_color_chooser.get_color (ffdi);
    }
    else
    if (product == "WIND")
    {
-      const Real u = evaluate (ZONAL_WIND, latitude, longitude, l);
-      const Real v = evaluate (MERIDIONAL_WIND, latitude, longitude, l);
+      const Real u = evaluate (U, lat_long, l);
+      const Real v = evaluate (V, lat_long, l);
       const Real speed = sqrt (u*u + v*v);
       const Real theta = atan2 (-u, -v);
       const Real hue = (theta < 0 ? theta + 2*M_PI : theta)/ (2*M_PI);
@@ -787,7 +650,7 @@ Model::Surface::Stage::get_color (const Product& product,
    else
    if (product == "VORTICITY")
    {
-      const Real zeta = evaluate (RELATIVE_VORTICITY, latitude, longitude, l);
+      const Real zeta = evaluate (ZETA, lat_long, l);
       const Real hue = (zeta < 0 ? 0.667 : 0.000);
       const Real modified_zeta = (log10 (fabs (zeta)) + 4) / 3;
       const Real saturation = std::max (std::min (modified_zeta, 1.0), 0.0);
@@ -796,15 +659,14 @@ Model::Surface::Stage::get_color (const Product& product,
    else
    if (product == "MSLP")
    {
-      const Nwp_Element MSLP = MEAN_SEA_LEVEL_PRESSURE;
-      const Real mslp = evaluate (MSLP, latitude, longitude, l);
+      const Real mslp = evaluate (MSLP, lat_long, l);
       const Real hue = Domain_1D (990e2, 1025e2).normalize (mslp) * 0.833;
       return Color::hsb (hue, 0.8, 0.8);
    }
    else
    if (product == "THETA_E")
    {
-      const Real theta_e = evaluate (THETA_E, latitude, longitude, l);
+      const Real theta_e = evaluate (THETA_E, lat_long, l);
       const Real hue = Domain_1D (65 + K, 5 + K).normalize (theta_e) * 0.833;
       return Color::hsb (hue, 0.8, 0.8);
    }
@@ -864,19 +726,15 @@ Model::Uppers::Stage::Stage (const Model& model,
 
 Real
 Model::Uppers::Stage::evaluate (const Nwp_Element& nwp_element,
-                                const Real latitude,
-                                const Real longitude,
+                                const Lat_Long& lat_long,
                                 const Real z,
                                 const size_t l) const
 {
 
-   const Real& x = latitude;
-   const Real& y = longitude;
-   const size_t i = Grid_nD::get_nearest_node (tuple_latitude, GSL_NAN, x);
-   const size_t j = Grid_nD::get_nearest_node (tuple_longitude, GSL_NAN, y);
+   size_t i, j;
+   acquire_ij (i, j, lat_long);
 
-   const Model::Terrain::Stage& terrain_stage = model.terrain.get_stage (*this);
-   const Real topography = terrain_stage.evaluate (Varname ("orog"), latitude, longitude);
+   const Real topography = get_topography (i, j);
    if (z < topography) { return GSL_NAN; }
 
    const Tuple& A = model.vertical_coefficients.get_A_rho ();
@@ -892,19 +750,13 @@ Model::Uppers::Stage::evaluate (const Nwp_Element& nwp_element,
 
 Real
 Model::Uppers::Stage::evaluate (const Nwp_Element& nwp_element,
-                                const Real latitude,
-                                const Real longitude,
+                                const Lat_Long& lat_long,
                                 const size_t k,
                                 const size_t l) const
 {
-
-   const Real& x = latitude;
-   const Real& y = longitude;
-   const size_t i = Grid_nD::get_nearest_node (tuple_latitude, GSL_NAN, x);
-   const size_t j = Grid_nD::get_nearest_node (tuple_longitude, GSL_NAN, y);
-
+   size_t i, j;
+   acquire_ij (i, j, lat_long);
    return evaluate (nwp_element, i, j, k, l);
-
 }
 
 Real
@@ -921,18 +773,30 @@ Model::Uppers::Stage::evaluate (const Nwp_Element& nwp_element,
    switch (nwp_element)
    {
 
-      case TEMPERATURE:
+      case T:
       {
          const Real theta = evaluate_raw ("ml_theta", i, j, k, l);
          const Real p = evaluate_raw ("ml_ptheta", i, j, k, l);
-         datum = Thermo_Point::theta_p (theta, p).get_t ();
+         datum = Thermo_Point::theta_p (theta - K, p).get_t () + K;
          break;
       };
 
-      case RELATIVE_HUMIDITY:
+      case TD:
       {
-         const Real t = evaluate (TEMPERATURE, i, j, k, l);
-         const Real t_d = evaluate (DEW_POINT, i, j, k, l);
+         const Real q = evaluate (Q, i, j, k, l);
+         const Real p = evaluate_raw ("ml_ptheta", i, j, k, l);
+         const Real r = q / (1 - q);
+         datum = Thermo_Point::p_r_s (p, r).get_t () + K;
+         break;
+      };
+
+      case RH:
+      {
+         const Real t = evaluate (T, i, j, k, l);
+         const Real q = evaluate (Q, i, j, k, l);
+         const Real p = evaluate_raw ("ml_ptheta", i, j, k, l);
+         const Real r = q / (1 - q);
+         const Real t_d = Thermo_Point::p_r_s (p, r).get_t () + K;
          datum = Moisture::get_rh (t - K, t_d - K, WATER);
          break;
       };
@@ -941,13 +805,12 @@ Model::Uppers::Stage::evaluate (const Nwp_Element& nwp_element,
       {
          if (i <= 0 || i >= tuple_latitude.size () - 1 ||
              j <= 0 || j >= tuple_longitude.size () - 1) { return GSL_NAN; }
-         const Real upper_u = evaluate (ZONAL_WIND, i+1, j, k, l);
-         const Real lower_u = evaluate (ZONAL_WIND, i-1, j, k, l);
-         const Real upper_v = evaluate (MERIDIONAL_WIND, i, j+1, k, l);
-         const Real lower_v = evaluate (MERIDIONAL_WIND, i, j-1, k, l);
+         const Real upper_u = evaluate (U, i+1, j, k, l);
+         const Real lower_u = evaluate (U, i-1, j, k, l);
+         const Real upper_v = evaluate (V, i, j+1, k, l);
+         const Real lower_v = evaluate (V, i, j-1, k, l);
          const Real du = upper_u - lower_u;
          const Real dv = upper_v - lower_v;
-         const Real longitude = tuple_latitude[j];
          const Real c = cos (tuple_latitude[i] * DEGREE_TO_RADIAN);
          const Real dlatitude = tuple_latitude[i+1] - tuple_latitude[i-1];
          const Real dlongitude = tuple_longitude[j+1] - tuple_longitude[j-1];
@@ -960,32 +823,18 @@ Model::Uppers::Stage::evaluate (const Nwp_Element& nwp_element,
       case THETA_E:
       {
          typedef Thermo_Point Tp;
-         const Real t = evaluate (TEMPERATURE, i, j, k, l);
-         const Real t_d = evaluate (DEW_POINT, i, j, k, l);
-         const Real mslp = evaluate (MEAN_SEA_LEVEL_PRESSURE, i, j, k, l);
-         //const Real orog = terrain.get_orog (i, j);
-         //const Real surface_p = mslp - 11.76 * orog;
-         const Real surface_p = mslp;
-         datum = Tp::normand (t - K, t_d - K, surface_p).get_theta_e () + K;
+         const Real p = evaluate_raw ("ml_ptheta", i, j, k, l);
+         const Real theta = evaluate_raw ("ml_theta", i, j, k, l);
+         const Real q = evaluate_raw ("ml_spechum", i, j, k, l);
+         const Real t = Thermo_Point::theta_p (theta - K, p).get_t () + K;
+         const Real r = q / (1 - q);
+         const Real t_d = Thermo_Point::p_r_s (p, r).get_t () + K;
+         datum = Tp::normand (t - K, t_d - K, p).get_theta_e () + K;
          break;
       };
 
       default:
       {
-
-         // We know kow this should be a direct read from the files
-         //    given nwp_element
-
-         // TEMPERATURE -> temp
-         // MEAN_SEA_LEVEL_PRESSURE -> mslp
-         // DEW_POINT -> dewpt
-
-         // ZONAL_WIND -> xwind or ml_xwind
-         // MERIDIONAL_WIND -> ywind or ml_ywind
-         // VERTICAL_VELOCITY -> ml_zwind
-
-         // THETA -> ml_theta
-         // SPECIFIC_HUMIDITY -> ml_spechum
 
          Varname varname ("");
 
@@ -1019,6 +868,18 @@ Model::Uppers::Stage::evaluate (const Nwp_Element& nwp_element,
             case SPECIFIC_HUMIDITY:
             {
                varname = string ("ml_spechum");
+               break;
+            }
+
+            case P_THETA:
+            {
+               varname = string ("ml_ptheta");
+               break;
+            }
+
+            case P_RHO:
+            {
+               varname = string ("ml_prho");
                break;
             }
 
@@ -1057,55 +918,6 @@ Model::Uppers::Stage::evaluate_raw (const string& varname,
 
 }
 
-Raster*
-Model::Uppers::Stage::get_raster_ptr (const Size_2D& size_2d,
-                                      const Transform_2D& transform,
-                                      const Product& product,
-                                      const Dtime& dtime,
-                                      const Level& level) const
-{
-
-   Raster* raster_ptr = new Raster (size_2d);
-   Raster& raster = *raster_ptr;
-
-   const size_t l = get_l (dtime);
-
-   Lat_Long lat_long;
-   Real& latitude = lat_long.latitude;
-   Real& longitude = lat_long.longitude;
-
-
-   const Real z = level.value;
-   const Color transparent (0, 0, 0, 0);
-
-   for (Integer i = 0; i < size_2d.i; i++)
-   {
-
-      const Real x = Real (i); 
-
-      for (Integer j = 0; j < size_2d.j; j++)
-      {
-
-         const Real y = Real (j); 
-         transform.reverse (latitude, longitude, x, y);
-
-         if (out_of_bounds (latitude, longitude))
-         {
-            raster.set_pixel (i, j, transparent);
-            continue;
-         }
-
-         const Color& color = get_color (product, lat_long, level, l);
-         raster.set_pixel (i, j, color);
-
-      }
-
-   }
-
-   return raster_ptr;
-
-}
-
 Color
 Model::Uppers::Stage::get_color (const Product& product,
                                  const Lat_Long& lat_long,
@@ -1116,26 +928,23 @@ Model::Uppers::Stage::get_color (const Product& product,
    // vertical index
    const Real z = level.value;
    const Color transparent (0, 0, 0, 0);
-   const Real& latitude = lat_long.latitude;
-   const Real& longitude = lat_long.longitude;
 
    const Model::Terrain::Stage& terrain_stage = model.terrain.get_stage (*this);
 
-   const Real topography = terrain_stage.evaluate (
-      Varname ("orog"), latitude, longitude);
+   const Real topography = get_topography (lat_long);
    if (z < topography) { return transparent; }
 
    if (product == "THETA")
    {
-      const Real theta = evaluate (THETA, latitude, longitude, z, l);
+      const Real theta = evaluate (THETA, lat_long, z, l);
       const Real hue = Domain_1D (60 + K, 0 + K).normalize (theta) * 0.833;
       return Color::hsb (hue, 0.8, 0.8);
    }
    else
    if (product == "WIND")
    {
-      const Real u = evaluate (ZONAL_WIND, latitude, longitude, z, l);
-      const Real v = evaluate (MERIDIONAL_WIND, latitude, longitude, z, l);
+      const Real u = evaluate (U, lat_long, z, l);
+      const Real v = evaluate (V, lat_long, z, l);
       const Real speed = sqrt (u*u + v*v);
       const Real theta = atan2 (-u, -v);
       const Real hue = (theta < 0 ? theta + 2*M_PI : theta)/ (2*M_PI);
@@ -1145,11 +954,33 @@ Model::Uppers::Stage::get_color (const Product& product,
    else
    if (product == "VORTICITY")
    {
-      const Real zeta = evaluate (RELATIVE_VORTICITY, latitude, longitude, z, l);
+      const Real zeta = evaluate (ZETA, lat_long, z, l);
       const Real hue = (zeta < 0 ? 0.667 : 0.000);
       const Real modified_zeta = (log10 (fabs (zeta)) + 4) / 3;
       const Real saturation = std::max (std::min (modified_zeta, 1.0), 0.0);
       return Color::hsb (hue, saturation, 1, 1);
+   }
+   else
+   if (product == "T")
+   {
+      const Real t = evaluate (T, lat_long, z, l);
+      const Real hue = Domain_1D (30 + K, -90 + K).normalize (t) * 0.833;
+      return Color::hsb (hue, 0.8, 0.8);
+   }
+   else
+   if (product == "TD")
+   {
+      const Real t_d = evaluate (TD, lat_long, z, l);
+      const Real hue = Domain_1D (30 + K, -90 + K).normalize (t_d) * 0.833;
+      return Color::hsb (hue, 0.8, 0.8);
+   }
+   else
+   if (product == "RH")
+   {
+      const Real rh = evaluate (RH, lat_long, z, l);
+      const Real hue = (rh < 0.5 ? 0.08 : 0.35);
+      const Real saturation = std::min ((fabs (rh - 0.5) * 2), 1.0);
+      return Color::hsb (hue, saturation, 1, 0.4);
    }
    else
    {
@@ -1322,16 +1153,11 @@ Model::get_k (const Real z,
 }
 
 
-Model::Model (const string& model_config_file_path)
+Model::Model (const Tokens& config_file_content)
    : terrain (*this),
      uppers (*this),
      surface (*this)
 {
-
-   string input_string;
-   ifstream file (model_config_file_path);
-
-   map<string, string> dictionary;
 
    Model::File_Path_Map terrain_file_path_3_map;
    Model::File_Path_Map terrain_file_path_4_map;
@@ -1344,47 +1170,28 @@ Model::Model (const string& model_config_file_path)
    Model::File_Path_Map uppers_file_path_5_map;
    string vertical_coefficients_file_path;
 
-   while (getline (file, input_string))
+   for (auto iterator = config_file_content.begin ();
+        iterator != config_file_content.end (); iterator++)
    {
 
-      if (input_string.size () == 0) { continue; }
-      if (input_string.c_str ()[0] == '#') { continue; }
+      const Tokens tokens (*(iterator));
+      if (tokens.size () != 2 || tokens[0] != "model") { continue; }
+      const string& argument = tokens[1];
 
-      size_t found;
-      for (auto iterator = dictionary.begin ();
-           iterator != dictionary.end (); iterator++)
+      const Tokens unstaged_tokens (argument, ":");
+      if (unstaged_tokens[0] == "AB" && unstaged_tokens.size () == 2)
       {
-         const string variable ("$" + iterator->first);
-         while ((found = input_string.find (variable)) != string::npos)
-         {
-            input_string.replace (found, variable.length (), iterator->second);
-         }
-      }
-      cout << input_string << endl;
-
-      const Tokens variable_tokens (input_string, "=");
-      if (variable_tokens.size () == 2)
-      {
-         const string& variable = get_trimmed (variable_tokens[0]);
-         const string& value = get_trimmed (variable_tokens[1]);
-         dictionary.insert (make_pair (variable, value));
+         vertical_coefficients_file_path = get_trimmed (unstaged_tokens[1]);
          continue;
       }
 
-      const Tokens ab_tokens (input_string, ":");
-      if (ab_tokens[0] == "AB" && ab_tokens.size () == 2)
+      const Tokens staged_tokens (argument, ":");
+      if (staged_tokens[0].substr (0, 5) == "STAGE" &&
+          staged_tokens.size () == 3)
       {
-         vertical_coefficients_file_path = get_trimmed (ab_tokens[1]);
-         continue;
-      }
-
-      const Tokens model_argument_tokens (input_string, ":");
-      if (model_argument_tokens[0].substr (0, 5) == "STAGE" &&
-          model_argument_tokens.size () == 3)
-      {
-         const string& stage_str = get_trimmed (model_argument_tokens[0]);
-         const string& var_str = (get_trimmed (model_argument_tokens[1]));
-         const string& file_path = get_trimmed (model_argument_tokens[2]);
+         const string& stage_str = get_trimmed (staged_tokens[0]);
+         const string& var_str = get_trimmed (staged_tokens[1]);
+         const string& file_path = get_trimmed (staged_tokens[2]);
 
          if (stage_str == "STAGE_3")
          {
@@ -1443,8 +1250,6 @@ Model::Model (const string& model_config_file_path)
  
    }
 
-   file.close ();
-
    vertical_coefficients.init (vertical_coefficients_file_path);
 
    const Tokens stage_tokens ("STAGE_3 STAGE_4 STAGE_5");
@@ -1471,18 +1276,24 @@ Model::~Model ()
 }
 
 bool
-Model::out_of_bounds (const Real latitude,
-                      const Real longitude,
+Model::out_of_bounds (const Lat_Long& lat_long,
                       const twiin::Stage& stage) const
 {
    const Model::Terrain::Stage& terrain_stage = terrain.get_stage (stage);
-   return terrain_stage.out_of_bounds (latitude, longitude);
+   return terrain_stage.out_of_bounds (lat_long);
+}
+
+Real
+Model::get_topography (const Lat_Long& lat_long,
+                       const twiin::Stage& stage) const
+{
+   const Model::Terrain::Stage& terrain_stage = terrain.get_stage (stage);
+   return terrain_stage.get_topography (lat_long);
 }
 
 Real
 Model::evaluate (const Nwp_Element& nwp_element,
-                 const Real latitude,
-                 const Real longitude,
+                 const Lat_Long& lat_long,
                  const size_t k,
 		 const Dtime& dtime,
                  const twiin::Stage& stage) const
@@ -1492,35 +1303,36 @@ Model::evaluate (const Nwp_Element& nwp_element,
    {
       const Model::Surface::Stage& surface_stage = surface.get_stage (stage);
       const Integer l = surface_stage.get_l (dtime);
-      return surface_stage.evaluate (nwp_element, latitude, longitude, l);
+      return surface_stage.evaluate (nwp_element, lat_long, l);
    }
    else
    {
       const Model::Uppers::Stage& upper_stage = uppers.get_stage (stage);
       const Integer l = upper_stage.get_l (dtime);
-      return upper_stage.evaluate (nwp_element, latitude, longitude, k, l);
+      return upper_stage.evaluate (nwp_element, lat_long, k, l);
    }
 }
 
 Real
 Model::evaluate (const Nwp_Element& nwp_element,
-                 const Real latitude,
-                 const Real longitude,
-                 const Real z,
+                 const Lat_Long& lat_long,
+                 const Level& level,
                  const Dtime& dtime,
                  const twiin::Stage& stage) const
 {
-   if (z < 0)
+   if (level.type == SURFACE_LEVEL)
    {
       const Model::Surface::Stage& surface_stage = surface.get_stage (stage);
       const Integer l = surface_stage.get_l (dtime);
-      return surface_stage.evaluate (nwp_element, latitude, longitude, l);
+      return surface_stage.evaluate (nwp_element, lat_long, l);
    }
    else
+   if (level.type == HEIGHT_LEVEL)
    {
+      const Real z = level.value;
       const Model::Uppers::Stage& uppers_stage = uppers.get_stage (stage);
       const Integer l = uppers_stage.get_l (dtime);
-      return uppers_stage.evaluate (nwp_element, latitude, longitude, z, l);
+      return uppers_stage.evaluate (nwp_element, lat_long, z, l);
    }
 }
 
@@ -1534,26 +1346,31 @@ Model::get_valid_time_set (const Product& product,
    {
    }
    else
-   if (product == "WIND" ||
+   if (product == "T" ||
+       product == "P_THETA" ||
+       product == "P_RHO" ||
+       product == "Q" ||
+       product == "TD" ||
+       product == "RH" ||
+       product == "WIND" ||
        product == "VORTICITY" ||
+       product == "THETA" ||
        product == "THETA_E")
    {
-      if (gsl_isnan (level.value))
+      if (level.type == SURFACE_LEVEL)
       {
          const Model::Surface::Stage& surface_stage = surface.get_stage (stage);
          return surface_stage.get_valid_time_set ();
       }
       else
+      if (level.type == HEIGHT_LEVEL)
       {
          const Model::Uppers::Stage& uppers_stage = uppers.get_stage (stage);
          return uppers_stage.get_valid_time_set ();
       }
    }
    else
-   if (product == "T" ||
-       product == "TD" ||
-       product == "RH" ||
-       product == "FFDI" ||
+   if (product == "FFDI" ||
        product == "MSLP")
    {
       const Model::Surface::Stage& surface_stage = surface.get_stage (stage);
@@ -1561,11 +1378,135 @@ Model::get_valid_time_set (const Product& product,
       return surface_stage.get_valid_time_set ();
    }
    else
-   if (product == "THETA")
+   if (product == "W")
    {
       const Model::Uppers::Stage& uppers_stage = uppers.get_stage (stage);
       return uppers_stage.get_valid_time_set ();
    }
+
+}
+
+Tokens
+Model::get_marker_tokens (const Lat_Long& lat_long,
+                          const Dtime& dtime,
+                          const Product& product,
+                          const twiin::Stage& stage,
+                          const Level& level) const
+{
+
+   Tokens tokens;
+
+   if (product == "P_THETA")
+   {
+      const Real datum = evaluate (P_THETA, lat_long, level, dtime, stage);
+      if (gsl_isnan (datum)) { return tokens; }
+      tokens.push_back (string_render ("%.0fhPa", datum * 1e-2));
+   }
+   else
+   if (product == "P_RHO")
+   {
+      const Real datum = evaluate (P_RHO, lat_long, level, dtime, stage);
+      if (gsl_isnan (datum)) { return tokens; }
+      tokens.push_back (string_render ("%.1fhPa", datum * 1e-2));
+   }
+   else
+   if (product == "THETA")
+   {
+      const Real datum = evaluate (THETA, lat_long, level, dtime, stage);
+      if (gsl_isnan (datum)) { return tokens; }
+      tokens.push_back (string_render ("%.1f\u00b0C", datum - K));
+   }
+   else
+   if (product == "Q")
+   {
+      const Real datum = evaluate (Q, lat_long, level, dtime, stage);
+      if (gsl_isnan (datum)) { return tokens; }
+      tokens.push_back (string_render ("%.3fg/kg", datum * 1e-3));
+   }
+   else
+   if (product == "T")
+   {
+      const Real datum = evaluate (T, lat_long, level, dtime, stage);
+      if (gsl_isnan (datum)) { return tokens; }
+      tokens.push_back (string_render ("%.1f\u00b0C", datum - K));
+   }
+   else
+   if (product == "TD")
+   {
+      const Real t_d = evaluate (TD, lat_long, level, dtime, stage);
+      if (gsl_isnan (t_d)) { return tokens; }
+      tokens.push_back (string_render ("%.1f\u00b0C", t_d - K));
+   }
+   else
+   if (product == "RH")
+   {
+      const Real rh = evaluate (RH, lat_long, level, dtime, stage);
+      if (gsl_isnan (rh)) { return tokens; }
+      tokens.push_back (string_render ("%.0f%%", rh * 100));
+   }
+   else
+   if (product == "THETA_E")
+   {
+      const Real theta_e = evaluate (THETA_E, lat_long, level, dtime, stage);
+      if (gsl_isnan (theta_e)) { return tokens; }
+      tokens.push_back (string_render ("%.1f\u00b0C", theta_e - K));
+   }
+   else
+   if (product == "WIND")
+   {
+      const Real u = evaluate (U, lat_long, level, dtime, stage);
+      if (gsl_isnan (u)) { return tokens; }
+      const Real v = evaluate (V, lat_long, level, dtime, stage);
+      if (gsl_isnan (v)) { return tokens; }
+      const Wind wind (u, v);
+      const Real msknot = 3.6/1.852;
+      const string fmt ("%03.0f\u00b0 / %02.1fkt");
+      tokens.push_back (wind.get_string (msknot, fmt));
+   }
+   else
+   if (product == "FFDI")
+   {
+      const Real t = evaluate (T, lat_long, level, dtime, stage);
+      const Real t_d = evaluate (TD, lat_long, level, dtime, stage);
+      const Real u = evaluate (U, lat_long, level, dtime, stage);
+      const Real v = evaluate (V, lat_long, level, dtime, stage);
+      const Real rh = Moisture::get_rh (t - K, t_d - K, WATER);
+      const Real speed = sqrt (u*u + v*v);
+      const Real ffdi = Fire::get_ffdi (t - K, rh * 100, speed * 3.6);
+      if (gsl_isnan (ffdi)) { return tokens; }
+      string ffdr = "Low-Moderate";
+      if (ffdi > 12) { ffdr = "High"; }
+      if (ffdi > 25) { ffdr = "Very High"; }
+      if (ffdi > 50) { ffdr = "Severe"; }
+      if (ffdi > 75) { ffdr = "Extreme"; }
+      if (ffdi > 100) { ffdr = "Catastrophic"; }
+      tokens.push_back (string_render ("%02.2f", ffdi));
+      tokens.push_back (ffdr);
+   }
+   else
+   if (product == "TERRAIN")
+   {
+      const Model::Terrain::Stage& terrain_stage = terrain.get_stage (stage);
+      const Real orog = terrain_stage.evaluate (string ("orog"), lat_long);
+      if (gsl_isnan (orog)) { return tokens; }
+      tokens.push_back (string_render ("%.2fm", orog));
+   }
+   else
+   if (product == "VORTICITY")
+   {
+      const Real zeta = evaluate (ZETA, lat_long, level, dtime, stage);
+      if (gsl_isnan (zeta)) { return tokens; }
+      tokens.push_back (string_render ("%.4e", zeta));
+   }
+   else
+   if (product == "MSLP")
+   {
+      const Real mslp = evaluate (MSLP, lat_long, level, dtime, stage);
+      if (gsl_isnan (mslp)) { return tokens; }
+      tokens.push_back (string_render ("%0.1fhPa", mslp * 1e-2));
+   }
+
+   return tokens;
 
 }
 

@@ -8,6 +8,7 @@
 #include <denise/geodesy.h>
 #include <denise/gtkmm.h>
 #include "display.h"
+#include "data.h"
 
 using namespace std;
 using namespace denise;
@@ -58,6 +59,9 @@ namespace twiin
 
          };
 
+         const Model&
+         model;
+
          Multi_Journey
          multi_journey;
 
@@ -66,9 +70,6 @@ namespace twiin
 
          Product_Panel
          product_panel;
-
-         const Display&
-         display;
 
          Stage
          stage;
@@ -104,9 +105,11 @@ namespace twiin
 
          Cross_Section (Gtk::Window& gtk_window,
                         const Size_2D& size_2d,
-                        const Display& display,
+                        const Model& model,
+                        const Route& route,
                         const string& stage_str,
-                        const string& product_str);
+                        const string& product_str,
+                        const Dtime& dtime);
 
          ~Cross_Section ();
 

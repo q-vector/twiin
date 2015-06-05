@@ -62,8 +62,11 @@ namespace twiin
          Product_Panel
          product_panel;
 
-         const Display&
-         display;
+         const Model
+         model;
+
+         //const Station::Map
+         //station_map;
 
          Stage
          stage;
@@ -87,14 +90,14 @@ namespace twiin
          unify_drawers (const bool expand);
 
          void
-         process_popup_menu (const string& popup_menu_str);
+         process_cross_section (const Integer route_id);
 
       public:
 
          Console (Gtk::Window& gtk_window,
                   const Size_2D& size_2d,
                   const Tokens& zoom_tokens,
-                  const Display& display,
+                  const Tokens& config_file_content,
                   const string& stage_str,
                   const string& product_str,
                   const string& level_str);

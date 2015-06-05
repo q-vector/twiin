@@ -11,24 +11,23 @@ main (int argc,
       char** argv)
 {
 
-   const string station_file_path (argv[1]);
-   const string model_config_file_path (argv[2]);
-   const string product_str (argv[3]);
-   const string stage_str (argv[4]);
-   const string level_str (argv[5]);
+   const string config_file_path (argv[1]);
+   const string product_str (argv[2]);
+   const string stage_str (argv[3]);
+   const string level_str (argv[4]);
 
    try
    {
 
+      const Tokens& config_file_content = read_config_file (config_file_path);
       const Size_2D size_2d (1280, 720);
-      const Display display (station_file_path, model_config_file_path);
 
       const twiin::Stage stage (stage_str);
       const Product product (product_str);
       const Affine_Transform_2D transform ();
 
       const Level level (level_str);
-      const Model& model = display.get_model ();
+      const Model model (config_file_content);
       const set<Dtime>& valid_time_set =
          model.get_valid_time_set (product, stage, level);
 
@@ -106,7 +105,7 @@ main (int argc,
             const Lat_Long lat_long = multi_journey.get_lat_long (x, geodesy);
             const Real latitude = lat_long.latitude;
             const Real longitude = lat_long.longitude;
-            const Real topography = terrain_stage.evaluate (string ("orog"), latitude, longitude);
+            const Real topography = terrain_stage.get_topography (lat_long);
 
             for (Integer j = i2d.j; j < i2d.j + s2d.j; j++)
             {
@@ -114,9 +113,8 @@ main (int argc,
                if (z < topography) { color = Color::hsb (0.0, 0.0, 0.0); }
                else
                {
-                  const Real datum = model.evaluate (THETA,
-                     latitude, longitude, z, dtime, stage);
-                  const Real hue = Domain_1D (60+K, K).normalize (datum)*0.833;
+                  const Real theta = model.evaluate (THETA, lat_long, z, dtime, stage);
+                  const Real hue = Domain_1D (60+K, K).normalize (theta)*0.833;
                   color = Color::hsb (hue, 0.8, 0.8);
                }
                raster.set_pixel (i - i2d.i, j - i2d.j, color);

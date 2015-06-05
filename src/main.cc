@@ -12,11 +12,10 @@ main (int argc,
       char** argv)
 {
 
-   const string station_file_path (argv[1]);
-   const string model_config_file_path (argv[2]);
-   const string product_str (argv[3]);
-   const string stage_str (argv[4]);
-   const string level_str (argv[5]);
+   const string config_file_path (argv[1]);
+   const string product_str (argv[2]);
+   const string stage_str (argv[3]);
+   const string level_str (argv[4]);
 
    try
    {
@@ -24,6 +23,7 @@ main (int argc,
       const Tokens stage_tokens (stage_str, ":");
       const Tokens product_tokens (product_str, ":");
 
+      const Tokens& config_file_content = read_config_file (config_file_path);
       const Size_2D size_2d (960, 960);
       const Point_2D centre (size_2d.i/2, size_2d.j/2);
 
@@ -41,10 +41,9 @@ main (int argc,
          Gt::get_transform_ptr (zoom_str_5, centre)));
 
       Title title (size_2d);
-      const Display display (station_file_path, model_config_file_path);
 
       const Level level ("500m");
-      const Model& model = display.get_model ();
+      const Model model (config_file_content);
 
       for (Tokens::const_iterator i = stage_tokens.begin ();
            i != stage_tokens.end (); i++)
@@ -76,9 +75,10 @@ main (int argc,
                   FORMAT_ARGB32, size_2d.i, size_2d.j);
                RefPtr<Context> cr = Context::create (surface);
 
-               display.cairo (cr, transform, size_2d,
-                  dtime, level, stage, product);
-               title.set (dtime.get_string ("%Y.%m.%d %H:%M UTC"), product, stage);
+               Display::render (cr, transform, size_2d,
+                  model, dtime, level, stage, product);
+               const string& time_str = dtime.get_string ("%Y.%m.%d %H:%M UTC");
+               title.set (time_str, product, stage);
                title.cairo (cr);
 
                surface->write_to_png (png_file_path);

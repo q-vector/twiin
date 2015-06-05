@@ -91,19 +91,23 @@ Cross_Section::unify_drawers (const bool expand)
 
 Cross_Section::Cross_Section (Gtk::Window& gtk_window,
                               const Size_2D& size_2d,
-                              const Display& display,
+                              const Model& model,
+                              const Route& route,
                               const string& stage_str,
-                              const string& product_str)
+                              const string& product_str,
+                              const Dtime& dtime)
    : Console_2D (gtk_window, size_2d),
      Time_Canvas (*this, 12),
      product_panel (*this, 12),
-     display (display),
+     model (model),
+     multi_journey (route),
      stage (stage_str),
      product (product_str),
-     domain_z (0, 5000)
+     domain_z (0, 8000)
 {
 
-   const Level level;
+   // So that it knows we are only checking the uppers
+   const Level level ("200m");
 
    time_chooser.get_signal ().connect (
       sigc::mem_fun (*this, &Cross_Section::render_queue_draw));
@@ -127,16 +131,14 @@ Cross_Section::Cross_Section (Gtk::Window& gtk_window,
    product_panel.add_product ("Misc", Product ("MSLP"));
    product_panel.add_product ("Misc", Product ("TERRAIN"));
 
-   const Model& model = display.get_model ();
-   const set<Dtime>& time_set = model.get_valid_time_set (product, stage, level);
+   const set<Dtime>& time_set =
+      model.get_valid_time_set (product, stage, level);
    time_chooser.set_shape (Time_Chooser::Shape (time_set));
    time_chooser.set_leap (1);
+   time_chooser.set_data (Time_Chooser::Data (dtime));
 
-   const Lat_Long lat_long_a (-40.5, 142.5);
-   const Lat_Long lat_long_b (-29.5, 156.5);
-   multi_journey.push_back (lat_long_a);
-   multi_journey.push_back (lat_long_b);
-   multi_journey.standardize (LAT_LONG_PACIFIC);
+
+cout << "cross for " << multi_journey << endl;
 
    pack ();
    reset_transform ();
@@ -185,7 +187,7 @@ void
 Cross_Section::reset_transform ()
 {
 
-   const Real top_z = 5000;
+   const Real top_z = 8000;
    const Real bottom_z = 0;
 
    const Geodesy geodesy;
@@ -255,8 +257,10 @@ Cross_Section::render_image_buffer (const RefPtr<Context>& cr)
    const Index_2D i2d (margin_l, margin_t);
    const Size_2D s2d (size_2d.i-margin_l-margin_r, size_2d.j-margin_t-margin_b);
 
-   Real x, z;
-   const Model& model = display.get_model ();
+   Real x;
+
+   Level level ("200m");
+   Real& z = level.value;
 
    if (s2d.i > 0 && s2d.j > 0)
    {
@@ -274,9 +278,7 @@ Cross_Section::render_image_buffer (const RefPtr<Context>& cr)
 
          transform.reverse (x, z, Real (i), 0);
          const Lat_Long lat_long = multi_journey.get_lat_long (x, geodesy);
-         const Real latitude = lat_long.latitude;
-         const Real longitude = lat_long.longitude;
-         const Real topography = terrain_stage.evaluate (string ("orog"), latitude, longitude);
+         const Real topography = terrain_stage.get_topography (lat_long);
 
          for (Integer j = i2d.j; j < i2d.j + s2d.j; j++)
          {
@@ -284,9 +286,9 @@ Cross_Section::render_image_buffer (const RefPtr<Context>& cr)
             if (z < topography) { color = Color::hsb (0.0, 0.0, 0.0); }
             else
             {
-               const Real datum = model.evaluate (THETA,
-                  latitude, longitude, z, dtime, stage);
-               const Real hue = Domain_1D (60+K, 0+K).normalize (datum)*0.833;
+               const Real theta = model.evaluate (THETA,
+                  lat_long, level, dtime, stage);
+               const Real hue = Domain_1D (60+K, 0+K).normalize (theta)*0.833;
                color = Color::hsb (hue, 0.8, 0.8);
             }
             raster.set_pixel (i - i2d.i, j - i2d.j, color);
@@ -312,16 +314,16 @@ Cross_Section::render_image_buffer (const RefPtr<Context>& cr)
 
 }
 
+/*
 int
 main (int argc,
       char** argv)
 {
 
-   const string station_file_path (argv[1]);
-   const string model_config_file_path (argv[2]);
-   const string product_str (argv[3]);
-   const string stage_str (argv[4]);
-   const string level_str (argv[5]);
+   const string config_file_path (argv[1]);
+   const string product_str (argv[2]);
+   const string stage_str (argv[3]);
+   const string level_str (argv[4]);
 
    try
    {
@@ -329,11 +331,12 @@ main (int argc,
       Gtk::Main gtk_main (argc, argv);
       Gtk::Window gtk_window;
 
-      const Size_2D size_2d (1280, 720);
-      const Display display (station_file_path, model_config_file_path);
+      const Tokens& config_file_content = read_config_file (config_file_path);
+      const Size_2D size_2d (1280, 240);
+      const Model model (config_file_content);
 
       Cross_Section cross_section (gtk_window, size_2d,
-         display, stage_str, product_str);
+         model, stage_str, product_str);
       gtk_window.add (cross_section);
       gtk_window.show_all_children ();
       gtk_window.show ();
@@ -352,4 +355,5 @@ main (int argc,
    }
 
 }
+*/
 

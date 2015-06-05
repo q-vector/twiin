@@ -23,47 +23,65 @@ namespace twiin
 
       private:
 
-         const Station::Map
-         station_map;
+         static Raster*
+         get_terrain_raster_ptr (const Size_2D& size_2d,
+                                 const Transform_2D& transform,
+                                 const Model& model,
+                                 const Stage& stage);
 
-         const Model
-         model;
+         static Raster*
+         get_surface_raster_ptr (const Size_2D& size_2d,
+                                 const Transform_2D& transform,
+                                 const Model& model,
+                                 const Stage& stage,
+                                 const Product& product,
+                                 const Dtime& dtime);
 
-         void
-         render_product (const Product& product,
-                         const RefPtr<Context>& cr,
-                         const Transform_2D& transform,
-                         const Size_2D& size_2d,
-                         const Dtime& dtime,
-                         const Level& level,
-                         const twiin::Stage& stage) const;
-
-         void
-         render_wind_barbs (const RefPtr<Context>& cr,
-                            const Transform_2D& transform,
-                            const Size_2D& size_2d,
-                            const Dtime& dtime,
-                            const Level& level,
-                            const Stage& stage) const;
+         static Raster*
+         get_uppers_raster_ptr (const Size_2D& size_2d,
+                                const Transform_2D& transform,
+                                const Model& model,
+                                const Stage& stage,
+                                const Product& product,
+                                const Dtime& dtime,
+                                const Level& level);
 
       public:
 
-         Display (const string& station_file_path,
-                  const string& data_config_file_path);
+         static void
+         render_stages (const RefPtr<Context>& cr,
+                        const Transform_2D& transform,
+                        const Station::Map& station_map);
 
-         ~Display ();
+         static void
+         render_product (const RefPtr<Context>& cr,
+                         const Transform_2D& transform,
+                         const Size_2D& size_2d,
+                         const Model& model,
+                         const Product& product,
+                         const Dtime& dtime,
+                         const Level& level,
+                         const twiin::Stage& stage);
 
-         const Model&
-         get_model () const;
+         static void
+         render_wind_barbs (const RefPtr<Context>& cr,
+                            const Transform_2D& transform,
+                            const Size_2D& size_2d,
+                            const Model& model,
+                            const Dtime& dtime,
+                            const Level& level,
+                            const Stage& stage);
 
-         void
-         cairo (const RefPtr<Context>& cr,
-                const Transform_2D& transform,
-                const Size_2D& size_2d,
-                const Dtime& dtime,
-                const Level& level,
-                const twiin::Stage& stage,
-                const Product product) const;
+         static void
+         render (const RefPtr<Context>& cr,
+                 const Transform_2D& transform,
+                 const Size_2D& size_2d,
+                 const Model& model,
+                 //const Station::Map& station_map,
+                 const Dtime& dtime,
+                 const Level& level,
+                 const twiin::Stage& stage,
+                 const Product product);
 
    };
 

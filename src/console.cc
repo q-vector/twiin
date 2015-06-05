@@ -1,5 +1,6 @@
 #include <denise/dstring.h>
 #include "console.h"
+#include "cross_section.h"
 
 using namespace std;
 using namespace denise;
@@ -42,116 +43,21 @@ Console::get_tokens (const Marker& marker) const
 {
 
    const Lat_Long lat_long (marker);
-   const string& lat_long_str = lat_long.get_string ("false", "%.3f\u00b0");
-
-   const Model& model = display.get_model ();
    const Real latitude = marker.x;
    const Real longitude = marker.y;
 
-   if (model.out_of_bounds (latitude, longitude, stage))
+   if (model.out_of_bounds (lat_long, stage))
    {
       return Map_Console::get_tokens (marker);
    }
 
-   const Real z = level.value;
    const Dtime& dtime = get_time_chooser ().get_time ();
 
-   Tokens tokens;
-   tokens.push_back (lat_long_str);
+   Tokens tokens = model.get_marker_tokens (lat_long,
+      dtime, product, stage, level);
 
-   if (product == "THETA")
-   {
-      const Real datum = model.evaluate (THETA,
-         latitude, longitude, z, dtime, stage);
-      if (gsl_isnan (datum)) { return Map_Console::get_tokens (marker); }
-      tokens.push_back (string_render ("%.1f\u00b0C", datum - K));
-   }
-   else
-   if (product == "T")
-   {
-      const Real datum = model.evaluate (TEMPERATURE,
-         latitude, longitude, z, dtime, stage);
-      if (gsl_isnan (datum)) { return Map_Console::get_tokens (marker); }
-      tokens.push_back (string_render ("%.1f\u00b0C", datum - K));
-   }
-   else
-   if (product == "TD")
-   {
-      const Real datum = model.evaluate (DEW_POINT,
-         latitude, longitude, z, dtime, stage);
-      if (gsl_isnan (datum)) { return Map_Console::get_tokens (marker); }
-      tokens.push_back (string_render ("%.1f\u00b0C", datum - K));
-   }
-   else
-   if (product == "RH")
-   {
-      const Real datum = model.evaluate (RELATIVE_HUMIDITY,
-         latitude, longitude, z, dtime, stage);
-      if (gsl_isnan (datum)) { return Map_Console::get_tokens (marker); }
-      tokens.push_back (string_render ("%.0f%%", datum * 100));
-   }
-   else
-   if (product == "THETA_E")
-   {
-      const Real datum = model.evaluate (THETA_E,
-         latitude, longitude, z, dtime, stage);
-      if (gsl_isnan (datum)) { return Map_Console::get_tokens (marker); }
-      tokens.push_back (string_render ("%.1f\u00b0C", datum - K));
-   }
-   else
-   if (product == "WIND")
-   {
-      const Real u = model.evaluate (ZONAL_WIND,
-         latitude, longitude, z, dtime, stage);
-      const Real v = model.evaluate (MERIDIONAL_WIND,
-         latitude, longitude, z, dtime, stage);
-      if (gsl_isnan (u)) { return Map_Console::get_tokens (marker); }
-      if (gsl_isnan (v)) { return Map_Console::get_tokens (marker); }
-      const Wind wind (u, v);
-      const Real msknot = 3.6/1.852;
-      const string fmt ("%03.0f\u00b0 / %02.1fkt");
-      tokens.push_back (wind.get_string (msknot, fmt));
-   }
-   else
-   if (product == "FFDI")
-   {
-      const Real t = model.evaluate (TEMPERATURE, latitude, longitude, z, dtime, stage);
-      const Real t_d = model.evaluate (DEW_POINT, latitude, longitude, z, dtime, stage);
-      const Real u = model.evaluate (ZONAL_WIND, latitude, longitude, z, dtime, stage);
-      const Real v = model.evaluate (MERIDIONAL_WIND, latitude, longitude, z, dtime, stage);
-      const Real rh = Moisture::get_rh (t - K, t_d - K, WATER);
-      const Real speed = sqrt (u*u + v*v);
-      const Real datum = Fire::get_ffdi (t - K, rh * 100, speed * 3.6);
-      if (gsl_isnan (datum)) { return Map_Console::get_tokens (marker); }
-      tokens.push_back (string_render ("%02.2f", datum));
-   }
-   else
-   if (product == "TERRAIN")
-   {
-      const Model::Terrain::Stage& terrain_stage =
-         model.terrain.get_stage (stage);
-      const Real datum = terrain_stage.evaluate (
-         string ("orog"), latitude, longitude);
-      if (gsl_isnan (datum)) { return Map_Console::get_tokens (marker); }
-      tokens.push_back (string_render ("%.2fm", datum));
-   }
-   else
-   if (product == "VORTICITY")
-   {
-      const Real datum = model.evaluate (RELATIVE_VORTICITY,
-         latitude, longitude, z, dtime, stage);
-      if (gsl_isnan (datum)) { return Map_Console::get_tokens (marker); }
-      tokens.push_back (string_render ("%.4e", datum));
-   }
-   else
-   if (product == "MSLP")
-   {
-      const size_t k = 0;
-      const Real datum = model.evaluate (MEAN_SEA_LEVEL_PRESSURE,
-         latitude, longitude, k, dtime, stage);
-      if (gsl_isnan (datum)) { return Map_Console::get_tokens (marker); }
-      tokens.push_back (string_render ("%0.1fhPa", datum * 1e-2));
-   }
+   const string& lat_long_str = lat_long.get_string ("false", "%.3f\u00b0");
+   tokens.insert (tokens.begin (), lat_long_str);
 
    return tokens;
 
@@ -205,15 +111,31 @@ Console::unify_drawers (const bool expand)
 }
 
 void
-Console::process_popup_menu (const string& popup_menu_str)
+Console::process_cross_section (const Integer route_id)
 {
-   cout << "process menu " << popup_menu_str << endl;
+
+   const Console_2D::Route& route = get_route_store ().get_route (route_id);
+   const Multi_Journey multi_journey (route);
+
+   const Size_2D size_2d (1280, 480);
+   const Dtime& dtime = get_time_chooser ().get_time ();
+
+   Cross_Section* cross_section_ptr = new Cross_Section (
+      gtk_window, size_2d, model, route, stage, product, dtime);
+
+   Gtk::Window* gtk_window_ptr = new Gtk::Window ();
+   gtk_window_ptr->add (*cross_section_ptr);
+   gtk_window_ptr->show_all_children ();
+   gtk_window_ptr->show ();
+   gtk_window_ptr->set_resizable (true);
+   gtk_window_ptr->resize (size_2d.i, size_2d.j);
+
 }
 
 Console::Console (Gtk::Window& gtk_window,
                   const Size_2D& size_2d,
                   const Tokens& zoom_tokens,
-                  const Display& display,
+                  const Tokens& config_file_content,
                   const string& stage_str,
                   const string& product_str,
                   const string& level_str)
@@ -221,7 +143,7 @@ Console::Console (Gtk::Window& gtk_window,
      Time_Canvas (*this, 12),
      Level_Canvas (*this, 12),
      product_panel (*this, 12),
-     display (display),
+     model (config_file_content),
      stage (stage_str),
      product (product_str),
      level (level_str)
@@ -234,6 +156,7 @@ Console::Console (Gtk::Window& gtk_window,
    product_panel.get_signal ().connect (
       sigc::mem_fun (*this, &Console::set_product));
 
+   level_panel.add_extra_level (Level ("Surface"));
    level_panel.set_level (Level (level_str));
 
    product_panel.set_hidable (true);
@@ -244,25 +167,27 @@ Console::Console (Gtk::Window& gtk_window,
    register_widget (level_panel);
    register_widget (product_panel);
 
+   product_panel.add_product ("Thermo", Product ("P_THETA"));
    product_panel.add_product ("Thermo", Product ("T"));
    product_panel.add_product ("Thermo", Product ("THETA"));
+   product_panel.add_product ("Thermo", Product ("Q"));
    product_panel.add_product ("Thermo", Product ("TD"));
    product_panel.add_product ("Thermo", Product ("RH"));
    product_panel.add_product ("Thermo", Product ("THETA_E"));
+   product_panel.add_product ("Dynamic", Product ("P_RHO"));
    product_panel.add_product ("Dynamic", Product ("WIND"));
    product_panel.add_product ("Dynamic", Product ("VORTICITY"));
    product_panel.add_product ("Fire", Product ("FFDI"));
    product_panel.add_product ("Misc", Product ("MSLP"));
    product_panel.add_product ("Misc", Product ("TERRAIN"));
 
-   const Model& model = display.get_model ();
    const set<Dtime>& time_set = model.get_valid_time_set (product, stage, level);
    time_chooser.set_shape (Time_Chooser::Shape (time_set));
    time_chooser.set_leap (1);
 
    route_popup_menu.append ("Cross Section");
-   route_popup_menu.get_str_signal ("Cross Section").connect (
-      sigc::mem_fun (*this, &Console::process_popup_menu));
+   route_popup_menu.get_id_signal ("Cross Section").connect (
+      sigc::mem_fun (*this, &Console::process_cross_section));
 
    pack ();
 
@@ -351,7 +276,8 @@ Console::render_image_buffer (const RefPtr<Context>& cr)
    const Dtime& dtime = get_time_chooser ().get_time ();
    const Level& level = get_level_panel ().get_level ();
 
-   display.cairo (cr, transform, size_2d, dtime, level, stage, product);
+   Display::render (cr, transform, size_2d, model, //station_map,
+      dtime, level, stage, product);
 
 }
 
@@ -360,11 +286,10 @@ main (int argc,
       char** argv)
 {
 
-   const string station_file_path (argv[1]);
-   const string model_config_file_path (argv[2]);
-   const string product_str (argv[3]);
-   const string stage_str (argv[4]);
-   const string level_str (argv[5]);
+   const string config_file_path (argv[1]);
+   const string product_str (argv[2]);
+   const string stage_str (argv[3]);
+   const string level_str (argv[4]);
 
    try
    {
@@ -372,8 +297,8 @@ main (int argc,
       Gtk::Main gtk_main (argc, argv);
       Gtk::Window gtk_window;
 
+      const Tokens& config_file_content = read_config_file (config_file_path);
       const Size_2D size_2d (960, 960);
-      const Display display (station_file_path, model_config_file_path);
 
       Tokens zoom_tokens;
       zoom_tokens.push_back ("Stage3/LAMBERT_CONIC_SOUTH:3000:-33.5:150.5");
@@ -381,7 +306,7 @@ main (int argc,
       zoom_tokens.push_back ("Stage5/LAMBERT_CONIC_SOUTH:380:-33.7:150.55");
 
       Console console (gtk_window, size_2d, zoom_tokens,
-         display, stage_str, product_str, level_str);
+         config_file_content, stage_str, product_str, level_str);
       gtk_window.add (console);
       gtk_window.show_all_children ();
       gtk_window.show ();

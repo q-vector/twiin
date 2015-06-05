@@ -168,8 +168,7 @@ namespace twiin
                      void
                      acquire_ij (size_t& i,
                                  size_t& j,
-                                 const Real latitude,
-                                 const Real longitude) const;
+                                 const Lat_Long& lat_long) const;
 
                   public:
 
@@ -188,8 +187,7 @@ namespace twiin
                      init (const File_Path_Map& file_path_map);
 
                      bool
-                     out_of_bounds (const Real latitude,
-                                    const Real longitude) const;
+                     out_of_bounds (const Lat_Long& lat_long) const;
 
                      Real
                      evaluate (const Varname& varname,
@@ -198,12 +196,15 @@ namespace twiin
 
                      Real
                      evaluate (const Varname& varname, 
-                               const Real latitude,
-                               const Real longitude) const;
+                               const Lat_Long& lat_long) const;
 
-                     Raster*
-                     get_raster_ptr (const Size_2D& size_2d,
-                                     const Transform_2D& transform) const;
+                     Real
+                     get_topography (const Lat_Long& lat_long) const;
+
+                     Real
+                     get_topography (const size_t i,
+                                     const size_t j) const;
+
 
                };
 
@@ -264,8 +265,7 @@ namespace twiin
 
                      Real
                      evaluate (const Nwp_Element& nwp_element,
-                               const Real latitude,
-                               const Real longitude,
+                               const Lat_Long& lat_long,
                                const size_t l) const;
                                
                      Real
@@ -279,12 +279,6 @@ namespace twiin
                                    const size_t i,
                                    const size_t j,
                                    const size_t l) const;
-
-                     Raster*
-                     get_raster_ptr (const Size_2D& size_2d,
-                                     const Transform_2D& transform,
-                                     const Product& product,
-                                     const Dtime& dtime) const;
 
                      Color
                      get_color (const Product& product,
@@ -331,15 +325,13 @@ namespace twiin
 
                      Real
                      evaluate (const Nwp_Element& nwp_element,
-                               const Real latitude,
-                               const Real longitude,
+                               const Lat_Long& lat_long,
                                const Real z,
                                const size_t l) const;
                                
                      Real
                      evaluate (const Nwp_Element& nwp_element,
-                               const Real latitude,
-                               const Real longitude,
+                               const Lat_Long& lat_long,
                                const size_t k,
                                const size_t l) const;
 
@@ -356,13 +348,6 @@ namespace twiin
                                    const size_t j,
                                    const size_t k,
                                    const size_t l) const;
-
-                     Raster*
-                     get_raster_ptr (const Size_2D& size_2d,
-                                     const Transform_2D& transform,
-                                     const Product& product,
-                                     const Dtime& dtime,
-                                     const Level& level) const;
 
                      Color
                      get_color (const Product& product,
@@ -466,28 +451,29 @@ namespace twiin
                 Integer start_k = -1,
                 Integer end_k = -1) const;
 
-         Model (const string& model_config_file_path);
+         Model (const Tokens& config_file_content);
 
          ~Model ();
 
          bool
-         out_of_bounds (const Real latitude,
-                        const Real longitude,
+         out_of_bounds (const Lat_Long& lat_long,
                         const twiin::Stage& stage) const;
 
          Real
+         get_topography (const Lat_Long& lat_long,
+                         const twiin::Stage& stage) const;
+
+         Real
          evaluate (const Nwp_Element& nwp_element,
-                   const Real latitude,
-                   const Real longitude,
+                   const Lat_Long& lat_long,
                    const size_t k,
                    const Dtime& dtime,
                    const twiin::Stage& stage) const;
 
          Real
          evaluate (const Nwp_Element& nwp_element,
-                   const Real latitude,
-                   const Real longitude,
-                   const Real z,
+                   const Lat_Long& lat_long,
+                   const Level& level,
                    const Dtime& dtime,
                    const twiin::Stage& stage) const;
 
@@ -495,6 +481,13 @@ namespace twiin
          get_valid_time_set (const Product& product,
                              const twiin::Stage& stage,
                              const Level& level) const;
+
+         Tokens
+         get_marker_tokens (const Lat_Long& lat_long,
+                            const Dtime& dtime,
+                            const Product& product,
+                            const twiin::Stage& stage,
+                            const Level& level) const;
 
    };
 
