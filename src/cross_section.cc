@@ -40,7 +40,34 @@ Cross_Section::Product_Panel::get_signal ()
 Tokens
 Cross_Section::get_tokens (const Marker& marker) const
 {
-   return Console_2D::get_tokens (marker);
+
+
+   const Geodesy geodesy;
+   const Tuple& tuple_x = multi_journey.get_tuple_x (geodesy);
+
+   Tokens tokens;
+
+   if (marker.x < tuple_x.front () ||
+       marker.x > tuple_x.back ())
+   {
+      return tokens;
+   }
+
+   const Lat_Long lat_long = multi_journey.get_lat_long (marker.x, geodesy);
+   const Level level (HEIGHT_LEVEL, marker.y);
+   const Dtime& dtime = get_time_chooser ().get_time ();
+
+   tokens = model.get_marker_tokens (
+      lat_long, dtime, product, stage, level);
+
+   const string& lat_long_str = lat_long.get_string ();
+   const string& height_str = level.get_string ();
+   tokens.insert (tokens.begin (), lat_long_str);
+   tokens.insert (tokens.begin (), height_str);
+
+   //return Console_2D::get_tokens (marker);
+   return tokens;
+
 }
 
 bool
@@ -93,16 +120,16 @@ Cross_Section::Cross_Section (Gtk::Window& gtk_window,
                               const Size_2D& size_2d,
                               const Model& model,
                               const Route& route,
-                              const string& stage_str,
-                              const string& product_str,
+                              const Stage& stage,
+                              const Product& product,
                               const Dtime& dtime)
    : Console_2D (gtk_window, size_2d),
      Time_Canvas (*this, 12),
      product_panel (*this, 12),
      model (model),
      multi_journey (route),
-     stage (stage_str),
-     product (product_str),
+     stage (stage),
+     product (product),
      domain_z (0, 8000)
 {
 
@@ -122,6 +149,7 @@ Cross_Section::Cross_Section (Gtk::Window& gtk_window,
 
    product_panel.add_product ("Thermo", Product ("T"));
    product_panel.add_product ("Thermo", Product ("THETA"));
+   product_panel.add_product ("Thermo", Product ("Q"));
    product_panel.add_product ("Thermo", Product ("TD"));
    product_panel.add_product ("Thermo", Product ("RH"));
    product_panel.add_product ("Thermo", Product ("THETA_E"));
@@ -136,9 +164,6 @@ Cross_Section::Cross_Section (Gtk::Window& gtk_window,
    time_chooser.set_shape (Time_Chooser::Shape (time_set));
    time_chooser.set_leap (1);
    time_chooser.set_data (Time_Chooser::Data (dtime));
-
-
-cout << "cross for " << multi_journey << endl;
 
    pack ();
    reset_transform ();
@@ -176,10 +201,10 @@ Cross_Section::pack ()
    product_panel.being_packed (pp_anchor, pp_width, pp_height);
    product_panel.pack ();
 
-   this->margin_l = 4 * margin + tc_width;
+   this->margin_l = 16 * margin + tc_width;
    this->margin_r = 4 * margin;
    this->margin_t = title_height + 4 * margin;
-   this->margin_b = 4 * margin + pp_height;
+   this->margin_b = 8 * margin + pp_height;
 
 }
 
@@ -234,6 +259,7 @@ void
 Cross_Section::render_image_buffer (const RefPtr<Context>& cr)
 {
 
+   const Geodesy geodesy;
    const Size_2D& size_2d = get_size_2d ();
    const Dtime& dtime = get_time_chooser ().get_time ();
 
@@ -247,9 +273,16 @@ Cross_Section::render_image_buffer (const RefPtr<Context>& cr)
    const Simple_Mesh_2D ma2 (Color (0, 0, 0, 0.4), 1e8, 1000);
 
    const Affine_Transform_2D& transform = get_affine_transform ();
+   const Real distance = multi_journey.get_distance (geodesy);
 
-   const Geodesy geodesy;
-   const Tuple& tuple_x = multi_journey.get_tuple_x (geodesy);
+   Real d_distance = 100e3;
+   if (distance < 1000e3) { d_distance = 50e3; }
+   if (distance < 400e3) { d_distance = 20e3; }
+   if (distance < 200e3) { d_distance = 10e3; }
+
+   const Multi_Journey mj (multi_journey, geodesy, 100e3);
+
+   const Tuple& tuple_x = mj.get_tuple_x (geodesy);
    const Domain_1D domain_x (tuple_x.front (), tuple_x.back ());
    const Domain_2D domain_2d (domain_x, domain_z);
    const Mesh_2D mesh_2d (domain_2d, ma2);
@@ -262,6 +295,15 @@ Cross_Section::render_image_buffer (const RefPtr<Context>& cr)
    Level level ("200m");
    Real& z = level.value;
 
+   Nwp_Element nwp_element;
+   if (product == "T") { nwp_element = T; }
+   if (product == "Q") { nwp_element = Q; }
+   if (product == "TD") { nwp_element = TD; }
+   if (product == "RH") { nwp_element = RH; }
+   //if (product == "WIND") { nwp_element = T; }
+   if (product == "THETA") { nwp_element = T; }
+   if (product == "THETA_E") { nwp_element = T; }
+
    if (s2d.i > 0 && s2d.j > 0)
    {
 
@@ -272,12 +314,18 @@ Cross_Section::render_image_buffer (const RefPtr<Context>& cr)
       Color color;
       const Model::Terrain::Stage& terrain_stage =
          model.terrain.get_stage (stage);
+      const Model::Uppers::Stage& uppers_stage =
+         model.uppers.get_stage (stage);
+      const size_t l = uppers_stage.get_l (dtime);
 
       for (Integer i = i2d.i; i < i2d.i + s2d.i; i++)
       {
 
          transform.reverse (x, z, Real (i), 0);
+         if (x < tuple_x.front () || x > tuple_x.back ()) { continue; }
          const Lat_Long lat_long = multi_journey.get_lat_long (x, geodesy);
+         if (model.out_of_bounds (lat_long, stage)) { continue; }
+
          const Real topography = terrain_stage.get_topography (lat_long);
 
          for (Integer j = i2d.j; j < i2d.j + s2d.j; j++)
@@ -286,10 +334,10 @@ Cross_Section::render_image_buffer (const RefPtr<Context>& cr)
             if (z < topography) { color = Color::hsb (0.0, 0.0, 0.0); }
             else
             {
-               const Real theta = model.evaluate (THETA,
-                  lat_long, level, dtime, stage);
-               const Real hue = Domain_1D (60+K, 0+K).normalize (theta)*0.833;
-               color = Color::hsb (hue, 0.8, 0.8);
+               const Nwp_Element nwp_element = product.get_nwp_element ();
+               const Real datum = model.evaluate (
+                  nwp_element, lat_long, level, dtime, stage);
+               color = Display::get_color (product, datum);
             }
             raster.set_pixel (i - i2d.i, j - i2d.j, color);
          }
@@ -305,55 +353,90 @@ Cross_Section::render_image_buffer (const RefPtr<Context>& cr)
    mesh_2d.render (cr, transform, Size_2D (2, 2));
    Color (0, 0, 0, 0.3).cairo (cr);
 
-//   mesh_2d.render_label_x (cr, transform, 0, 1050e2,
-//      "%.0f", NUMBER_REAL, 'c', 't', 5);
-//   mesh_2d.render_label_y (cr, transform, 0, 0,
-//      "%.0f", NUMBER_REAL, 'r', 'c', 5);
+   mesh_2d.render_label_x (cr, transform, 0, 0,
+      "%.0f", NUMBER_REAL, 'c', 't', 5);
+   mesh_2d.render_label_y (cr, transform, 0, 0,
+      "%.0f", NUMBER_REAL, 'r', 'c', 5);
+
+   for (Tuple::const_iterator iterator = tuple_x.begin ();
+        iterator != tuple_x.end (); iterator++)
+   {
+
+      const Real d = *(iterator);
+      const Point_2D& point_a = transform.transform (Point_2D (d, 0));
+      const Point_2D& point_b = transform.transform (Point_2D (d, 8000));
+
+      const Integer i = std::distance (tuple_x.begin (), iterator);
+      const string& str = string_render ("%d", i);
+
+      Color (0, 0, 0, 1).cairo (cr);
+      Label (str, point_a, 'c', 't', 6).cairo (cr);
+
+      //Color (0, 0, 0, 0.0).cairo (cr);
+      //cr->move_to (point_a.x, point_a.y);
+      //cr->line_to (point_b.x, point_b.y);
+      //cr->stroke ();
+
+   }
+
+
+   {
+
+      Real x, p;
+      Point_2D point;
+
+      const Real arrow_size = 15;
+      const Real h = arrow_size * 1.5;
+
+      Color (0, 0, 0, 0.2).cairo (cr);
+      const Model::Terrain::Stage& terrain_stage =
+         model.terrain.get_stage (stage);
+      const Model::Uppers::Stage& uppers_stage =
+         model.uppers.get_stage (stage);
+      const size_t l = uppers_stage.get_l (dtime);
+
+      for (Integer i = i2d.i; i < i2d.i + s2d.i; i += Integer (h))
+      {
+
+         transform.reverse (x, z, Real (i), 0);
+         if (x < tuple_x.front () || x > tuple_x.back ()) { continue; }
+         const Lat_Long lat_long = multi_journey.get_lat_long (x, geodesy);
+         if (model.out_of_bounds (lat_long, stage)) { continue; }
+
+         const Real topography = terrain_stage.get_topography (lat_long);
+
+         for (Integer j = i2d.j; j < i2d.j + s2d.j; j += Integer (h))
+         {
+            transform.reverse (x, z, Real (i), Real (j));
+            if (z < topography) { continue; }
+            else
+            {
+               Real u = model.evaluate (
+                  U, lat_long, level, dtime, stage);
+               Real v = model.evaluate (
+                  V, lat_long, level, dtime, stage);
+               Real w = model.evaluate (
+                  W, lat_long, level, dtime, stage);
+               transform.transform_uv (u, w, x, z);
+               const Real theta = atan2 (w, u);
+               const Real mag = sqrt (u*u + w*w);
+               const Real as = std::min (3600 * mag, arrow_size);
+               const Arrow arrow (theta, arrow_size, 0.12);
+               arrow.cairo (cr, Point_2D (i, j));
+               Color (0, 0, 0, 0.05).cairo (cr);
+               cr->fill_preserve ();
+               Color (0, 0, 0, 0.10).cairo (cr);
+               cr->stroke ();
+
+            }
+
+         }
+
+      }
+   }
+
 
    cr->restore ();
 
 }
-
-/*
-int
-main (int argc,
-      char** argv)
-{
-
-   const string config_file_path (argv[1]);
-   const string product_str (argv[2]);
-   const string stage_str (argv[3]);
-   const string level_str (argv[4]);
-
-   try
-   {
-
-      Gtk::Main gtk_main (argc, argv);
-      Gtk::Window gtk_window;
-
-      const Tokens& config_file_content = read_config_file (config_file_path);
-      const Size_2D size_2d (1280, 240);
-      const Model model (config_file_content);
-
-      Cross_Section cross_section (gtk_window, size_2d,
-         model, stage_str, product_str);
-      gtk_window.add (cross_section);
-      gtk_window.show_all_children ();
-      gtk_window.show ();
-      gtk_window.set_resizable (true);
-      gtk_window.resize (size_2d.i, size_2d.j);
-      Gtk::Main::run (gtk_window);
-
-   }
-   catch (const Exception& e)
-   {
-      cerr << "Exception " << e << endl;
-   }
-   catch (const std::exception& se)
-   {
-      cerr << "std::exception " << se.what () << endl;
-   }
-
-}
-*/
 

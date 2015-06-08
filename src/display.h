@@ -18,6 +18,23 @@ using namespace Cairo;
 namespace twiin
 {
 
+   class Ffdi_Color_Chooser : public Color_Chooser
+   {
+
+      private:
+
+         Real
+         alpha;
+
+      public:
+
+         Ffdi_Color_Chooser (const Real alpha = 1.0);
+
+         Color
+         get_color (const Real ffdi) const;
+
+   };
+
    class Display
    {
 
@@ -47,6 +64,10 @@ namespace twiin
                                 const Level& level);
 
       public:
+
+         static Color
+         get_color (const Product& product,
+                    const Real datum);
 
          static void
          render_stages (const RefPtr<Context>& cr,

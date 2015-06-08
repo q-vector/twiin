@@ -43,22 +43,8 @@ namespace twiin
          string
          get_string () const;
 
-   };
-
-   class Ffdi_Color_Chooser : public Color_Chooser
-   {
-
-      private:
-
-         Real
-         alpha;
-
-      public:
-
-         Ffdi_Color_Chooser (const Real alpha = 1.0);
-
-         Color
-         get_color (const Real ffdi) const;
+         Nwp_Element
+         get_nwp_element () const;
 
    };
 

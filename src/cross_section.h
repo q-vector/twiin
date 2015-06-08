@@ -107,8 +107,8 @@ namespace twiin
                         const Size_2D& size_2d,
                         const Model& model,
                         const Route& route,
-                        const string& stage_str,
-                        const string& product_str,
+                        const Stage& stage,
+                        const Product& product,
                         const Dtime& dtime);
 
          ~Cross_Section ();

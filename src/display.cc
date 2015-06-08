@@ -5,6 +5,84 @@ using namespace denise;
 using namespace Cairo;
 using namespace twiin;
 
+Ffdi_Color_Chooser::Ffdi_Color_Chooser (const Real alpha)
+   : alpha (alpha)
+{
+}
+
+Color
+Ffdi_Color_Chooser::get_color (const Real ffdi) const
+{
+
+   if (ffdi < 12)
+   {
+      const Real delta = ffdi;
+      const Real r = 0.400 + delta * 0.03137;
+      const Real g = 0.400 + delta * 0.04549;
+      const Real b = 0.400 + delta * 0.03012;
+      return Color (r, g, b, alpha);
+   }
+   else
+   if (ffdi < 25)
+   {
+      const Real delta = ffdi - 10;
+      const Real r = 0.278 + delta * 0.02133;
+      const Real g = 0.400 + delta * 0.03075;
+      const Real b = 0.500 + delta * 0.03859;
+      return Color (r, g, b, alpha);
+   }
+   else
+   if (ffdi < 50)
+   {
+      const Real delta = ffdi - 25;
+      const Real r = 0.600 - delta * 0.02137;
+      const Real g = 0.600 - delta * 0.02065;
+      const Real b = 0.600 - delta * 0.02012;
+      return Color (r, g, b, alpha);
+   }
+   else
+   if (ffdi < 75)
+   {
+      const Real delta = ffdi - 50;
+      const Real r = 0.549 + delta * 0.01757 * 2;
+      const Real g = 0.549 + delta * 0.01757 * 2;
+      const Real b = 0.329 + delta * 0.02133 * 2;
+      return Color (r, g, b, alpha);
+   }
+   else
+   if (ffdi < 100)
+   {
+      const Real delta = ffdi - 75;
+      const Real r = 0.097 + delta * 0.01553 * 2;
+      const Real g = 0.357 + delta * 0.00925 * 2;
+      const Real b = 0.000 + delta * 0.00000 * 2;
+      return Color (r, g, b, alpha);
+   }
+   else
+   if (ffdi < 150)
+   {
+      const Real delta = ffdi - 100;
+      const Real r = 0.647 + delta * 0.01396;
+      const Real g = 0.000 + delta * 0.00000;
+      const Real b = 0.000 + delta * 0.00000;
+      return Color (r, g, b, alpha);
+   }
+   else
+   if (ffdi < 200)
+   {
+      const Real delta = ffdi - 150;
+      const Real r = 0.698 + delta * 0.01176;
+      const Real g = 0.000 + delta * 0.00000;
+      const Real b = 0.463 + delta * 0.00784;
+      return Color (r, g, b, alpha);
+   }
+   else
+   {
+      return Color (0, 0, 0, 0);
+   }
+
+}
+
 Raster*
 Display::get_terrain_raster_ptr (const Size_2D& size_2d,
                                  const Transform_2D& transform,
@@ -157,6 +235,89 @@ Display::get_uppers_raster_ptr (const Size_2D& size_2d,
 
 }
 
+Color
+Display::get_color (const Product& product,
+                    const Real datum)
+{
+
+   const Color transparent (0, 0, 0, 0);
+
+   if (product == "T")
+   {
+      const Real hue = Domain_1D (35 + K, 10 + K).normalize (datum) * 0.833;
+      const Real brightness = (Integer (floor (datum)) % 2) ? 0.83:0.77;
+      return Color::hsb (hue, 0.8, brightness);
+   }
+   else
+   if (product == "TD")
+   {
+      const Real saturation = Domain_1D (-10+K, 20+K).normalize (datum);
+      const Real brightness = (Integer (floor (datum)) % 2) ? 0.82:0.78;
+      return Color::hsb (0.25, saturation, brightness);
+   }
+   else
+   if (product == "RH")
+   {
+      const Real hue = (datum < 0.5 ? 0.08 : 0.35);
+      const Real saturation = std::min ((fabs (datum - 0.5) * 2), 1.0);
+      return Color::hsb (hue, saturation, 1, 0.4);
+   }
+   else
+   if (product == "THETA")
+   {
+      const Real hue = Domain_1D (60+K, 0+K).normalize (datum) * 0.833;
+      const Real brightness = (Integer (floor (datum)) % 2) ? 0.83:0.77;
+      return Color::hsb (hue, 0.8, brightness);
+   }
+   else
+   if (product == "THETA_E")
+   {
+      const Real saturation = Domain_1D (5+K, 65+K).normalize (datum);
+      const Real brightness = (Integer (floor (datum)) % 2) ? 0.82:0.78;
+      return Color::hsb (0.35, saturation, brightness);
+   }
+   else
+   if (product == "Q")
+   {
+      const Real saturation = Domain_1D (0, 10).normalize (datum * 1e3);
+      const Real brightness = (Integer (floor (datum * 1e3)) % 2) ? 0.82:0.78;
+      return Color::hsb (0.45, saturation, brightness);
+   }
+   else
+   if (product == "VORTICITY")
+   {
+      const Real hue = (datum < 0 ? 0.667 : 0.000);
+      const Real modified_datum = (log10 (fabs (datum)) + 4) / 3;
+      const Real saturation = std::max (std::min (modified_datum, 1.0), 0.0);
+      return Color::hsb (hue, saturation, 1, 1);
+   }
+   else
+   if (product == "FFDI")
+   {
+      const Ffdi_Color_Chooser ffdi_color_chooser (0.7);
+      return ffdi_color_chooser.get_color (datum);
+   }
+   else
+   if (product == "MSLP")
+   {
+      //const Real hue = Domain_1D (990e2, 1025e2).normalize (datum) * 0.833;
+      const Real brightness = (Integer (floor (datum/200)) % 2) ? 0.82:0.78;
+      return Color::hsb (0, 0, brightness);
+   }
+   else
+   {
+      return transparent;
+   }
+
+}
+
+void
+Display::render_stages (const RefPtr<Context>& cr,
+                        const Transform_2D& transform,
+                        const Station::Map& station_map)
+{
+}
+
 void
 Display::render_product (const RefPtr<Context>& cr,
                          const Transform_2D& transform,
@@ -180,6 +341,7 @@ Display::render_product (const RefPtr<Context>& cr,
        product == "P_RHO" ||
        product == "TD" ||
        product == "RH" ||
+       product == "THETA" ||
        product == "WIND" ||
        product == "VORTICITY" ||
        product == "THETA_E")
@@ -204,7 +366,7 @@ Display::render_product (const RefPtr<Context>& cr,
          size_2d, transform, model, stage, product, dtime);
    }
    else
-   if (product == "THETA")
+   if (product == "Q")
    {
       raster_ptr = get_uppers_raster_ptr (size_2d,
          transform, model, stage, product, dtime, level);
