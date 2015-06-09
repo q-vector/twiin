@@ -122,7 +122,28 @@ namespace twiin
    };
 
    void
-   start_console ();
+   interactive (const Size_2D& size_2d,
+                const Tokens& zoom_tokens,
+                const Tokens& config_file_content,
+                const string& stage_str,
+                const string& product_str,
+                const string& level_str);
+
+   void
+   command_line (const Size_2D& size_2d,
+                 const Tokens& zoom_tokens,
+                 const Tokens& config_file_content,
+                 const string& stage_str,
+                 const string& product_str,
+                 const string& level_str);
+
+   void
+   cross_section (const Size_2D& size_2d,
+                  const Tokens& zoom_tokens,
+                  const Tokens& config_file_content,
+                  const string& stage_str,
+                  const string& product_str,
+                  const Multi_Journey& multi_journey);
 
 };
 
