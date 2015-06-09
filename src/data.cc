@@ -49,9 +49,10 @@ Product::get_nwp_element () const
    if (*this == "THETA") { return THETA; }
    if (*this == "Q") { return Q; }
    if (*this == "THETA_E") { return THETA_E; }
+   if (*this == "RHO") { return RHO; }
    if (*this == "WIND") { return WIND_DIRECTION; }
    if (*this == "VORTICITY") { return RELATIVE_VORTICITY; }
-   if (*this == "W") { return VERTICAL_VELOCITY; }
+   if (*this == "W") { return W; }
    if (*this == "FFDI") { return FFDI; }
    if (*this == "MSLP") { return MSLP; }
 }
@@ -431,6 +432,12 @@ Model::Surface::Stage::evaluate (const Nwp_Element& nwp_element,
    switch (nwp_element)
    {
 
+      case W:
+      {
+         datum = 0;
+         break;
+      };
+
       case WIND_SPEED:
       {
          const Real u = evaluate (U, i, j, l);
@@ -494,6 +501,16 @@ Model::Surface::Stage::evaluate (const Nwp_Element& nwp_element,
          const Real topography = get_topography (i, j);
          const Real surface_p = mslp - 11.76 * topography;
          datum = Tp::normand (t - K, t_d - K, surface_p).get_theta_e () + K;
+         break;
+      };
+
+      case RHO:
+      {
+         const Real t = evaluate (T, i, j, l);
+         const Real mslp = evaluate (MSLP, i, j, l);
+         const Real topography = get_topography (i, j);
+         const Real surface_p = mslp - 11.76 * topography;
+         datum = surface_p / (R_d * t);
          break;
       };
 
@@ -642,6 +659,7 @@ Model::Uppers::Stage::evaluate (const Nwp_Element& nwp_element,
    const bool is_w = (nwp_element == W);
    const bool is_theta = ((nwp_element == THETA) || 
                           (nwp_element == Q) || 
+                          (nwp_element == RHO) || 
                           (nwp_element == W) || 
                           (nwp_element == T) || 
                           (nwp_element == TD) || 
@@ -730,6 +748,15 @@ Model::Uppers::Stage::evaluate (const Nwp_Element& nwp_element,
          const Real r = q / (1 - q);
          const Real t_d = Thermo_Point::p_r_s (p, r).get_t () + K;
          datum = Moisture::get_rh (t - K, t_d - K, WATER);
+         break;
+      };
+
+      case RHO:
+      {
+         const Real theta = evaluate_raw ("ml_theta", i, j, k, l);
+         const Real p = evaluate_raw ("ml_ptheta", i, j, k, l);
+         const Real t = Thermo_Point::theta_p (theta - K, p).get_t () + K;
+         datum = p / (R_d * t);
          break;
       };
 
@@ -1092,7 +1119,7 @@ Model::Model (const Tokens& config_file_content)
          const bool is_terrain = (var_str == "orog" || var_str == "lsm");
          const bool is_uppers = (var_str.substr (0, 3) == "ml_");
 
-         if (stage_str == "STAGE_3")
+         if (stage_str == "STAGE3")
          {
             if (is_terrain)
             {
@@ -1109,7 +1136,7 @@ Model::Model (const Tokens& config_file_content)
             }
          }
          else
-         if (stage_str == "STAGE_4")
+         if (stage_str == "STAGE4")
          {
             if (is_terrain)
             {
@@ -1126,7 +1153,7 @@ Model::Model (const Tokens& config_file_content)
             }
          }
          else
-         if (stage_str == "STAGE_5")
+         if (stage_str == "STAGE5")
          {
             if (is_terrain)
             {
@@ -1151,22 +1178,22 @@ Model::Model (const Tokens& config_file_content)
 
    vertical_coefficients.init (vertical_coefficients_file_path);
 
-   const Tokens stage_tokens ("STAGE_3 STAGE_4 STAGE_5");
+   const Tokens stage_tokens ("STAGE3 STAGE4 STAGE5");
 
    terrain.init (stage_tokens);
-   terrain.init2 (string ("STAGE_3"), terrain_file_path_3_map);
-   terrain.init2 (string ("STAGE_4"), terrain_file_path_4_map);
-   terrain.init2 (string ("STAGE_5"), terrain_file_path_5_map);
+   terrain.init2 (string ("STAGE3"), terrain_file_path_3_map);
+   terrain.init2 (string ("STAGE4"), terrain_file_path_4_map);
+   terrain.init2 (string ("STAGE5"), terrain_file_path_5_map);
 
    surface.init (stage_tokens);
-   surface.init2 (string ("STAGE_3"), surface_file_path_3_map);
-   surface.init2 (string ("STAGE_4"), surface_file_path_4_map);
-   surface.init2 (string ("STAGE_5"), surface_file_path_5_map);
+   surface.init2 (string ("STAGE3"), surface_file_path_3_map);
+   surface.init2 (string ("STAGE4"), surface_file_path_4_map);
+   surface.init2 (string ("STAGE5"), surface_file_path_5_map);
 
    uppers.init (stage_tokens);
-   uppers.init2 (string ("STAGE_3"), uppers_file_path_3_map);
-   uppers.init2 (string ("STAGE_4"), uppers_file_path_4_map);
-   uppers.init2 (string ("STAGE_5"), uppers_file_path_5_map);
+   uppers.init2 (string ("STAGE3"), uppers_file_path_3_map);
+   uppers.init2 (string ("STAGE4"), uppers_file_path_4_map);
+   uppers.init2 (string ("STAGE5"), uppers_file_path_5_map);
 
 }
 
@@ -1253,7 +1280,9 @@ Model::get_valid_time_set (const Product& product,
        product == "Q" ||
        product == "TD" ||
        product == "RH" ||
+       product == "RHO" ||
        product == "WIND" ||
+       product == "W" ||
        product == "VORTICITY" ||
        product == "THETA" ||
        product == "THETA_E")
@@ -1353,6 +1382,13 @@ Model::get_marker_tokens (const Lat_Long& lat_long,
       tokens.push_back (string_render ("%.1f\u00b0C", theta_e - K));
    }
    else
+   if (product == "RHO")
+   {
+      const Real rho = evaluate (RHO, lat_long, level, dtime, stage);
+      if (gsl_isnan (rho)) { return tokens; }
+      tokens.push_back (string_render ("%.2fkg/m3", rho));
+   }
+   else
    if (product == "WIND")
    {
       const Real u = evaluate (U, lat_long, level, dtime, stage);
@@ -1387,11 +1423,18 @@ Model::get_marker_tokens (const Lat_Long& lat_long,
       tokens.push_back (string_render ("%.2fm", orog));
    }
    else
+   if (product == "W")
+   {
+      const Real w = evaluate (W, lat_long, level, dtime, stage);
+      if (gsl_isnan (w)) { return tokens; }
+      tokens.push_back (string_render ("%.2fm/s", w));
+   }
+   else
    if (product == "VORTICITY")
    {
       const Real zeta = evaluate (ZETA, lat_long, level, dtime, stage);
       if (gsl_isnan (zeta)) { return tokens; }
-      tokens.push_back (string_render ("%.4e", zeta));
+      tokens.push_back (string_render ("%.4e/s", zeta));
    }
    else
    if (product == "MSLP")

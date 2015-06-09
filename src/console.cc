@@ -136,17 +136,17 @@ Console::Console (Gtk::Window& gtk_window,
                   const Size_2D& size_2d,
                   const Tokens& zoom_tokens,
                   const Tokens& config_file_content,
-                  const string& stage_str,
-                  const string& product_str,
-                  const string& level_str)
+                  const Stage& stage,
+                  const Product& product,
+                  const Level& level)
    : Map_Console (gtk_window, size_2d, zoom_tokens),
      Time_Canvas (*this, 12),
      Level_Canvas (*this, 12),
      product_panel (*this, 12),
      model (config_file_content),
-     stage (stage_str),
-     product (product_str),
-     level (level_str)
+     stage (stage),
+     product (product),
+     level (level)
 {
 
    time_chooser.get_signal ().connect (
@@ -157,7 +157,7 @@ Console::Console (Gtk::Window& gtk_window,
       sigc::mem_fun (*this, &Console::set_product));
 
    level_panel.add_extra_level (Level ("Surface"));
-   level_panel.set_level (Level (level_str));
+   level_panel.set_level (level);
 
    product_panel.set_hidable (true);
    time_chooser.set_hidable (true);
@@ -174,8 +174,10 @@ Console::Console (Gtk::Window& gtk_window,
    product_panel.add_product ("Thermo", Product ("TD"));
    product_panel.add_product ("Thermo", Product ("RH"));
    product_panel.add_product ("Thermo", Product ("THETA_E"));
+   product_panel.add_product ("Thermo", Product ("RHO"));
    product_panel.add_product ("Dynamic", Product ("P_RHO"));
    product_panel.add_product ("Dynamic", Product ("WIND"));
+   product_panel.add_product ("Dynamic", Product ("W"));
    product_panel.add_product ("Dynamic", Product ("VORTICITY"));
    product_panel.add_product ("Fire", Product ("FFDI"));
    product_panel.add_product ("Misc", Product ("MSLP"));
@@ -260,7 +262,7 @@ Console::render_queue_draw ()
 
    const Dtime& dtime = get_time_chooser ().get_time ();
    const string& time_string = dtime.get_string ("%Y.%m.%d %H:%M UTC");
-   title.set (time_string, product, stage, "", level.get_string ());
+   title.set ("", time_string, product, stage, level.get_string ());
    set_foreground_ready (false);
 
    Map_Console::render_queue_draw ();
@@ -286,10 +288,26 @@ main (int argc,
       char** argv)
 {
 
+   const string zoom_str_3 ("LAMBERT_CONIC_SOUTH:3000:-33.5:150.5");
+   const string zoom_str_4 ("LAMBERT_CONIC_SOUTH:1200:-33.75:150.5");
+   const string zoom_str_5 ("LAMBERT_CONIC_SOUTH:380:-33.7:150.55");
+
+   Tokens zoom_tokens;
+   zoom_tokens.push_back ("Stage_3/" + zoom_str_3);
+   zoom_tokens.push_back ("Stage_4/" + zoom_str_4);
+   zoom_tokens.push_back ("Stage_5/" + zoom_str_5);
+
    const string config_file_path (argv[1]);
    const string product_str (argv[2]);
    const string stage_str (argv[3]);
    const string level_str (argv[4]);
+
+   const Tokens stage_tokens (stage_str, ":");
+   const Tokens product_tokens (product_str, ":");
+
+   const Stage stage (stage_tokens[0]);
+   const Product product (product_tokens[0]);
+   const Level level (level_str);
 
    try
    {
@@ -297,16 +315,11 @@ main (int argc,
       Gtk::Main gtk_main (argc, argv);
       Gtk::Window gtk_window;
 
-      const Tokens& config_file_content = read_config_file (config_file_path);
       const Size_2D size_2d (960, 960);
-
-      Tokens zoom_tokens;
-      zoom_tokens.push_back ("Stage3/LAMBERT_CONIC_SOUTH:3000:-33.5:150.5");
-      zoom_tokens.push_back ("Stage4/LAMBERT_CONIC_SOUTH:1200:-33.75:150.5");
-      zoom_tokens.push_back ("Stage5/LAMBERT_CONIC_SOUTH:380:-33.7:150.55");
+      const Tokens& config_file_content = read_config_file (config_file_path);
 
       Console console (gtk_window, size_2d, zoom_tokens,
-         config_file_content, stage_str, product_str, level_str);
+         config_file_content, stage, product, level);
       gtk_window.add (console);
       gtk_window.show_all_children ();
       gtk_window.show ();

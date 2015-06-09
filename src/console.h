@@ -98,9 +98,9 @@ namespace twiin
                   const Size_2D& size_2d,
                   const Tokens& zoom_tokens,
                   const Tokens& config_file_content,
-                  const string& stage_str,
-                  const string& product_str,
-                  const string& level_str);
+                  const Stage& stage,
+                  const Product& product,
+                  const Level& level);
 
          ~Console ();
 
@@ -120,6 +120,9 @@ namespace twiin
          render_image_buffer (const RefPtr<Context>& cr);
 
    };
+
+   void
+   start_console ();
 
 };
 

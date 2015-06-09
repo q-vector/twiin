@@ -63,6 +63,15 @@ namespace twiin
                                 const Dtime& dtime,
                                 const Level& level);
 
+         static Raster*
+         get_cross_section_raster_ptr (const Box_2D& box_2d,
+                                       const Transform_2D& transform,
+                                       const Model& model,
+                                       const Stage& stage,
+                                       const Product& product,
+                                       const Dtime& dtime,
+                                       const Multi_Journey& multi_journey);
+
       public:
 
          static Color
@@ -103,6 +112,27 @@ namespace twiin
                  const Level& level,
                  const twiin::Stage& stage,
                  const Product product);
+
+         static Raster*
+         render_cross_section (const RefPtr<Context>& cr,
+                               const Transform_2D& transform,
+                               const Box_2D& box_2d,
+                               const Domain_1D& domain_z,
+                               const Model& model,
+                               const Stage& stage,
+                               const Product& product,
+                               const Dtime& dtime,
+                               const Multi_Journey& multi_journey);
+
+         static Raster*
+         render_cross_section_arrows (const RefPtr<Context>& cr,
+                                      const Transform_2D& transform,
+                                      const Box_2D& box_2d,
+                                      const Model& model,
+                                      const Stage& stage,
+                                      const Product& product,
+                                      const Dtime& dtime,
+                                      const Multi_Journey& multi_journey);
 
    };
 

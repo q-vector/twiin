@@ -235,6 +235,62 @@ Display::get_uppers_raster_ptr (const Size_2D& size_2d,
 
 }
 
+Raster*
+Display::get_cross_section_raster_ptr (const Box_2D& box_2d,
+                                       const Transform_2D& transform,
+                                       const Model& model,
+                                       const Stage& stage,
+                                       const Product& product,
+                                       const Dtime& dtime,
+                                       const Multi_Journey& multi_journey)
+{
+
+   Raster* raster_ptr = new Raster (box_2d);
+
+   Color color;
+   const Model::Terrain::Stage& terrain_stage = model.terrain.get_stage (stage);
+   const Model::Uppers::Stage& uppers_stage = model.uppers.get_stage (stage);
+   //const size_t l = uppers_stage.get_l (dtime);
+
+   Real x;
+   Level level (HEIGHT_LEVEL, GSL_NAN);
+   Real& z = level.value;
+
+   const Geodesy geodesy;
+   const Index_2D& index_2d = box_2d.index_2d;
+   const Size_2D& size_2d = box_2d.size_2d;
+   const Real distance = multi_journey.get_distance (geodesy);
+
+   for (Integer i = index_2d.i; i < index_2d.i + size_2d.i; i++)
+   {
+
+      transform.reverse (x, z, Real (i), 0);
+      if (x < 0 || x > distance) { continue; }
+      const Lat_Long lat_long = multi_journey.get_lat_long (x, geodesy);
+      if (model.out_of_bounds (lat_long, stage)) { continue; }
+
+      const Real topography = terrain_stage.get_topography (lat_long);
+
+      for (Integer j = index_2d.j; j < index_2d.j + size_2d.j; j++)
+      {
+         transform.reverse (x, z, Real (i), Real (j));
+         if (z < topography) { color = Color::hsb (0.0, 0.0, 0.0); }
+         else
+         {
+            const Nwp_Element nwp_element = product.get_nwp_element ();
+            const Real datum = model.evaluate (
+               nwp_element, lat_long, level, dtime, stage);
+            color = Display::get_color (product, datum);
+         }
+         raster_ptr->set_pixel (i - index_2d.i, j - index_2d.j, color);
+      }
+
+   }
+
+   return raster_ptr;
+
+}
+
 Color
 Display::get_color (const Product& product,
                     const Real datum)
@@ -266,14 +322,14 @@ Display::get_color (const Product& product,
    if (product == "THETA")
    {
       const Real hue = Domain_1D (60+K, 0+K).normalize (datum) * 0.833;
-      const Real brightness = (Integer (floor (datum)) % 2) ? 0.83:0.77;
+      const Real brightness = (Integer (floor ((datum-K) / 2)) % 2) ? 0.83:0.77;
       return Color::hsb (hue, 0.8, brightness);
    }
    else
    if (product == "THETA_E")
    {
       const Real saturation = Domain_1D (5+K, 65+K).normalize (datum);
-      const Real brightness = (Integer (floor (datum)) % 2) ? 0.82:0.78;
+      const Real brightness = (Integer (floor ((datum-K) / 4)) % 2) ? 0.82:0.78;
       return Color::hsb (0.35, saturation, brightness);
    }
    else
@@ -284,11 +340,27 @@ Display::get_color (const Product& product,
       return Color::hsb (0.45, saturation, brightness);
    }
    else
+   if (product == "RHO")
+   {
+      const Real x = tanh (Domain_1D (1.25, 0.95).normalize (datum)-0.5)+0.5;
+      return Color::hsb (0.0, 0.0, x);
+   }
+   else
+   if (product == "W")
+   {
+      const Real hue = (datum < 0 ? 0.667 : 0.000);
+      const Real absolute = fabs (datum);
+      const Real quantized = floor (absolute * 10) / 10;
+      const Real alpha = Domain_1D (0, 1.5).normalize (quantized);
+      return Color::hsb (hue, 1.0, 1.0, alpha);
+   }
+   else
    if (product == "VORTICITY")
    {
       const Real hue = (datum < 0 ? 0.667 : 0.000);
       const Real modified_datum = (log10 (fabs (datum)) + 4) / 3;
       const Real saturation = std::max (std::min (modified_datum, 1.0), 0.0);
+      //const Real saturation = Domain_1D (0, 1).normalize (modified_datum);
       return Color::hsb (hue, saturation, 1, 1);
    }
    else
@@ -342,7 +414,9 @@ Display::render_product (const RefPtr<Context>& cr,
        product == "TD" ||
        product == "RH" ||
        product == "THETA" ||
+       product == "RHO" ||
        product == "WIND" ||
+       product == "W" ||
        product == "VORTICITY" ||
        product == "THETA_E")
    {
@@ -354,8 +428,10 @@ Display::render_product (const RefPtr<Context>& cr,
       else
       if (level.type == HEIGHT_LEVEL)
       {
+cout << "      render product a " << endl;
          raster_ptr = get_uppers_raster_ptr (size_2d,
             transform, model, stage, product, dtime, level);
+cout << "      render product b " << endl;
       }
    }
    else
@@ -443,13 +519,17 @@ Display::render (const RefPtr<Context>& cr,
                  const Product product)
 {
 
+cout << "   Display::render a " << endl;
    cr->save ();
 
    Color (0.86, 0.85, 0.47).cairo (cr);
    cr->paint();
 
+cout << "   Display::render b " << endl;
    render_product (cr, transform, size_2d, model,product, dtime, level, stage);
+cout << "   Display::render c " << endl;
    render_wind_barbs (cr, transform, size_2d, model, dtime, level, stage);
+cout << "   Display::render d " << endl;
 
    // Stage 3/4/5 Frames
    //render_stages (cr, transform, station_map);
@@ -457,7 +537,167 @@ Display::render (const RefPtr<Context>& cr,
    // All Stations
    //station_map.cairo (cr, transform);
 
+cout << "   Display::render a " << endl;
    cr->restore ();
+
+}
+
+Raster*
+Display::render_cross_section (const RefPtr<Context>& cr,
+                               const Transform_2D& transform,
+                               const Box_2D& box_2d,
+                               const Domain_1D& domain_z,
+                               const Model& model,
+                               const Stage& stage,
+                               const Product& product,
+                               const Dtime& dtime,
+                               const Multi_Journey& multi_journey)
+{
+
+   cr->save ();
+
+   Color::hsb (0.0, 0.0, 1.0).cairo (cr);
+   cr->paint ();
+
+   Raster* raster_ptr = Display::get_cross_section_raster_ptr (box_2d,
+      transform, model, stage, product, dtime, multi_journey);
+   raster_ptr->blit (cr);
+   delete raster_ptr;
+
+   if (product == "RHO")
+   {
+      Raster* raster_ptr = Display::get_cross_section_raster_ptr (box_2d,
+         transform, model, stage, Product ("W"), dtime, multi_journey);
+      raster_ptr->blit (cr);
+      delete raster_ptr;
+   }
+
+
+   const Geodesy geodesy;
+   const Real distance = multi_journey.get_distance (geodesy);
+
+   Real d_distance = 100e3;
+   if (distance < 1000e3) { d_distance = 50e3; }
+   if (distance < 400e3) { d_distance = 20e3; }
+   if (distance < 200e3) { d_distance = 10e3; }
+   const Multi_Journey mj (multi_journey, geodesy, d_distance);
+   const Tuple& tuple_x = mj.get_tuple_x (geodesy);
+
+   const Simple_Mesh_2D ma0 (Color (0, 0, 0, 0.05), 1e8, 10);
+   const Simple_Mesh_2D ma1 (Color (0, 0, 0, 0.1), 1e8, 100);
+   const Simple_Mesh_2D ma2 (Color (0, 0, 0, 0.4), 1e8, 1000);
+   const Domain_1D domain_x (0, distance);
+   const Domain_2D domain_2d (domain_x, domain_z);
+   const Mesh_2D mesh_2d (domain_2d, ma2);
+
+   cr->set_line_width (2);
+   mesh_2d.render (cr, transform, Size_2D (2, 2));
+   Color (0, 0, 0, 0.3).cairo (cr);
+
+   mesh_2d.render_label_x (cr, transform, 0, 0,
+      "%.0f", NUMBER_REAL, 'c', 't', 5);
+   mesh_2d.render_label_y (cr, transform, 0, 0,
+      "%.0f", NUMBER_REAL, 'r', 'c', 5);
+
+   for (Tuple::const_iterator iterator = tuple_x.begin ();
+        iterator != tuple_x.end (); iterator++)
+   {
+
+      const Real d = *(iterator);
+      const Point_2D& point_a = transform.transform (Point_2D (d, 0));
+      const Point_2D& point_b = transform.transform (Point_2D (d, 8000));
+
+      const Integer i = std::distance (tuple_x.begin (), iterator);
+      const string& str = string_render ("%d", i);
+
+      Color (0, 0, 0, 0.3).cairo (cr);
+      Label (str, point_a, 'c', 't', 6).cairo (cr);
+
+      //Color (0, 0, 0, 0.0).cairo (cr);
+      //cr->move_to (point_a.x, point_a.y);
+      //cr->line_to (point_b.x, point_b.y);
+      //cr->stroke ();
+   }
+
+   render_cross_section_arrows (cr, transform, box_2d,
+      model, stage, product, dtime, multi_journey);
+
+   cr->restore ();
+
+}
+
+Raster*
+Display::render_cross_section_arrows (const RefPtr<Context>& cr,
+                                      const Transform_2D& transform,
+                                      const Box_2D& box_2d,
+                                      const Model& model,
+                                      const Stage& stage,
+                                      const Product& product,
+                                      const Dtime& dtime,
+                                      const Multi_Journey& multi_journey)
+{
+
+   Real x;
+   Level level (HEIGHT_LEVEL, GSL_NAN);
+   Real& z = level.value;
+
+   const Real arrow_size = 15;
+   const Real h = arrow_size * 1.5;
+
+   Color (0, 0, 0, 0.2).cairo (cr);
+   const Model::Terrain::Stage& terrain_stage = model.terrain.get_stage (stage);
+   const Model::Uppers::Stage& uppers_stage = model.uppers.get_stage (stage);
+   //const size_t l = uppers_stage.get_l (dtime);
+
+   const Geodesy geodesy;
+   const Index_2D& index_2d = box_2d.index_2d;
+   const Size_2D& size_2d = box_2d.size_2d;
+   const Real distance = multi_journey.get_distance (geodesy);
+
+   cr->set_line_width (1);
+
+   for (Integer i = index_2d.i; i < index_2d.i + size_2d.i; i += Integer (h))
+   {
+
+      transform.reverse (x, z, Real (i), 0);
+      if (x < 0 || x > distance) { continue; }
+      const Lat_Long lat_long = multi_journey.get_lat_long (x, geodesy);
+      if (model.out_of_bounds (lat_long, stage)) { continue; }
+
+      const Real topography = terrain_stage.get_topography (lat_long);
+      const Real azimuth = multi_journey.get_azimuth_forward (x, geodesy);
+      const Real theta = azimuth * DEGREE_TO_RADIAN;
+      const Real c = cos (theta);
+      const Real s = sin (theta);
+
+      for (Integer j = index_2d.j; j < index_2d.j + size_2d.j; j += Integer (h))
+      {
+         transform.reverse (x, z, Real (i), Real (j));
+         if (z < topography) { continue; }
+         else
+         {
+            Real u = model.evaluate (U, lat_long, level, dtime, stage);
+            Real v = model.evaluate (V, lat_long, level, dtime, stage);
+            Real w = model.evaluate (W, lat_long, level, dtime, stage);
+//const Real datum = model.evaluate (nwp_element, lat_long, level, dtime, stage);
+            Real uu = u * s + v * c;
+            transform.transform_uv (uu, w, x, z);
+            const Real theta = atan2 (w, uu);
+            const Real mag = sqrt (uu*uu + w*w);
+            const Real as = std::min (3600 * mag, arrow_size);
+            const Arrow arrow (theta, as, 0.12);
+            arrow.cairo (cr, Point_2D (i, j));
+            //Color (0, 0, 0, 0.05).cairo (cr);
+            //cr->fill_preserve ();
+            Color (0, 0, 0, 0.10).cairo (cr);
+            cr->stroke ();
+
+         }
+
+      }
+
+   }
+
 
 }
 
