@@ -2,6 +2,13 @@
 #include <denise/dstring.h>
 #include "main.h"
 
+#ifndef ENABLE_GTKMM
+#else /* ENABLE_GTKMM */
+#include "cross_section.h"
+#include "console.h"
+#endif /* ENABLE_GTKMM */
+
+
 using namespace std;
 using namespace denise;
 using namespace Cairo;
@@ -10,7 +17,8 @@ using namespace twiin;
 namespace twiin
 {
 
-#ifdef ENABLE_GTKMM
+#ifndef ENABLE_GTKMM
+#else /* ENABLE_GTKMM */
    void
    interactive (const Size_2D& size_2d,
                 const Tokens& zoom_tokens,
@@ -351,12 +359,12 @@ main (int argc,
 
       if (is_interactive)
       {
-#ifdef ENABLE_GTKMM
+#ifndef ENABLE_GTKMM
+         cerr << "Interactive mode not available" << endl;
+#else /* ENABLE_GTKMM */
          Gtk::Main gtk_main (argc, argv);
          interactive (size_2d, zoom_tokens, config_file_content,
             stage_str, product_str, level_str, time_str);
-#else /* ENABLE_GTKMM */
-         cerr << "Interactive mode not available" << endl;
 #endif /* ENABLE_GTKMM */
       }
       else

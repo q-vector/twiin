@@ -172,6 +172,9 @@ namespace twiin
                      virtual void
                      init (const File_Path_Map& file_path_map);
 
+                     Domain_2D
+                     get_domain_2d () const;
+
                      bool
                      out_of_bounds (const Lat_Long& lat_long) const;
 
@@ -440,6 +443,9 @@ namespace twiin
          Model (const Tokens& config_file_content);
 
          ~Model ();
+
+         Domain_2D
+         get_domain_2d (const twiin::Stage& stage) const;
 
          bool
          out_of_bounds (const Lat_Long& lat_long,

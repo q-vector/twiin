@@ -238,6 +238,13 @@ Model::Terrain::Stage::~Stage ()
 {
 }
 
+Domain_2D
+Model::Terrain::Stage::get_domain_2d () const
+{
+   return Domain_2D (tuple_latitude.front (), tuple_latitude.back (),
+                     tuple_longitude.front (), tuple_longitude.back ());
+}
+
 bool
 Model::Terrain::Stage::out_of_bounds (const Lat_Long& lat_long) const
 {
@@ -1198,6 +1205,13 @@ Model::Model (const Tokens& config_file_content)
 
 Model::~Model ()
 {
+}
+
+Domain_2D
+Model::get_domain_2d (const twiin::Stage& stage) const
+{
+   const Model::Terrain::Stage& terrain_stage = terrain.get_stage (stage);
+   return terrain_stage.get_domain_2d ();
 }
 
 bool

@@ -81,7 +81,7 @@ namespace twiin
          static void
          render_stages (const RefPtr<Context>& cr,
                         const Transform_2D& transform,
-                        const Station::Map& station_map);
+                        const Model& model);
 
          static void
          render_product (const RefPtr<Context>& cr,

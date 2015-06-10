@@ -386,8 +386,26 @@ Display::get_color (const Product& product,
 void
 Display::render_stages (const RefPtr<Context>& cr,
                         const Transform_2D& transform,
-                        const Station::Map& station_map)
+                        const Model& model)
 {
+
+   cr->save ();
+
+   cr->set_line_width (4);
+   Color::hsb (0.00, 0.00, 0.00, 0.5).cairo (cr);
+   const Tokens stage_tokens ("STAGE3 STAGE4 STAGE5");
+
+   for (auto iterator = stage_tokens.begin ();
+        iterator != stage_tokens.end (); iterator++)
+   {
+      const Stage& stage = *(iterator);
+      const Domain_2D& domain_2d = model.get_domain_2d (stage);
+      Polygon (domain_2d).cairo (cr, transform);
+      cr->stroke ();
+   }
+
+   cr->restore ();
+
 }
 
 void
@@ -526,7 +544,7 @@ Display::render (const RefPtr<Context>& cr,
    render_wind_barbs (cr, transform, size_2d, model, dtime, level, stage);
 
    // Stage 3/4/5 Frames
-   //render_stages (cr, transform, station_map);
+   render_stages (cr, transform, model);
 
    // All Stations
    //station_map.cairo (cr, transform);

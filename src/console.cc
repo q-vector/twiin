@@ -191,6 +191,9 @@ Console::Console (Gtk::Window& gtk_window,
    route_popup_menu.get_id_signal ("Cross Section").connect (
       sigc::mem_fun (*this, &Console::process_cross_section));
 
+   Map_Console::Overlay_Store& overlay_store = get_overlay_store ();
+   overlay_store.add ("GSHHS:Coastline:2:0:0:0:0.6:not_filled:/home/accounts/eching/data/gshhs/australia_i.gshhs", false);
+
    pack ();
 
 }
@@ -262,7 +265,7 @@ Console::render_queue_draw ()
 
    const Dtime& dtime = get_time_chooser ().get_time ();
    const string& time_string = dtime.get_string ("%Y.%m.%d %H:%M UTC");
-   title.set (time_string, "", product, , level.get_string ());
+   title.set (time_string, "", product, level.get_string (), "");
    set_foreground_ready (false);
 
    Map_Console::render_queue_draw ();
@@ -280,6 +283,9 @@ Console::render_image_buffer (const RefPtr<Context>& cr)
 
    Display::render (cr, transform, size_2d, model, //station_map,
       dtime, level, stage, product);
+cout << "a" << endl;
+   render_overlays (cr);
+cout << "b" << endl;
 
 }
 
