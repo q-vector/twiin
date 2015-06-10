@@ -250,7 +250,7 @@ Display::get_cross_section_raster_ptr (const Box_2D& box_2d,
    Color color;
    const Model::Terrain::Stage& terrain_stage = model.terrain.get_stage (stage);
    const Model::Uppers::Stage& uppers_stage = model.uppers.get_stage (stage);
-   //const size_t l = uppers_stage.get_l (dtime);
+   const size_t l = uppers_stage.get_l (dtime);
 
    Real x;
    Level level (HEIGHT_LEVEL, GSL_NAN);
@@ -266,7 +266,8 @@ Display::get_cross_section_raster_ptr (const Box_2D& box_2d,
 
       transform.reverse (x, z, Real (i), 0);
       if (x < 0 || x > distance) { continue; }
-      const Lat_Long lat_long = multi_journey.get_lat_long (x, geodesy);
+      const Lat_Long& lat_long = multi_journey.get_lat_long (x, geodesy);
+      const Lat_Long& ll = lat_long;
       if (model.out_of_bounds (lat_long, stage)) { continue; }
 
       const Real topography = terrain_stage.get_topography (lat_long);
@@ -277,10 +278,22 @@ Display::get_cross_section_raster_ptr (const Box_2D& box_2d,
          if (z < topography) { color = Color::hsb (0.0, 0.0, 0.0); }
          else
          {
-            const Nwp_Element nwp_element = product.get_nwp_element ();
-            const Real datum = model.evaluate (
-               nwp_element, lat_long, level, dtime, stage);
-            color = Display::get_color (product, datum);
+            if (product == "WIND")
+            {
+               const Real u = uppers_stage.evaluate (U, lat_long, z, l);
+               const Real v = uppers_stage.evaluate (V, lat_long, z, l);
+               const Real speed = sqrt (u*u + v*v);
+               const Real theta = atan2 (-u, -v);
+               const Real hue = (theta < 0 ? theta + 2*M_PI : theta)/ (2*M_PI);
+               const Real brightness = std::min (speed / 15, 1.0);
+               color = Color::hsb (hue, 0.8, brightness);
+            }
+            else
+            {
+               const Nwp_Element nwp_element = product.get_nwp_element ();
+               const Real datum = uppers_stage.evaluate (nwp_element, ll, z, l);
+               color = Display::get_color (product, datum);
+            }
          }
          raster_ptr->set_pixel (i - index_2d.i, j - index_2d.j, color);
       }
@@ -481,6 +494,7 @@ Display::render_wind_barbs (const RefPtr<Context>& cr,
 
    Point_2D point;
    Lat_Long lat_long;
+   const Lat_Long& ll = lat_long;
    Real& latitude = lat_long.latitude;
    Real& longitude = lat_long.longitude;
 
@@ -508,8 +522,8 @@ Display::render_wind_barbs (const RefPtr<Context>& cr,
          transform.reverse (latitude, longitude, point.x, point.y);
          if (model.out_of_bounds (lat_long, stage)) { continue; }
 
-         Real u = model.evaluate (U, lat_long, level, dtime, stage);
-         Real v = model.evaluate (V, lat_long, level, dtime, stage);
+         Real u = model.evaluate (U, ll, level, dtime, stage);
+         Real v = model.evaluate (V, ll, level, dtime, stage);
          transform.transform_uv (u, v, latitude, longitude);
          if (gsl_isnan (u) || gsl_isnan (v)) { continue; }
 
@@ -537,7 +551,8 @@ Display::render (const RefPtr<Context>& cr,
 
    cr->save ();
 
-   Color (0.86, 0.85, 0.47).cairo (cr);
+   //Color (0.86, 0.85, 0.47).cairo (cr);
+   Color (1, 1, 1).cairo (cr);
    cr->paint();
 
    render_product (cr, transform, size_2d, model,product, dtime, level, stage);
@@ -598,10 +613,10 @@ Display::render_cross_section (const RefPtr<Context>& cr,
    const Simple_Mesh_2D ma2 (Color (0, 0, 0, 0.4), 1e8, 1000);
    const Domain_1D domain_x (0, distance);
    const Domain_2D domain_2d (domain_x, domain_z);
-   const Mesh_2D mesh_2d (domain_2d, ma2);
+   const Mesh_2D mesh_2d (Size_2D (2, 2), domain_2d, ma2);
 
    cr->set_line_width (2);
-   mesh_2d.render (cr, transform, Size_2D (2, 2));
+   mesh_2d.render (cr, transform);
    Color (0, 0, 0, 0.3).cairo (cr);
 
    mesh_2d.render_label_x (cr, transform, 0, 0,
@@ -657,7 +672,7 @@ Display::render_cross_section_arrows (const RefPtr<Context>& cr,
    Color (0, 0, 0, 0.2).cairo (cr);
    const Model::Terrain::Stage& terrain_stage = model.terrain.get_stage (stage);
    const Model::Uppers::Stage& uppers_stage = model.uppers.get_stage (stage);
-   //const size_t l = uppers_stage.get_l (dtime);
+   const size_t l = uppers_stage.get_l (dtime);
 
    const Geodesy geodesy;
    const Index_2D& index_2d = box_2d.index_2d;
@@ -686,9 +701,9 @@ Display::render_cross_section_arrows (const RefPtr<Context>& cr,
          if (z < topography) { continue; }
          else
          {
-            Real u = model.evaluate (U, lat_long, level, dtime, stage);
-            Real v = model.evaluate (V, lat_long, level, dtime, stage);
-            Real w = model.evaluate (W, lat_long, level, dtime, stage);
+            Real u = uppers_stage.evaluate (U, lat_long, z, l);
+            Real v = uppers_stage.evaluate (V, lat_long, z, l);
+            Real w = uppers_stage.evaluate (W, lat_long, z, l);
             Real uu = u * s + v * c;
             transform.transform_uv (uu, w, x, z);
             const Real theta = atan2 (w, uu);

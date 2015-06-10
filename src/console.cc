@@ -192,9 +192,18 @@ Console::Console (Gtk::Window& gtk_window,
       sigc::mem_fun (*this, &Console::process_cross_section));
 
    Map_Console::Overlay_Store& overlay_store = get_overlay_store ();
-   overlay_store.add ("GSHHS:Coastline:2:0:0:0:0.6:not_filled:/home/accounts/eching/data/gshhs/australia_i.gshhs", false);
+   for (auto iterator = config_file_content.begin ();
+        iterator != config_file_content.end (); iterator++)
+   {
+
+      const Tokens tokens (*(iterator));
+      if (tokens.size () != 2 || tokens[0] != "overlay") { continue; }
+
+      overlay_store.add (tokens[1], false);
 
    pack ();
+   }
+
 
 }
 
@@ -283,9 +292,8 @@ Console::render_image_buffer (const RefPtr<Context>& cr)
 
    Display::render (cr, transform, size_2d, model, //station_map,
       dtime, level, stage, product);
-cout << "a" << endl;
+   render_mesh (cr);
    render_overlays (cr);
-cout << "b" << endl;
 
 }
 
