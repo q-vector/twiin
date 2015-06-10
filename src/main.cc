@@ -110,7 +110,7 @@ namespace twiin
                Display::render (cr, transform, size_2d,
                   model, dtime, level, stage, product);
                const string& time_str = dtime.get_string ("%Y.%m.%d %H:%M UTC");
-               title.set ("", time_str, product, stage, level.get_string ());
+               title.set (time_str, "", product, stage, level.get_string ());
                title.cairo (cr);
 
                surface->write_to_png (png_file_path);
@@ -147,6 +147,8 @@ namespace twiin
 
       const Geodesy geodesy;
       const Real distance = multi_journey.get_distance (geodesy);
+      const Lat_Long origin (multi_journey.front ());
+      const Lat_Long destination (multi_journey.back ());
 
       const Domain_1D domain_x (0, distance);
       const Domain_1D domain_z (0, 8000);
@@ -211,7 +213,9 @@ namespace twiin
                Display::render_cross_section (cr, transform, box_2d,
                   domain_z, model, stage, product, dtime, multi_journey);
                const string& time_str = dtime.get_string ("%Y.%m.%d %H:%M UTC");
-               title.set ("", time_str, product, stage, "");
+               title.set (time_str, origin.get_string (), product,
+                  stage, destination.get_string ());
+
                title.cairo (cr);
 
                surface->write_to_png (png_file_path);

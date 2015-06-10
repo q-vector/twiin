@@ -262,7 +262,7 @@ Console::render_queue_draw ()
 
    const Dtime& dtime = get_time_chooser ().get_time ();
    const string& time_string = dtime.get_string ("%Y.%m.%d %H:%M UTC");
-   title.set ("", time_string, product, stage, level.get_string ());
+   title.set (time_string, "", product, , level.get_string ());
    set_foreground_ready (false);
 
    Map_Console::render_queue_draw ();

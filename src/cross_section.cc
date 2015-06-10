@@ -248,9 +248,13 @@ void
 Cross_Section::render_queue_draw ()
 {
 
+   const Lat_Long origin (multi_journey.front ());
+   const Lat_Long destination (multi_journey.back ());
+
    const Dtime& dtime = get_time_chooser ().get_time ();
    const string& time_string = dtime.get_string ("%Y.%m.%d %H:%M UTC");
-   title.set (time_string, product, stage);
+   title.set (time_string, origin.get_string (), product,
+      stage, destination.get_string ());
    set_foreground_ready (false);
 
    Console_2D::render_queue_draw ();
