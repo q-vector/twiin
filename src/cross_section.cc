@@ -218,9 +218,9 @@ Cross_Section::reset_transform ()
    const Real bottom_z = 0;
 
    const Geodesy geodesy;
-   const Tuple& tuple_x = multi_journey.get_tuple_x (geodesy);
+   const Real distance = multi_journey.get_distance (geodesy);
    const Domain_1D domain_z (top_z, bottom_z);
-   const Domain_1D domain_x (tuple_x.front (), tuple_x.back ());
+   const Domain_1D domain_x (0, distance);
    const Domain_2D domain_2d (domain_x, domain_z);
 
    const Real w = width - margin_l - margin_r;

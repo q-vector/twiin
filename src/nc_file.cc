@@ -7,10 +7,8 @@ using namespace twiin;
 Nc_File::Nc_File (const string& file_path)
    : file_path (file_path)
 {
-cout << "Opening " << file_path << endl;
    int ret = nc_open (file_path.c_str (), NC_NOWRITE, &nc_id);
    if (ret != NC_NOERR) { throw Exception ("nc_open " + file_path); }
-cout << nc_id << " " << file_path << " okay" << endl;
 }
 
 Nc_File::~Nc_File ()

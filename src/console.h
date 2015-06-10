@@ -127,7 +127,8 @@ namespace twiin
                 const Tokens& config_file_content,
                 const string& stage_str,
                 const string& product_str,
-                const string& level_str);
+                const string& level_str,
+                const string& time_str);
 
    void
    command_line (const Size_2D& size_2d,
@@ -135,7 +136,9 @@ namespace twiin
                  const Tokens& config_file_content,
                  const string& stage_str,
                  const string& product_str,
-                 const string& level_str);
+                 const string& level_str,
+                 const string& time_str,
+                 const bool is_test);
 
    void
    cross_section (const Size_2D& size_2d,
@@ -143,7 +146,9 @@ namespace twiin
                   const Tokens& config_file_content,
                   const string& stage_str,
                   const string& product_str,
-                  const Multi_Journey& multi_journey);
+                  const Multi_Journey& multi_journey,
+                  const string& time_str,
+                  const bool is_test);
 
 };
 

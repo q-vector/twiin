@@ -163,7 +163,6 @@ Model::File_Path_Map::insert (const Varname& varname,
                               const string& file_path)
 {
    map<Varname, string>::insert (make_pair (varname, file_path));
-cout << "insert " << varname << " " << file_path << endl;
 }
 
 void

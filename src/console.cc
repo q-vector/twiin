@@ -292,7 +292,8 @@ namespace twiin
                 const Tokens& config_file_content,
                 const string& stage_str,
                 const string& product_str,
-                const string& level_str)
+                const string& level_str,
+                const string& time_str)
    {
 
       const Tokens stage_tokens (stage_str, ":");
@@ -320,9 +321,12 @@ namespace twiin
                  const Tokens& config_file_content,
                  const string& stage_str,
                  const string& product_str,
-                 const string& level_str)
+                 const string& level_str,
+                 const string& time_str,
+                 const bool is_bludge)
    {
 
+      const Dtime::Set time_set (time_str);
       const Level level (level_str);
       const Tokens stage_tokens (stage_str, ":");
       const Tokens product_tokens (product_str, ":");
@@ -362,6 +366,14 @@ namespace twiin
             for (auto k = valid_time_set.begin ();
                  k != valid_time_set.end (); k++)
             {
+              
+               const Dtime& dtime = *(k);
+               if (!time_set.match (dtime)) { continue; }
+
+               const string png_file_path = stage + "_" + product +
+                  "_" + dtime.get_string ("%Y%m%d%H%M") + ".png";
+               cout << "Rendering " << png_file_path << endl;
+               if (is_bludge) { continue; }
 
                RefPtr<ImageSurface> surface = ImageSurface::create (
                   FORMAT_ARGB32, size_2d.i, size_2d.j);
@@ -369,17 +381,13 @@ namespace twiin
                cr->select_font_face ("Verdana", FONT_SLANT_NORMAL,
                   FONT_WEIGHT_NORMAL);
 
-               const Dtime& dtime = *(k);
                Display::render (cr, transform, size_2d,
                   model, dtime, level, stage, product);
                const string& time_str = dtime.get_string ("%Y.%m.%d %H:%M UTC");
                title.set ("", time_str, product, stage, level.get_string ());
                title.cairo (cr);
 
-               const string png_file_path = stage + "_" + product +
-                  "_" + dtime.get_string ("%Y%m%d%H%M") + ".png";
                surface->write_to_png (png_file_path);
-               cout << png_file_path << " done." << endl;
 
             }
 
@@ -402,9 +410,12 @@ namespace twiin
                   const Tokens& config_file_content,
                   const string& stage_str,
                   const string& product_str,
-                  const Multi_Journey& multi_journey)
+                  const Multi_Journey& multi_journey,
+                  const string& time_str,
+                  const bool is_bludge)
    {
 
+      const Dtime::Set time_set (time_str);
       const Tokens stage_tokens (stage_str, ":");
       const Tokens product_tokens (product_str, ":");
 
@@ -413,7 +424,6 @@ namespace twiin
 
       const Domain_1D domain_x (0, distance);
       const Domain_1D domain_z (0, 8000);
-      const Domain_2D domain_2d (domain_x, domain_z);
 
       Title title (size_2d);
       const Model model (config_file_content);
@@ -451,6 +461,14 @@ namespace twiin
                  k != valid_time_set.end (); k++)
             {
 
+               const Dtime& dtime = *(k);
+               if (!time_set.match (dtime)) { continue; }
+
+               const string png_file_path = "crosssection_" + stage + "_" +
+                  product + "_" + dtime.get_string ("%Y%m%d%H%M") + ".png";
+               cout << "Rendering " << png_file_path << endl;
+               if (is_bludge) { continue; }
+
                RefPtr<ImageSurface> surface = ImageSurface::create (
                   FORMAT_ARGB32, size_2d.i, size_2d.j);
                RefPtr<Context> cr = Context::create (surface);
@@ -464,15 +482,12 @@ namespace twiin
 
                if (s2d.i < 0 || s2d.j < 0) { continue; }
 
-               const Dtime& dtime = *(k);
                Display::render_cross_section (cr, transform, box_2d,
                   domain_z, model, stage, product, dtime, multi_journey);
                const string& time_str = dtime.get_string ("%Y.%m.%d %H:%M UTC");
                title.set ("", time_str, product, stage, "");
                title.cairo (cr);
 
-               const string png_file_path = "crosssection_" + stage + "_" +
-                  product + "_" + dtime.get_string ("%Y%m%d%H%M") + ".png";
                surface->write_to_png (png_file_path);
 
             }
@@ -490,32 +505,42 @@ main (int argc,
 
    static struct option long_options[] =
    {
+      { "bludge", 0, 0, 'b' },
       { "geometry", 1, 0, 'g' },
       { "interactive", 0, 0, 'i' },
       { "level", 1, 0, 'l' },
       { "product", 1, 0, 'p' },
       { "stage", 1, 0, 's' },
+      { "time", 1, 0, 't' },
       { "cross-section", 1, 0, 'x' },
       { NULL, 0, NULL, 0 }
    };
 
+   Size_2D size_2d (960, 960);
    string product_str ("WIND");
    string stage_str ("STAGE3");
    string level_str ("Surface");
-   Size_2D size_2d (960, 960);
+   string time_str;
 
    int c;
+   bool is_bludge = false;
    bool is_interactive = false;
    int option_index = 0;
 
    Multi_Journey multi_journey;
 
-   while ((c = getopt_long (argc, argv, "g:il:p:s:x:",
+   while ((c = getopt_long (argc, argv, "bg:il:p:s:t:x:",
           long_options, &option_index)) != -1)
    {
 
       switch (c)
       {
+
+         case 'b':
+         {
+            is_bludge = true;
+            break;
+         }
 
          case 'g':
          {
@@ -549,6 +574,12 @@ main (int argc,
             break;
          }
 
+         case 't':
+         {
+            time_str = (string (optarg));
+            break;
+         }
+
          case 'x':
          {
             is_interactive = false;
@@ -556,7 +587,7 @@ main (int argc,
             while (tokens.size () >= 2)
             {
                const Lat_Long lat_long (stof (tokens[0]), stof (tokens[1]));
-               tokens.erase (tokens.begin (), tokens.begin () + 1);
+               tokens.erase (tokens.begin (), tokens.begin () + 2);
                multi_journey.push_back (lat_long);
             }
             break;
@@ -579,9 +610,9 @@ main (int argc,
    const string zoom_str_5 ("LAMBERT_CONIC_SOUTH:380:-33.7:150.55");
 
    Tokens zoom_tokens;
-   zoom_tokens.push_back ("Stage_3/" + zoom_str_3);
-   zoom_tokens.push_back ("Stage_4/" + zoom_str_4);
-   zoom_tokens.push_back ("Stage_5/" + zoom_str_5);
+   zoom_tokens.push_back ("STAGE3/" + zoom_str_3);
+   zoom_tokens.push_back ("STAGE4/" + zoom_str_4);
+   zoom_tokens.push_back ("STAGE5/" + zoom_str_5);
 
    try
    {
@@ -592,7 +623,7 @@ main (int argc,
       {
          Gtk::Main gtk_main (argc, argv);
          interactive (size_2d, zoom_tokens, config_file_content,
-            stage_str, product_str, level_str);
+            stage_str, product_str, level_str, time_str);
       }
       else
       {
@@ -600,12 +631,12 @@ main (int argc,
          if (is_cross_section)
          {
             cross_section (size_2d, zoom_tokens, config_file_content,
-               stage_str, product_str, multi_journey);
+               stage_str, product_str, multi_journey, time_str, is_bludge);
          }
          else
          {
             command_line (size_2d, zoom_tokens, config_file_content,
-               stage_str, product_str, level_str);
+               stage_str, product_str, level_str, time_str, is_bludge);
          }
       }
 

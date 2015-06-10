@@ -428,10 +428,8 @@ Display::render_product (const RefPtr<Context>& cr,
       else
       if (level.type == HEIGHT_LEVEL)
       {
-cout << "      render product a " << endl;
          raster_ptr = get_uppers_raster_ptr (size_2d,
             transform, model, stage, product, dtime, level);
-cout << "      render product b " << endl;
       }
    }
    else
@@ -519,17 +517,13 @@ Display::render (const RefPtr<Context>& cr,
                  const Product product)
 {
 
-cout << "   Display::render a " << endl;
    cr->save ();
 
    Color (0.86, 0.85, 0.47).cairo (cr);
    cr->paint();
 
-cout << "   Display::render b " << endl;
    render_product (cr, transform, size_2d, model,product, dtime, level, stage);
-cout << "   Display::render c " << endl;
    render_wind_barbs (cr, transform, size_2d, model, dtime, level, stage);
-cout << "   Display::render d " << endl;
 
    // Stage 3/4/5 Frames
    //render_stages (cr, transform, station_map);
@@ -537,7 +531,6 @@ cout << "   Display::render d " << endl;
    // All Stations
    //station_map.cairo (cr, transform);
 
-cout << "   Display::render a " << endl;
    cr->restore ();
 
 }
@@ -571,7 +564,6 @@ Display::render_cross_section (const RefPtr<Context>& cr,
       raster_ptr->blit (cr);
       delete raster_ptr;
    }
-
 
    const Geodesy geodesy;
    const Real distance = multi_journey.get_distance (geodesy);
@@ -679,7 +671,6 @@ Display::render_cross_section_arrows (const RefPtr<Context>& cr,
             Real u = model.evaluate (U, lat_long, level, dtime, stage);
             Real v = model.evaluate (V, lat_long, level, dtime, stage);
             Real w = model.evaluate (W, lat_long, level, dtime, stage);
-//const Real datum = model.evaluate (nwp_element, lat_long, level, dtime, stage);
             Real uu = u * s + v * c;
             transform.transform_uv (uu, w, x, z);
             const Real theta = atan2 (w, uu);
@@ -687,8 +678,6 @@ Display::render_cross_section_arrows (const RefPtr<Context>& cr,
             const Real as = std::min (3600 * mag, arrow_size);
             const Arrow arrow (theta, as, 0.12);
             arrow.cairo (cr, Point_2D (i, j));
-            //Color (0, 0, 0, 0.05).cairo (cr);
-            //cr->fill_preserve ();
             Color (0, 0, 0, 0.10).cairo (cr);
             cr->stroke ();
 
