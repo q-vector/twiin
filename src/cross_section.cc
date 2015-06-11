@@ -203,10 +203,10 @@ Cross_Section::pack ()
    product_panel.being_packed (pp_anchor, pp_width, pp_height);
    product_panel.pack ();
 
-   this->margin_l = 16 * margin + tc_width;
+   this->margin_l = 10 * margin + tc_width;
    this->margin_r = 4 * margin;
    this->margin_t = title_height + 4 * margin;
-   this->margin_b = 8 * margin + pp_height;
+   this->margin_b = 5 * margin + pp_height;
 
 }
 
@@ -248,13 +248,18 @@ void
 Cross_Section::render_queue_draw ()
 {
 
-   const Lat_Long origin (multi_journey.front ());
-   const Lat_Long destination (multi_journey.back ());
-
    const Dtime& dtime = get_time_chooser ().get_time ();
    const string& time_string = dtime.get_string ("%Y.%m.%d %H:%M UTC");
-   title.set (time_string, origin.get_string (), product,
-      stage, destination.get_string ());
+
+   const Lat_Long origin (multi_journey.front ());
+   const Lat_Long destination (multi_journey.back ());
+   const bool complex_mj = (multi_journey.size () > 2);
+   const string o_suffix (complex_mj ? " ..." : "");
+   const string d_preffix (complex_mj ? "... " : "");
+   const string& o_str = origin.get_string (3) + o_suffix;
+   const string& d_str = d_preffix + destination.get_string (3);
+
+   title.set (time_string, o_str, product, stage, d_str);
    set_foreground_ready (false);
 
    Console_2D::render_queue_draw ();

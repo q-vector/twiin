@@ -221,8 +221,14 @@ namespace twiin
                Display::render_cross_section (cr, transform, box_2d,
                   domain_z, model, stage, product, dtime, multi_journey);
                const string& time_str = dtime.get_string ("%Y.%m.%d %H:%M UTC");
-               title.set (time_str, origin.get_string (), product,
-                  stage, destination.get_string ());
+
+               const bool complex_mj = (multi_journey.size () >= 2);
+               const string o_suffix (complex_mj ? " ..." : "");
+               const string d_preffix (complex_mj ? "... " : "");
+               const string& o_str = origin.get_string (3) + o_suffix;
+               const string& d_str = d_preffix + destination.get_string (3);
+
+               title.set (time_str, o_str, product, stage, d_str);
 
                title.cairo (cr);
 

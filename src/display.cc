@@ -355,8 +355,12 @@ Display::get_color (const Product& product,
    else
    if (product == "RHO")
    {
-      const Real x = tanh (Domain_1D (1.25, 0.95).normalize (datum)-0.5)+0.5;
-      return Color::hsb (0.0, 0.0, x);
+      const Real jump = 1.10;
+      const Real deviate = datum - jump;
+      const Real x = atan (deviate / 0.05);
+      const Real b = Domain_1D (M_PI_2, -M_PI_2).normalize (x) * 0.85 + 0.15;
+      const Real s = exp (-fabs (deviate) / 0.01) * 0.8 + 0.2;
+      return Color::hsb (0.800, s, b);
    }
    else
    if (product == "W")
@@ -364,7 +368,7 @@ Display::get_color (const Product& product,
       const Real hue = (datum < 0 ? 0.667 : 0.000);
       const Real absolute = fabs (datum);
       const Real quantized = floor (absolute * 10) / 10;
-      const Real alpha = Domain_1D (0, 1.5).normalize (quantized);
+      const Real alpha = Domain_1D (0, 1.5).normalize (quantized) * 0.7;
       return Color::hsb (hue, 1.0, 1.0, alpha);
    }
    else
@@ -552,7 +556,7 @@ Display::render (const RefPtr<Context>& cr,
    cr->save ();
 
    //Color (0.86, 0.85, 0.47).cairo (cr);
-   Color (1, 1, 1).cairo (cr);
+   Checkered (Color (0.55, 0.55, 0.55), Color (0.45, 0.45, 0.45)).cairo (cr);
    cr->paint();
 
    render_product (cr, transform, size_2d, model,product, dtime, level, stage);
@@ -711,7 +715,6 @@ Display::render_cross_section_arrows (const RefPtr<Context>& cr,
             const Real as = std::min (3600 * mag, arrow_size);
             const Arrow arrow (theta, as, 0.12);
             arrow.cairo (cr, Point_2D (i, j));
-            Color (0, 0, 0, 0.10).cairo (cr);
             cr->stroke ();
 
          }
