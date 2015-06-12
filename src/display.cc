@@ -118,8 +118,8 @@ Display::get_terrain_raster_ptr (const Size_2D& size_2d,
             continue;
          }
 
-         const Real orog = terrain_stage.get_topography (i, j);
-         const Real lsm = terrain_stage.evaluate (string ("lsm"), i, j);
+         const Real orog = terrain_stage.get_topography (lat_long);
+         const Real lsm = terrain_stage.evaluate (string ("lsm"), lat_long);
          const Real h = std::min (std::max (orog / 2000.0, 0.0), 1.0);
 
          const bool land = (lsm > 0.5);

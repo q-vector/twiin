@@ -44,20 +44,6 @@ Twiin::Transform_Ptr_Map::~Transform_Ptr_Map ()
 
 }
 
-RefPtr<ImageSurface>
-Twiin::get_surface (const Size_2D& size_2d) const
-{
-   return ImageSurface::create (FORMAT_ARGB32, size_2d.i, size_2d.j);
-}
-
-RefPtr<Context>
-Twiin::get_cr (const RefPtr<ImageSurface> surface) const
-{
-   RefPtr<Context> cr = Context::create (surface);
-   cr->select_font_face ("Verdana", FONT_SLANT_NORMAL, FONT_WEIGHT_NORMAL);
-   return cr;
-}
-
 string
 Twiin::get_png_file_path (const Stage& stage,
                           const Product& product,
@@ -179,8 +165,8 @@ Twiin::command_line (const string& stage_str,
             cout << "Rendering " << png_file_path << endl;
             if (is_bludge) { continue; }
 
-            RefPtr<ImageSurface> surface = get_surface (size_2d);
-            RefPtr<Context> cr = get_cr (surface);
+            RefPtr<ImageSurface> surface = denise::get_surface (size_2d);
+            RefPtr<Context> cr = denise::get_cr (surface);
 
             Display::render (cr, transform, size_2d,
                model, dtime, level, stage, product);
@@ -262,8 +248,8 @@ Twiin::cross_section (const string& stage_str,
             cout << "Rendering " << png_file_path << endl;
             if (is_bludge) { continue; }
 
-            RefPtr<ImageSurface> surface = get_surface (size_2d);
-            RefPtr<Context> cr = get_cr (surface);
+            RefPtr<ImageSurface> surface = denise::get_surface (size_2d);
+            RefPtr<Context> cr = denise::get_cr (surface);
 
             const Index_2D i2d (margin_l, margin_t);
             const Size_2D s2d (size_2d.i - margin_l - margin_r,

@@ -1285,6 +1285,8 @@ Model::get_valid_time_set (const Product& product,
 
    if (product == "TERRAIN")
    {
+      const Model::Surface::Stage& surface_stage = surface.get_stage (stage);
+      return surface_stage.get_valid_time_set ();
    }
    else
    if (product == "T" ||

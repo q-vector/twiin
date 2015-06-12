@@ -183,8 +183,8 @@ Console::Console (Gtk::Window& gtk_window,
    product_panel.add_product ("Misc", Product ("MSLP"));
    product_panel.add_product ("Misc", Product ("TERRAIN"));
 
-   const set<Dtime>& time_set = model.get_valid_time_set (product, stage, level);
-   time_chooser.set_shape (Time_Chooser::Shape (time_set));
+   const set<Dtime>& ts = model.get_valid_time_set (product, stage, level);
+   time_chooser.set_shape (Time_Chooser::Shape (ts));
    time_chooser.set_leap (1);
 
    route_popup_menu.append ("Cross Section");
@@ -201,9 +201,13 @@ Console::Console (Gtk::Window& gtk_window,
 
       overlay_store.add (tokens[1], false);
 
-   pack ();
    }
 
+   pack ();
+
+//   const Lat_Long lat_long_a (-40, 140);
+//   const Lat_Long lat_long_b (-35, 150);
+//   get_route_store ().insert (lat_long_a, lat_long_b);
 
 }
 

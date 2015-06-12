@@ -44,12 +44,6 @@ namespace twiin
          const string
          output_dir;
 
-         RefPtr<ImageSurface>
-         get_surface (const Size_2D& size_2d) const;
-
-         RefPtr<Context>
-         get_cr (const RefPtr<ImageSurface> surface) const;
-
          string
          get_png_file_path (const Stage& stage,
                             const Product& product,
