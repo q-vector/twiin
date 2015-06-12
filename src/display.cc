@@ -304,6 +304,40 @@ Display::get_cross_section_raster_ptr (const Box_2D& box_2d,
 
 }
 
+void
+Display::set_title (Title& title,
+                    const Stage& stage,
+                    const Product& product,
+                    const Dtime& dtime,
+                    const Level& level)
+{
+   const string& time_str = dtime.get_string ("%Y.%m.%d %H:%M UTC");
+   title.set (time_str, "", product, stage, level.get_string ());
+}
+
+void
+Display::set_title (Title& title,
+                    const Stage& stage,
+                    const Product& product,
+                    const Dtime& dtime,
+                    const Multi_Journey& multi_journey)
+{
+
+   const Lat_Long origin (multi_journey.front ());
+   const Lat_Long destination (multi_journey.back ());
+   const bool complex_mj = (multi_journey.size () > 2);
+
+   const string o_suffix (complex_mj ? " ..." : "");
+   const string d_preffix (complex_mj ? "... " : "");
+   const string& o_str = origin.get_string (3) + o_suffix;
+   const string& d_str = d_preffix + destination.get_string (3);
+
+   const string& time_str = dtime.get_string ("%Y.%m.%d %H:%M UTC");
+
+   title.set (time_str, o_str, product, stage, d_str);
+
+}
+
 Color
 Display::get_color (const Product& product,
                     const Real datum)

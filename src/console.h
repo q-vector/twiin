@@ -96,7 +96,6 @@ namespace twiin
 
          Console (Gtk::Window& gtk_window,
                   const Size_2D& size_2d,
-                  const Tokens& zoom_tokens,
                   const Tokens& config_file_content,
                   const Stage& stage,
                   const Product& product,

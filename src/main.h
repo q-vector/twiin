@@ -26,7 +26,7 @@ namespace twiin
             public:
 
                Transform_Ptr_Map (const Size_2D& size_2d,
-                                  const Tokens& zoom_tokens);
+                                  const Tokens& config_file_content);
 
                ~Transform_Ptr_Map ();
 
@@ -34,9 +34,6 @@ namespace twiin
 
          const Size_2D
          size_2d;
-
-         const Tokens
-         zoom_tokens;
 
          const Tokens
          config_file_content;
@@ -58,7 +55,6 @@ namespace twiin
       public:
 
          Twiin (const Size_2D& size_2d,
-                const Tokens& zoom_tokens,
                 const Tokens& config_file_content,
                 const string& output_dir);
 

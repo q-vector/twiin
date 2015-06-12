@@ -26,7 +26,6 @@ Console::Product_Panel::add_product (const string& drawer_str,
                                      const Product& product)
 {
    Button* pb_ptr = new Button (console, product, font_size);
-   pb_ptr->set_hidable (true);
    Button::T_Signal& signal = pb_ptr->get_t_signal ();
    signal.connect (sigc::mem_fun (*this, &Product_Panel::emit));
    add_widget_ptr (drawer_str, pb_ptr);
@@ -134,12 +133,11 @@ Console::process_cross_section (const Integer route_id)
 
 Console::Console (Gtk::Window& gtk_window,
                   const Size_2D& size_2d,
-                  const Tokens& zoom_tokens,
                   const Tokens& config_file_content,
                   const Stage& stage,
                   const Product& product,
                   const Level& level)
-   : Map_Console (gtk_window, size_2d, zoom_tokens),
+   : Map_Console (gtk_window, size_2d, config_file_content),
      Time_Canvas (*this, 12),
      Level_Canvas (*this, 12),
      product_panel (*this, 12),
@@ -192,6 +190,7 @@ Console::Console (Gtk::Window& gtk_window,
       sigc::mem_fun (*this, &Console::process_cross_section));
 
    Map_Console::Overlay_Store& overlay_store = get_overlay_store ();
+
    for (auto iterator = config_file_content.begin ();
         iterator != config_file_content.end (); iterator++)
    {
@@ -205,9 +204,9 @@ Console::Console (Gtk::Window& gtk_window,
 
    pack ();
 
-//   const Lat_Long lat_long_a (-40, 140);
-//   const Lat_Long lat_long_b (-35, 150);
-//   get_route_store ().insert (lat_long_a, lat_long_b);
+   const Lat_Long lat_long_a (-40, 140);
+   const Lat_Long lat_long_b (-35, 150);
+   get_route_store ().insert (lat_long_a, lat_long_b);
 
 }
 
@@ -275,14 +274,10 @@ Console::set_product (const Product& product)
 void
 Console::render_queue_draw ()
 {
-
    const Dtime& dtime = get_time_chooser ().get_time ();
-   const string& time_string = dtime.get_string ("%Y.%m.%d %H:%M UTC");
-   title.set (time_string, "", product, level.get_string (), "");
+   Display::set_title (title, stage, product, dtime, level);
    set_foreground_ready (false);
-
    Map_Console::render_queue_draw ();
-
 }
 
 void

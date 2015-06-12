@@ -249,19 +249,9 @@ Cross_Section::render_queue_draw ()
 {
 
    const Dtime& dtime = get_time_chooser ().get_time ();
-   const string& time_string = dtime.get_string ("%Y.%m.%d %H:%M UTC");
+   Display::set_title (title, stage, product, dtime, multi_journey);
 
-   const Lat_Long origin (multi_journey.front ());
-   const Lat_Long destination (multi_journey.back ());
-   const bool complex_mj = (multi_journey.size () > 2);
-   const string o_suffix (complex_mj ? " ..." : "");
-   const string d_preffix (complex_mj ? "... " : "");
-   const string& o_str = origin.get_string (3) + o_suffix;
-   const string& d_str = d_preffix + destination.get_string (3);
-
-   title.set (time_string, o_str, product, stage, d_str);
    set_foreground_ready (false);
-
    Console_2D::render_queue_draw ();
 
 }

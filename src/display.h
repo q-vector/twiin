@@ -74,6 +74,20 @@ namespace twiin
 
       public:
 
+         static void
+         set_title (Title& title,
+                    const Stage& stage,
+                    const Product& product,
+                    const Dtime& dtime,
+                    const Level& level);
+
+         static void
+         set_title (Title& title,
+                    const Stage& stage,
+                    const Product& product,
+                    const Dtime& dtime,
+                    const Multi_Journey& multi_journey);
+
          static Color
          get_color (const Product& product,
                     const Real datum);

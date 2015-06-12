@@ -14,21 +14,27 @@ using namespace Cairo;
 using namespace twiin;
 
 Twiin::Transform_Ptr_Map::Transform_Ptr_Map (const Size_2D& size_2d,
-                                             const Tokens& zoom_tokens)
+                                             const Tokens& config_file_content)
 {
 
    typedef Geodetic_Transform Gt;
    const Point_2D centre (size_2d.i/2, size_2d.j/2);
 
-   for (auto iterator = zoom_tokens.begin ();
-        iterator != zoom_tokens.end (); iterator++)
+   for (auto iterator = config_file_content.begin ();
+        iterator != config_file_content.end (); iterator++)
    {
-      const Tokens tokens (*(iterator), "/");
-      const string& identifier = tokens[0];
-      const string& zoom_str = tokens[1];
+
+      const Tokens tokens (*(iterator));
+      if (tokens.size () != 3) { continue; }
+      if (tokens[0] != "geodetic_transform") { continue; }
+
+      const string& identifier = tokens[1];
+      const string& zoom_str = tokens[2];
       Gt* gt_ptr = Gt::get_transform_ptr (zoom_str, centre);
       insert (make_pair (identifier, gt_ptr));
+
    }
+
 
 }
 
@@ -81,11 +87,9 @@ Twiin::get_png_file_path (const Stage& stage,
 }
 
 Twiin::Twiin (const Size_2D& size_2d,
-              const Tokens& zoom_tokens,
               const Tokens& config_file_content,
               const string& output_dir)
    : size_2d (size_2d),
-     zoom_tokens (zoom_tokens),
      config_file_content (config_file_content),
      output_dir (output_dir)
 {
@@ -108,7 +112,7 @@ Twiin::interactive (const string& stage_str,
    const Level level (level_str);
 
    Gtk::Window gtk_window;
-   Console console (gtk_window, size_2d, zoom_tokens,
+   Console console (gtk_window, size_2d,
       config_file_content, stage, product, level);
    gtk_window.add (console);
    gtk_window.show_all_children ();
@@ -133,7 +137,7 @@ Twiin::command_line (const string& stage_str,
    const Tokens stage_tokens (stage_str, ":");
    const Tokens product_tokens (product_str, ":");
 
-   Transform_Ptr_Map transform_ptr_map (size_2d, zoom_tokens);
+   Transform_Ptr_Map transform_ptr_map (size_2d, config_file_content);
 
    Title title (size_2d);
    const Model model (config_file_content);
@@ -170,8 +174,7 @@ Twiin::command_line (const string& stage_str,
 
             Display::render (cr, transform, size_2d,
                model, dtime, level, stage, product);
-            const string& time_str = dtime.get_string ("%Y.%m.%d %H:%M UTC");
-            title.set (time_str, "", product, stage, level.get_string ());
+            Display::set_title (title, stage, product, dtime, level);
             title.cairo (cr);
 
             surface->write_to_png (png_file_path);
@@ -260,16 +263,8 @@ Twiin::cross_section (const string& stage_str,
 
             Display::render_cross_section (cr, transform, box_2d,
                domain_z, model, stage, product, dtime, multi_journey);
-            const string& time_str = dtime.get_string ("%Y.%m.%d %H:%M UTC");
 
-            const bool complex_mj = (multi_journey.size () > 2);
-            const string o_suffix (complex_mj ? " ..." : "");
-            const string d_preffix (complex_mj ? "... " : "");
-            const string& o_str = origin.get_string (3) + o_suffix;
-            const string& d_str = d_preffix + destination.get_string (3);
-
-            title.set (time_str, o_str, product, stage, d_str);
-
+            Display::set_title (title, stage, product, dtime, multi_journey);
             title.cairo (cr);
 
             surface->write_to_png (png_file_path);
@@ -397,18 +392,10 @@ main (int argc,
    try
    {
 
-      const string zoom_str_3 ("LAMBERT_CONIC_SOUTH:3000:-33.5:150.5");
-      const string zoom_str_4 ("LAMBERT_CONIC_SOUTH:1200:-33.75:150.5");
-      const string zoom_str_5 ("LAMBERT_CONIC_SOUTH:380:-33.7:150.55");
-
-      Tokens zoom_tokens;
-      zoom_tokens.push_back ("STAGE3/" + zoom_str_3);
-      zoom_tokens.push_back ("STAGE4/" + zoom_str_4);
-      zoom_tokens.push_back ("STAGE5/" + zoom_str_5);
-
       const string config_file_path (string (getenv ("HOME")) + "/.twiin.rc");
       const Tokens& config_file_content = read_config_file (config_file_path);
-      const Twiin twiin (size_2d, zoom_tokens, config_file_content, output_dir);
+
+      const Twiin twiin (size_2d, config_file_content, output_dir);
 
       if (is_interactive)
       {
