@@ -446,25 +446,35 @@ Model::Surface::Stage::evaluate (const Nwp_Element& nwp_element,
 
       case WIND_SPEED:
       {
-         const Real u = evaluate (U, i, j, l);
-         const Real v = evaluate (V, i, j, l);
+         const Real u = evaluate_raw (string ("xwind"), i, j, l);
+         const Real v = evaluate_raw (string ("ywind"), i, j, l);
          datum = sqrt (u*u + v*v);
          break;
       };
 
       case WIND_DIRECTION:
       {
-         const Real u = evaluate (U, i, j, l);
-         const Real v = evaluate (V, i, j, l);
+         const Real u = evaluate_raw (string ("xwind"), i, j, l);
+         const Real v = evaluate_raw (string ("ywind"), i, j, l);
          datum = Wind (u, v).get_direction ();
          break;
       };
 
       case RH:
       {
-         const Real t = evaluate (T, i, j, l);
-         const Real t_d = evaluate (TD, i, j, l);
+         const Real t = evaluate_raw (string ("temp"), i, j, l);
+         const Real t_d = evaluate_raw (string ("dewpt"), i, j, l);
          datum = Moisture::get_rh (t - K, t_d - K, WATER);
+         break;
+      };
+
+      case Q:
+      {
+         const Real t_d = evaluate_raw (string ("dewpt"), i, j, l);
+         const Real mslp = evaluate_raw (string ("mslp"), i, j, l);
+         const Real topography = get_topography (i, j);
+         const Real surface_p = mslp - 11.76 * topography;
+         datum = Moisture::get_q_s (t_d - K, surface_p);
          break;
       };
 
@@ -490,8 +500,8 @@ Model::Surface::Stage::evaluate (const Nwp_Element& nwp_element,
 
       case THETA:
       {
-         const Real t = evaluate (T, i, j, l);
-         const Real mslp = evaluate (MSLP, i, j, l);
+         const Real t = evaluate_raw (string ("temp"), i, j, l);
+         const Real mslp = evaluate_raw (string ("mslp"), i, j, l);
          const Real topography = get_topography (i, j);
          const Real surface_p = mslp - 11.76 * topography;
          datum = Thermo_Point::t_p (t - K, surface_p).get_theta () + K;
@@ -501,9 +511,9 @@ Model::Surface::Stage::evaluate (const Nwp_Element& nwp_element,
       case THETA_E:
       {
          typedef Thermo_Point Tp;
-         const Real t = evaluate (T, i, j, l);
-         const Real t_d = evaluate (TD, i, j, l);
-         const Real mslp = evaluate (MSLP, i, j, l);
+         const Real t = evaluate_raw (string ("temp"), i, j, l);
+         const Real t_d = evaluate_raw (string ("dewpt"), i, j, l);
+         const Real mslp = evaluate_raw (string ("mslp"), i, j, l);
          const Real topography = get_topography (i, j);
          const Real surface_p = mslp - 11.76 * topography;
          datum = Tp::normand (t - K, t_d - K, surface_p).get_theta_e () + K;
@@ -512,8 +522,8 @@ Model::Surface::Stage::evaluate (const Nwp_Element& nwp_element,
 
       case RHO:
       {
-         const Real t = evaluate (T, i, j, l);
-         const Real mslp = evaluate (MSLP, i, j, l);
+         const Real t = evaluate_raw (string ("temp"), i, j, l);
+         const Real mslp = evaluate_raw (string ("mslp"), i, j, l);
          const Real topography = get_topography (i, j);
          const Real surface_p = mslp - 11.76 * topography;
          datum = surface_p / (R_d * t);
@@ -522,13 +532,14 @@ Model::Surface::Stage::evaluate (const Nwp_Element& nwp_element,
 
       case FFDI:
       {
-         const Real t = evaluate (T, i, j, l);
-         const Real t_d = evaluate (TD, i, j, l);
+         const Real t = evaluate_raw (string ("temp"), i, j, l);
+         const Real t_d = evaluate_raw (string ("dewpt"), i, j, l);
          const Real rh = Moisture::get_rh (t - K, t_d - K, WATER);
-         const Real u = evaluate (U, i, j, l);
-         const Real v = evaluate (V, i, j, l);
+         const Real u = evaluate_raw (string ("xwind"), i, j, l);
+         const Real v = evaluate_raw (string ("ywind"), i, j, l);
          const Real speed = sqrt (u*u + v*v);
          datum = Fire::get_ffdi (t - K, rh * 100, speed * 3.6);
+         break;
       };
 
       default:
@@ -805,49 +816,13 @@ Model::Uppers::Stage::evaluate (const Nwp_Element& nwp_element,
 
          switch (nwp_element)
          {
-
-            case ZONAL_WIND:
-            {
-               varname = string ("ml_xwind");
-               break;
-            }
-
-            case MERIDIONAL_WIND:
-            {
-               varname = string ("ml_ywind");
-               break;
-            }
-
-            case VERTICAL_VELOCITY:
-            {
-               varname = string ("ml_zwind");
-               break;
-            }
-
-            case THETA:
-            {
-               varname = string ("ml_theta");
-               break;
-            }
-
-            case SPECIFIC_HUMIDITY:
-            {
-               varname = string ("ml_spechum");
-               break;
-            }
-
-            case P_THETA:
-            {
-               varname = string ("ml_ptheta");
-               break;
-            }
-
-            case P_RHO:
-            {
-               varname = string ("ml_prho");
-               break;
-            }
-
+            case U:       { varname = string ("ml_xwind"); break; } 
+            case V:       { varname = string ("ml_ywind"); break; } 
+            case W:       { varname = string ("ml_zwind"); break; } 
+            case THETA:   { varname = string ("ml_theta"); break; } 
+            case Q:       { varname = string ("ml_spechum"); break; } 
+            case P_THETA: { varname = string ("ml_ptheta"); break; } 
+            case P_RHO:   { varname = string ("ml_prho"); break; } 
          }
 
          datum = evaluate_raw (varname, i, j, k, l);

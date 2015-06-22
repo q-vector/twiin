@@ -482,6 +482,7 @@ Display::render_product (const RefPtr<Context>& cr,
        product == "P_RHO" ||
        product == "TD" ||
        product == "RH" ||
+       product == "Q" ||
        product == "THETA" ||
        product == "RHO" ||
        product == "WIND" ||
@@ -509,7 +510,6 @@ Display::render_product (const RefPtr<Context>& cr,
          size_2d, transform, model, stage, product, dtime);
    }
    else
-   if (product == "Q")
    {
       raster_ptr = get_uppers_raster_ptr (size_2d,
          transform, model, stage, product, dtime, level);
