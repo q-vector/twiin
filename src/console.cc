@@ -142,6 +142,7 @@ Console::Console (Gtk::Window& gtk_window,
      Level_Canvas (*this, 12),
      product_panel (*this, 12),
      model (config_file_content),
+     hrit (config_file_content),
      stage (stage),
      product (product),
      level (level)
@@ -180,7 +181,11 @@ Console::Console (Gtk::Window& gtk_window,
    product_panel.add_product ("Fire", Product ("FFDI"));
    product_panel.add_product ("Misc", Product ("MSLP"));
    product_panel.add_product ("Misc", Product ("TERRAIN"));
+   product_panel.add_product ("Misc", Product ("IR1"));
+   product_panel.add_product ("Misc", Product ("IR2"));
    product_panel.add_product ("Misc", Product ("IR3"));
+   product_panel.add_product ("Misc", Product ("IR4"));
+   product_panel.add_product ("Misc", Product ("VIS"));
 
    const set<Dtime>& ts = model.get_valid_time_set (product, stage, level);
    time_chooser.set_shape (Time_Chooser::Shape (ts));
@@ -290,7 +295,7 @@ Console::render_image_buffer (const RefPtr<Context>& cr)
    const Dtime& dtime = get_time_chooser ().get_time ();
    const Level& level = get_level_panel ().get_level ();
 
-   Display::render (cr, transform, size_2d, model, //station_map,
+   Display::render (cr, transform, size_2d, model, hrit, //station_map,
       dtime, level, stage, product);
    render_mesh (cr);
    render_overlays (cr);

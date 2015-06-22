@@ -65,6 +65,9 @@ namespace twiin
          const Model
          model;
 
+         const Hrit
+         hrit;
+
          //const Station::Map
          //station_map;
 

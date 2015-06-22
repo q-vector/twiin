@@ -120,8 +120,8 @@ Enhancement_Gamma::Enhancement_Gamma (const Real gamma,
 Enhancement_Wvjl3::Enhancement_Wvjl3 ()
 {
 
-   //const Integer max = 1023;
-   const Integer max = 255;
+   const Integer max = 1023;
+   //const Integer max = 255;
    const Real f = Real (1) / Real (max);
 
    add (  0, 607, Color (  0*f,   0*f,   0*f), Color (  0*f,   0*f,   0*f));

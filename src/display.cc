@@ -237,6 +237,59 @@ Display::get_uppers_raster_ptr (const Size_2D& size_2d,
 }
 
 Raster*
+Display::get_hrit_raster_ptr (const Size_2D& size_2d,
+                              const Transform_2D& transform,
+                              const Hrit& hrit,
+                              const Product& product,
+                              const Dtime& dtime)
+{
+
+   const string channel (product);
+   const Integer max_index = (channel == "VIS" ? 1024 : 1024);
+
+   Raster* raster_ptr = new Raster (size_2d);
+   Raster& raster = *raster_ptr;
+
+   const auto& navigation_map = hrit.get_navigation_map (dtime);
+   Hrit::Disk disk = hrit.get_disk (dtime, channel);
+
+   Lat_Long lat_long;
+   Real& latitude = lat_long.latitude;
+   Real& longitude = lat_long.longitude;
+
+   Real hrit_x, hrit_y;
+   Integer line, element;
+
+   for (Integer i = 0; i < size_2d.i; i++)
+   {
+
+      const Real x = Real (i);
+
+      for (Integer j = 0; j < size_2d.j; j++)
+      {
+
+         const Real y = Real (j);
+         transform.reverse (latitude, longitude, x, y);
+         const auto navigation = navigation_map.at (channel);
+         navigation.transform (hrit_x, hrit_y, latitude, longitude);
+         const Integer line = Integer (round (hrit_y));
+         const Integer element = Integer (round (hrit_x));
+
+         const uint16_t datum = disk.get_datum (line, element);
+         const Real brightness = Real (datum) / max_index;
+         const Color& color = Color::hsb (0, 0, brightness);
+         //const Color& color = enhancement.get_color (raw_datum);
+         raster.set_pixel (i, j, color);
+
+      }
+
+   }
+
+   return raster_ptr;
+
+}
+
+Raster*
 Display::get_cross_section_raster_ptr (const Box_2D& box_2d,
                                        const Transform_2D& transform,
                                        const Model& model,
@@ -465,6 +518,7 @@ Display::render_product (const RefPtr<Context>& cr,
                          const Transform_2D& transform,
                          const Size_2D& size_2d,
                          const Model& model,
+                         const Hrit& hrit,
                          const Product& product,
                          const Dtime& dtime,
                          const Level& level,
@@ -511,52 +565,14 @@ Display::render_product (const RefPtr<Context>& cr,
          size_2d, transform, model, stage, product, dtime);
    }
    else
-   if (product == "IR3")
+   if (product == "IR1" ||
+       product == "IR2" ||
+       product == "IR3" ||
+       product == "IR4" ||
+       product == "VIS")
    {
-
-      const string hrit_data_path ("/media/500GB/research/hrit");
-      const string channel ("VIS");
-      const Integer max_index = (channel == "VIS" ? 256 : 1024);
-
-      raster_ptr = new Raster (size_2d);
-      Raster& raster = *raster_ptr;
-
-      Hrit hrit (hrit_data_path);
-      const Geos_Transform& navigation = hrit.get_navigation (dtime, channel);
-      Hrit::Disk disk = hrit.get_disk (dtime, channel);
-
-      Lat_Long lat_long;
-      Real& latitude = lat_long.latitude;
-      Real& longitude = lat_long.longitude;
-
-      Real disk_x, disk_y;
-      Integer line, element;
-
-      for (Integer i = 0; i < size_2d.i; i++)
-      {
-
-         const Real x = Real (i);
-
-         for (Integer j = 0; j < size_2d.j; j++)
-         {
-
-            const Real y = Real (j);
-            transform.reverse (latitude, longitude, x, y);
-
-            navigation.transform (disk_x, disk_y, latitude, longitude);
-            const Integer line = Integer (round (disk_y));
-            const Integer element = Integer (round (disk_x));
-
-            const uint16_t datum = disk.get_datum (line, element);
-            const Real brightness = Real (datum) / max_index;
-            const Color& color = Color::hsb (0, 0, brightness);
-            //const Color& color = enhancement.get_color (raw_datum);
-            raster.set_pixel (i, j, color);
-
-         }
-
-      }
-
+      raster_ptr = get_hrit_raster_ptr (
+         size_2d, transform, hrit, product, dtime);
    }
 
    if (raster_ptr != NULL) { raster_ptr->blit (cr); }
@@ -624,6 +640,7 @@ Display::render (const RefPtr<Context>& cr,
                  const Transform_2D& transform,
                  const Size_2D& size_2d,
                  const Model& model,
+                 const Hrit& hrit,
                  //const Station::Map& station_map,
                  const Dtime& dtime,
                  const Level& level,
@@ -637,7 +654,8 @@ Display::render (const RefPtr<Context>& cr,
    Checkered (Color (0.55, 0.55, 0.55), Color (0.45, 0.45, 0.45)).cairo (cr);
    cr->paint();
 
-   render_product (cr, transform, size_2d, model,product, dtime, level, stage);
+   render_product (cr, transform, size_2d, model, hrit,
+      product, dtime, level, stage);
    render_wind_barbs (cr, transform, size_2d, model, dtime, level, stage);
 
    // Stage 3/4/5 Frames

@@ -13,10 +13,16 @@ class Hrit
 
    private:
 
-      const string
+      string
       data_path;
 
+      void
+      init (const string& data_path);
+
    public:
+
+      const Tokens
+      channel_tokens;
 
       class File : public ifstream
       {
@@ -121,6 +127,8 @@ class Hrit
 
       Hrit (const string& data_path);
 
+      Hrit (const Tokens& config_file_content);
+
       const string&
       get_data_path () const;
 
@@ -133,9 +141,18 @@ class Hrit
       get_navigation (const Dtime& dtime,
                       const string& channel) const;
 
+      map<string, Geos_Transform>
+      get_navigation_map (const Dtime& dtime) const;
+
       Disk
       get_disk (const Dtime& dtime,
                 const string& channel) const;
+
+      uint16_t
+      get_datum (const Dtime& dtime,
+                 const string& channel,
+                 const Geos_Transform& navigation,
+                 const Lat_Long& lat_long) const;
 
 };
 

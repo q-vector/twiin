@@ -10,6 +10,7 @@
 #include <denise/nwp.h>
 #include "display.h"
 #include "data.h"
+#include "hrit.h"
 
 using namespace std;
 using namespace denise;
@@ -64,6 +65,13 @@ namespace twiin
                                 const Level& level);
 
          static Raster*
+         get_hrit_raster_ptr (const Size_2D& size_2d,
+                              const Transform_2D& transform,
+                              const Hrit& hrit,
+                              const Product& product,
+                              const Dtime& dtime);
+
+         static Raster*
          get_cross_section_raster_ptr (const Box_2D& box_2d,
                                        const Transform_2D& transform,
                                        const Model& model,
@@ -102,6 +110,7 @@ namespace twiin
                          const Transform_2D& transform,
                          const Size_2D& size_2d,
                          const Model& model,
+                         const Hrit& hrit,
                          const Product& product,
                          const Dtime& dtime,
                          const Level& level,
@@ -121,6 +130,7 @@ namespace twiin
                  const Transform_2D& transform,
                  const Size_2D& size_2d,
                  const Model& model,
+                 const Hrit& hrit,
                  //const Station::Map& station_map,
                  const Dtime& dtime,
                  const Level& level,

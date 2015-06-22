@@ -9,6 +9,29 @@ using namespace std;
 using namespace denise;
 using namespace Cairo;
 
+void
+Hrit::init (const string& data_path)
+{
+
+   this->data_path = data_path;
+
+   const Reg_Exp re ("DK01_[0-9]+");
+   const Tokens& dir_listing = get_dir_listing (data_path, re);
+
+   for (auto l = dir_listing.begin ();
+        l != dir_listing.end (); l++)
+   {
+
+      const string& leaf = *(l);
+      const string& time_str = leaf.substr (5, 11) + "2";
+      const Dtime dtime (time_str);
+
+      frame_map.insert (make_pair (dtime, Frame (*this, leaf)));
+
+   }
+
+}
+
 uint32_t
 Hrit::File::get_uint32_t (const uint32_t address,
                           const uint8_t size)
@@ -171,12 +194,11 @@ Hrit::Frame::Frame (const Hrit& hrit,
 {
 
    const Reg_Exp re ("DK01_[0-9]+");
-   const Tokens channel_tokens ("IR1 IR2 IR3 IR4 VIS");
 
    const string& time_str = leaf.substr (5, 11) + "2";
 
-   for (auto c = channel_tokens.begin ();
-        c != channel_tokens.end (); c++)
+   for (auto c = hrit.channel_tokens.begin ();
+        c != hrit.channel_tokens.end (); c++)
    {
 
       const string& channel = *(c);
@@ -254,22 +276,26 @@ Hrit::Disk::get_datum (const Integer line,
 }
 
 Hrit::Hrit (const string& data_path)
-   : data_path (data_path)
+   : channel_tokens ("IR1 IR2 IR3 IR4 VIS")
+{
+   init (data_path);
+}
+
+Hrit::Hrit (const Tokens& config_file_content)
+   : channel_tokens ("IR1 IR2 IR3 IR4 VIS")
 {
 
-   const Reg_Exp re ("DK01_[0-9]+");
-   const Tokens channel_tokens ("IR1 IR2 IR3 IR4 VIS");
-   const Tokens& dir_listing = get_dir_listing (data_path, re);
-
-   for (auto l = dir_listing.begin ();
-        l != dir_listing.end (); l++)
+   for (auto iterator = config_file_content.begin ();
+        iterator != config_file_content.end (); iterator++)
    {
 
-      const string& leaf = *(l);
-      const string& time_str = leaf.substr (5, 11) + "2";
-      const Dtime dtime (time_str);
+      const Tokens tokens (*(iterator));
+      if (tokens.size () != 2) { continue; }
+      if (tokens[0] != "hrit") { continue; }
 
-      frame_map.insert (make_pair (dtime, Frame (*this, leaf)));
+      const string& data_path = tokens[1];
+      init (data_path);
+      break;
 
    }
 
@@ -291,11 +317,47 @@ Hrit::get_navigation (const Dtime& dtime,
    return file.get_navigation ();
 }
 
+map<string, Geos_Transform>
+Hrit::get_navigation_map (const Dtime& dtime) const
+{
+
+   map<string, Geos_Transform> navigation_map;
+
+   for (auto c = channel_tokens.begin ();
+        c != channel_tokens.end (); c++)
+   {
+      const string& channel = *(c);
+      const Geos_Transform& navigation = get_navigation (dtime, channel);
+      navigation_map.insert (make_pair (channel, navigation));
+   }
+
+   return navigation_map;
+
+}
+
 Hrit::Disk
 Hrit::get_disk (const Dtime& dtime,
                 const string& channel) const
 {
    const Hrit::Frame& frame = frame_map.get_frame (dtime);
    return Hrit::Disk (frame, channel);
+}
+
+uint16_t
+Hrit::get_datum (const Dtime& dtime,
+                 const string& channel,
+                 const Geos_Transform& navigation,
+                 const Lat_Long& lat_long) const
+{
+
+   Real x, y;
+
+   navigation.transform (x, y, lat_long.latitude, lat_long.longitude);
+   const Integer line = Integer (round (y));
+   const Integer element = Integer (round (x));
+
+   Hrit::Disk disk = get_disk (dtime, channel);
+   return disk.get_datum (line, element);
+
 }
 

@@ -141,6 +141,7 @@ Twiin::command_line (const string& stage_str,
 
    Title title (size_2d);
    const Model model (config_file_content);
+   const Hrit hrit (config_file_content);
 
    for (Tokens::const_iterator i = stage_tokens.begin ();
         i != stage_tokens.end (); i++)
@@ -173,7 +174,7 @@ Twiin::command_line (const string& stage_str,
             RefPtr<Context> cr = denise::get_cr (surface);
 
             Display::render (cr, transform, size_2d,
-               model, dtime, level, stage, product);
+               model, hrit, dtime, level, stage, product);
             Display::set_title (title, stage, product, dtime, level);
             title.cairo (cr);
 
