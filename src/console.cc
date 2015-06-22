@@ -180,6 +180,7 @@ Console::Console (Gtk::Window& gtk_window,
    product_panel.add_product ("Fire", Product ("FFDI"));
    product_panel.add_product ("Misc", Product ("MSLP"));
    product_panel.add_product ("Misc", Product ("TERRAIN"));
+   product_panel.add_product ("Misc", Product ("IR3"));
 
    const set<Dtime>& ts = model.get_valid_time_set (product, stage, level);
    time_chooser.set_shape (Time_Chooser::Shape (ts));

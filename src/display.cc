@@ -1,4 +1,5 @@
 #include "display.h"
+#include "hrit.h"
 
 using namespace std;
 using namespace denise;
@@ -510,9 +511,52 @@ Display::render_product (const RefPtr<Context>& cr,
          size_2d, transform, model, stage, product, dtime);
    }
    else
+   if (product == "IR3")
    {
-      raster_ptr = get_uppers_raster_ptr (size_2d,
-         transform, model, stage, product, dtime, level);
+
+      const string hrit_data_path ("/media/500GB/research/hrit");
+      const string channel ("VIS");
+      const Integer max_index = (channel == "VIS" ? 256 : 1024);
+
+      raster_ptr = new Raster (size_2d);
+      Raster& raster = *raster_ptr;
+
+      Hrit hrit (hrit_data_path);
+      const Geos_Transform& navigation = hrit.get_navigation (dtime, channel);
+      Hrit::Disk disk = hrit.get_disk (dtime, channel);
+
+      Lat_Long lat_long;
+      Real& latitude = lat_long.latitude;
+      Real& longitude = lat_long.longitude;
+
+      Real disk_x, disk_y;
+      Integer line, element;
+
+      for (Integer i = 0; i < size_2d.i; i++)
+      {
+
+         const Real x = Real (i);
+
+         for (Integer j = 0; j < size_2d.j; j++)
+         {
+
+            const Real y = Real (j);
+            transform.reverse (latitude, longitude, x, y);
+
+            navigation.transform (disk_x, disk_y, latitude, longitude);
+            const Integer line = Integer (round (disk_y));
+            const Integer element = Integer (round (disk_x));
+
+            const uint16_t datum = disk.get_datum (line, element);
+            const Real brightness = Real (datum) / max_index;
+            const Color& color = Color::hsb (0, 0, brightness);
+            //const Color& color = enhancement.get_color (raw_datum);
+            raster.set_pixel (i, j, color);
+
+         }
+
+      }
+
    }
 
    if (raster_ptr != NULL) { raster_ptr->blit (cr); }

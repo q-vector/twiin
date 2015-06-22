@@ -121,6 +121,50 @@ Hrit::File::get_datum (const Integer relative_line,
 
 }
 
+Hrit::Frame&
+Hrit::Frame::Map::get_frame (const Dtime& dtime)
+{
+
+   Dtime closest_time;
+   Real min_dt = GSL_POSINF;
+
+   for (auto iterator = begin (); iterator != end (); iterator++)
+   {
+      const Dtime& t = iterator->first;
+      const Real dt = fabs (dtime.t - t.t);
+      if (dt < min_dt)
+      {
+         min_dt = dt;
+         closest_time = t;
+      }
+   }
+
+   return at (closest_time);
+
+}
+
+const Hrit::Frame&
+Hrit::Frame::Map::get_frame (const Dtime& dtime) const
+{
+
+   Dtime closest_time;
+   Real min_dt = GSL_POSINF;
+
+   for (auto iterator = begin (); iterator != end (); iterator++)
+   {
+      const Dtime& t = iterator->first;
+      const Real dt = fabs (dtime.t - t.t);
+      if (dt < min_dt)
+      {
+         min_dt = dt;
+         closest_time = t;
+      }
+   }
+
+   return at (closest_time);
+
+}
+
 Hrit::Frame::Frame (const Hrit& hrit,
                     const string& leaf)
    : hrit (hrit)
@@ -236,14 +280,14 @@ Hrit::get_file_path (const Dtime& dtime,
                      const string& channel,
                      const Integer segment) const
 {
-   return frame_map.at (dtime).at (channel).at (segment);
+   return frame_map.get_frame (dtime).at (channel).at (segment);
 }
 
 Geos_Transform
 Hrit::get_navigation (const Dtime& dtime,
                       const string& channel) const
 {
-   Hrit::File file (frame_map.at (dtime).at (channel).at (0));
+   Hrit::File file (frame_map.get_frame (dtime).at (channel).at (0));
    return file.get_navigation ();
 }
 
@@ -251,7 +295,7 @@ Hrit::Disk
 Hrit::get_disk (const Dtime& dtime,
                 const string& channel) const
 {
-   const Hrit::Frame& frame = frame_map.at (dtime);
+   const Hrit::Frame& frame = frame_map.get_frame (dtime);
    return Hrit::Disk (frame, channel);
 }
 

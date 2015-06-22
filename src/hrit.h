@@ -70,6 +70,19 @@ class Hrit
 
          public:
 
+            class Map : public map<Dtime, Frame>
+            {
+
+               public:
+
+                  Frame&
+                  get_frame (const Dtime& dtime);
+
+                  const Frame&
+                  get_frame (const Dtime& dtime) const;
+
+            };
+
             Frame (const Hrit& hrit,
                    const string& leaf);
 
@@ -103,7 +116,7 @@ class Hrit
 
       };
 
-      map<Dtime, Frame>
+      Frame::Map
       frame_map;
 
       Hrit (const string& data_path);
