@@ -155,6 +155,7 @@ Cross_Section::Cross_Section (Gtk::Window& gtk_window,
    product_panel.add_product ("Thermo", Product ("THETA_E"));
    product_panel.add_product ("Thermo", Product ("RHO"));
    product_panel.add_product ("Dynamic", Product ("WIND"));
+   product_panel.add_product ("Dynamic", Product ("SPEED"));
    product_panel.add_product ("Dynamic", Product ("W"));
    product_panel.add_product ("Dynamic", Product ("VORTICITY"));
    product_panel.add_product ("Fire", Product ("FFDI"));

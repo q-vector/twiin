@@ -449,6 +449,25 @@ Display::get_color (const Product& product,
       return Color::hsb (hue, 1.0, 1.0, alpha);
    }
    else
+   if (product == "SPEED")
+   {
+      const Real knots = datum * 3.6/1.852;
+           if (knots <  5) { return Color::hsb (0.000, 0.00, 1.00); }
+      else if (knots < 10) { return Color::hsb (0.167, 0.30, 1.00); }
+      else if (knots < 15) { return Color::hsb (0.150, 0.35, 0.95); }
+      else if (knots < 20) { return Color::hsb (0.133, 0.40, 0.90); }
+      else if (knots < 25) { return Color::hsb (0.333, 0.40, 0.95); }
+      else if (knots < 30) { return Color::hsb (0.333, 0.40, 0.75); }
+      else if (knots < 35) { return Color::hsb (0.333, 0.40, 0.65); }
+      else if (knots < 40) { return Color::hsb (0.600, 0.40, 1.00); }
+      else if (knots < 45) { return Color::hsb (0.633, 0.40, 0.90); }
+      else if (knots < 50) { return Color::hsb (0.667, 0.40, 0.80); }
+      else if (knots < 55) { return Color::hsb (0.033, 0.40, 0.65); }
+      else if (knots < 60) { return Color::hsb (0.016, 0.45, 0.80); }
+      else if (knots < 65) { return Color::hsb (0.000, 0.50, 0.95); }
+      else                 { return Color::transparent (); }
+   }
+   else
    if (product == "VORTICITY")
    {
       const Real hue = (datum < 0 ? 0.667 : 0.000);
@@ -469,6 +488,23 @@ Display::get_color (const Product& product,
       //const Real hue = Domain_1D (990e2, 1025e2).normalize (datum) * 0.833;
       const Real brightness = (Integer (floor (datum/200)) % 2) ? 0.82:0.78;
       return Color::hsb (0, 0, brightness);
+   }
+   else
+   if (product == "PRECIP_RATE")
+   {
+      const Real mmhr = datum * 3600;
+           if (mmhr < 0.1) { return Color::hsb (0.000, 0.00, 1.0); }
+      else if (mmhr <   1) { return Color::hsb (0.167, 0.60, 1.0); }
+      else if (mmhr <   2) { return Color::hsb (0.333, 0.60, 1.0); }
+      else if (mmhr <   5) { return Color::hsb (0.333, 0.60, 0.8); }
+      else if (mmhr <  10) { return Color::hsb (0.333, 0.60, 0.6); }
+      else if (mmhr <  20) { return Color::hsb (0.333, 0.60, 0.4); }
+      else if (mmhr <  30) { return Color::hsb (0.600, 0.60, 1.0); }
+      else if (mmhr <  50) { return Color::hsb (0.633, 0.60, 0.8); }
+      else if (mmhr <  75) { return Color::hsb (0.666, 0.60, 0.6); }
+      else if (mmhr < 100) { return Color::hsb (0.083, 0.60, 1.0); }
+      else if (mmhr < 150) { return Color::hsb (0.042, 0.60, 1.0); }
+      else                 { return Color::hsb (0.000, 0.60, 1.0); }
    }
    else
    {
@@ -530,6 +566,7 @@ Display::render_product (const RefPtr<Context>& cr,
        product == "THETA" ||
        product == "RHO" ||
        product == "WIND" ||
+       product == "SPEED" ||
        product == "W" ||
        product == "VORTICITY" ||
        product == "THETA_E")
@@ -548,7 +585,8 @@ Display::render_product (const RefPtr<Context>& cr,
    }
    else
    if (product == "FFDI" ||
-       product == "MSLP")
+       product == "MSLP" ||
+       product == "PRECIP_RATE")
    {
       raster_ptr = get_surface_raster_ptr (
          size_2d, transform, model, stage, product, dtime);

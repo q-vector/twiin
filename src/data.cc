@@ -51,10 +51,12 @@ Product::get_nwp_element () const
    if (*this == "THETA_E") { return THETA_E; }
    if (*this == "RHO") { return RHO; }
    if (*this == "WIND") { return WIND_DIRECTION; }
+   if (*this == "SPEED") { return WIND_SPEED; }
    if (*this == "VORTICITY") { return RELATIVE_VORTICITY; }
    if (*this == "W") { return W; }
    if (*this == "FFDI") { return FFDI; }
    if (*this == "MSLP") { return MSLP; }
+   if (*this == "PRECIP_RATE") { return PRECIP_RATE; }
 }
 
 Station::Station (const Integer id,
@@ -552,6 +554,7 @@ Model::Surface::Stage::evaluate (const Nwp_Element& nwp_element,
             case T: { varname = string ("temp"); break; }
             case TD: { varname = string ("dewpt"); break; }
             case MSLP: { varname = string ("mslp"); break; }
+            case PRECIP_RATE: { varname = string ("prcp8p5"); break; }
             case U: { varname = string ("xwind"); break; }
             case V: { varname = string ("ywind"); break; }
          }
@@ -1000,6 +1003,7 @@ Model::get_nc_varname (const Varname& varname)
    if (varname == "ml_ywind") { return "y-wind"; }
    if (varname == "ml_zwind") { return "dz_dt"; }
    if (varname == "mslp") { return "p"; }
+   if (varname == "prcp8p5") { return "precip"; }
    if (varname == "ml_prho") { return "p"; }
    if (varname == "ml_ptheta") { return "p"; }
    if (varname == "prcp8p5") { return "precip"; }
@@ -1235,6 +1239,7 @@ Model::evaluate (const Nwp_Element& nwp_element,
                  const twiin::Stage& stage) const
 {
    if (nwp_element == MSLP ||
+       nwp_element == PRECIP_RATE ||
        nwp_element == FFDI ||
        level.type == SURFACE_LEVEL)
    {
@@ -1272,6 +1277,7 @@ Model::get_valid_time_set (const Product& product,
        product == "RH" ||
        product == "RHO" ||
        product == "WIND" ||
+       product == "SPEED" ||
        product == "W" ||
        product == "VORTICITY" ||
        product == "THETA" ||
@@ -1291,7 +1297,8 @@ Model::get_valid_time_set (const Product& product,
    }
    else
    if (product == "FFDI" ||
-       product == "MSLP")
+       product == "MSLP" ||
+       product == "PRECIP_RATE")
    {
       const Model::Surface::Stage& surface_stage = surface.get_stage (stage);
       surface_stage.get_valid_time_set ();
@@ -1379,7 +1386,8 @@ Model::get_marker_tokens (const Lat_Long& lat_long,
       tokens.push_back (string_render ("%.2fkg/m3", rho));
    }
    else
-   if (product == "WIND")
+   if (product == "WIND" ||
+       product == "SPEED")
    {
       const Real u = evaluate (U, lat_long, level, dtime, stage);
       if (gsl_isnan (u)) { return tokens; }
@@ -1432,6 +1440,13 @@ Model::get_marker_tokens (const Lat_Long& lat_long,
       const Real mslp = evaluate (MSLP, lat_long, level, dtime, stage);
       if (gsl_isnan (mslp)) { return tokens; }
       tokens.push_back (string_render ("%0.1fhPa", mslp * 1e-2));
+   }
+   else
+   if (product == "PRECIP_RATE")
+   {
+      const Real mmhr = evaluate (PRECIP_RATE, lat_long, level, dtime, stage);
+      if (gsl_isnan (mmhr)) { return tokens; }
+      tokens.push_back (string_render ("%0.1fmm/hr", mmhr * 3600));
    }
 
    return tokens;
