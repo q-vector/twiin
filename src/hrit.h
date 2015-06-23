@@ -114,11 +114,22 @@ class Hrit
             Disk (const Frame& frame,
                   const string& channel);
 
+            //Disk (const Disk& disk);
+
             ~Disk ();
 
             uint16_t
             get_datum (const Integer line,
                        const Integer element);
+
+      };
+
+      class Disk_Ptr_Map : public map<string, Disk*>
+      {
+
+         public:
+
+            ~Disk_Ptr_Map ();
 
       };
 
@@ -144,15 +155,23 @@ class Hrit
       map<string, Geos_Transform>
       get_navigation_map (const Dtime& dtime) const;
 
-      Disk
-      get_disk (const Dtime& dtime,
-                const string& channel) const;
+      Disk*
+      get_disk_ptr (const Dtime& dtime,
+                    const string& channel) const;
 
-      uint16_t
-      get_datum (const Dtime& dtime,
-                 const string& channel,
+      Disk_Ptr_Map
+      get_disk_ptr_map (const Dtime& dtime) const;
+
+      static uint16_t
+      get_datum (Disk& disk,
                  const Geos_Transform& navigation,
-                 const Lat_Long& lat_long) const;
+                 const Lat_Long& lat_long);
+
+      static Color
+      get_color (const string& hrit_product,
+                 Disk_Ptr_Map& disk_ptr_map,
+                 const map<string, Geos_Transform>& navigation_map,
+                 const Lat_Long& lat_long);
 
 };
 

@@ -58,11 +58,14 @@ Color
 Enhancement::get_color (const uint16_t datum) const
 {
 
-   for (vector<Segment>::const_iterator iterator = segment_vector.begin ();
+   for (auto iterator = segment_vector.begin ();
         iterator != segment_vector.end (); iterator++)
    {
-      const Segment& segment = *(iterator);
-      if (segment.contains (datum)) { return segment.get_color (datum); }
+      const auto& segment = *(iterator);
+      if (segment.contains (datum))
+      {
+         return segment.get_color (datum);
+      }
    }
 
    return Enhancement::get_color (datum);
@@ -94,7 +97,6 @@ Enhancement::get_enhancement (const string& str)
 Enhancement_Plain::Enhancement_Plain ()
 {
    const Integer max = 1023;
-   //const Integer max = 255;
    add (0, max, Color (0, 0, 0), Color (1, 1, 1));
 }
 
@@ -103,7 +105,6 @@ Enhancement_Gamma::Enhancement_Gamma (const Real gamma,
 {  
 
    const Integer max = 1023;
-   //const Integer max = 255; 
 
    for (Integer i = 0; i < n; i++)
    {
@@ -119,19 +120,13 @@ Enhancement_Gamma::Enhancement_Gamma (const Real gamma,
 
 Enhancement_Wvjl3::Enhancement_Wvjl3 ()
 {
-
-   const Integer max = 1023;
-   //const Integer max = 255;
-   const Real f = Real (1) / Real (max);
-
-   add (  0, 607, Color (  0*f,   0*f,   0*f), Color (  0*f,   0*f,   0*f));
-   add (608, 787, Color (245*f, 140*f,  70*f), Color ( 73*f,  73*f,  73*f));
-   add (788, 871, Color ( 74*f,  74*f,  74*f), Color (210*f, 210*f, 210*f));
-   add (872, 943, Color (210*f, 210*f, 210*f), Color (  0*f, 130*f,  80*f));
-   add (944, 975, Color (  0*f, 121*f, 121*f), Color (  0*f, 212*f, 212*f));
-   add (976, 1011, Color (160*f, 150*f,   0*f), Color (250*f,  50*f,   0*f));
-   add (1012, 1015, Color (150*f,   0*f, 220*f), Color (250*f,   0*f, 220*f));
-   add (1016, 1023, Color (  0*f,   0*f, 226*f), Color (  0*f,   0*f, 134*f));
-
+   add (   0,  607, Color (.0000, .0000, .0000), Color (.0000, .0000, .0000));
+   add ( 608,  787, Color (.9608, .5490, .2745), Color (.2863, .2863, .2863));
+   add ( 788,  871, Color (.2902, .2902, .2902), Color (.8235, .8235, .8235));
+   add ( 872,  943, Color (.8235, .8235, .8235), Color (.0000, .5098, .3137));
+   add ( 944,  975, Color (.0000, .4745, .4745), Color (.0000, .8314, .8314));
+   add ( 976, 1011, Color (.6275, .5882, .0000), Color (.9804, .1961, .0000));
+   add (1012, 1015, Color (.5882, .0000, .8627), Color (.9804, .0000, .8627));
+   add (1016, 1023, Color (.0000, .0000, .8863), Color (.0000, .0000, .5294));
 }
 

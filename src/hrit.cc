@@ -252,6 +252,21 @@ Hrit::Disk::Disk (const Frame& frame,
 
 }
 
+/*
+Hrit::Disk::Disk (const Disk& disk)
+{
+
+   for (auto iterator = disk.begin (); iterator != disk.end (); iterator++)
+   {
+      Hrit::File* file_ptr = *(iterator);
+      push_back (file_ptr);
+   }
+
+   this->segment_size = disk.segment_size;
+
+}
+*/
+
 Hrit::Disk::~Disk ()
 {
    for (auto f = begin (); f != end (); f++)
@@ -273,6 +288,15 @@ Hrit::Disk::get_datum (const Integer line,
    Hrit::File& file = *(at (segment));
    return file.get_datum (relative_line, element);
 
+}
+
+Hrit::Disk_Ptr_Map::~Disk_Ptr_Map ()
+{
+   for (auto iterator = begin (); iterator != end (); iterator++)
+   {
+      Hrit::Disk* disk_ptr = iterator->second;
+      delete disk_ptr;
+   }
 }
 
 Hrit::Hrit (const string& data_path)
@@ -335,19 +359,36 @@ Hrit::get_navigation_map (const Dtime& dtime) const
 
 }
 
-Hrit::Disk
-Hrit::get_disk (const Dtime& dtime,
+Hrit::Disk*
+Hrit::get_disk_ptr (const Dtime& dtime,
                 const string& channel) const
 {
    const Hrit::Frame& frame = frame_map.get_frame (dtime);
-   return Hrit::Disk (frame, channel);
+   return new Hrit::Disk (frame, channel);
+}
+
+Hrit::Disk_Ptr_Map
+Hrit::get_disk_ptr_map (const Dtime& dtime) const
+{
+
+   Hrit::Disk_Ptr_Map disk_ptr_map;
+
+   for (auto c = channel_tokens.begin ();
+        c != channel_tokens.end (); c++)
+   {
+      const string& channel = *(c);
+      Hrit::Disk* disk_ptr = get_disk_ptr (dtime, channel);
+      disk_ptr_map.insert (make_pair (channel, disk_ptr));
+   }
+
+   return disk_ptr_map;
+
 }
 
 uint16_t
-Hrit::get_datum (const Dtime& dtime,
-                 const string& channel,
+Hrit::get_datum (Hrit::Disk& disk,
                  const Geos_Transform& navigation,
-                 const Lat_Long& lat_long) const
+                 const Lat_Long& lat_long)
 {
 
    Real x, y;
@@ -356,8 +397,69 @@ Hrit::get_datum (const Dtime& dtime,
    const Integer line = Integer (round (y));
    const Integer element = Integer (round (x));
 
-   Hrit::Disk disk = get_disk (dtime, channel);
    return disk.get_datum (line, element);
+
+}
+
+Color
+Hrit::get_color (const string& hrit_product,
+                 Disk_Ptr_Map& disk_ptr_map,
+                 const map<string, Geos_Transform>& navigation_map,
+                 const Lat_Long& lat_long)
+{
+
+   const Integer max_index = 1024;
+   //const Integer max_index = (channel == "VIS" ? 1024 : 1024);
+
+   if (hrit_product == "IR1" ||
+       hrit_product == "IR2" ||
+       hrit_product == "IR4" ||
+       hrit_product == "VIS")
+   {
+
+      const string channel (hrit_product);
+
+      const auto& navigation = navigation_map.at (channel);
+      auto& disk = *(disk_ptr_map.at (channel));
+
+      const auto datum = Hrit::get_datum (disk, navigation, lat_long);
+      const Real brightness = Real (datum) / max_index;
+      return Color::hsb (0, 0, brightness);
+
+   }
+   else
+   if (hrit_product == "IR3")
+   {
+
+      Enhancement_Wvjl3 enhancement;
+
+      const auto& navigation = navigation_map.at ("IR3");
+      auto& disk = *(disk_ptr_map.at ("IR3"));
+
+      const auto datum = Hrit::get_datum (disk, navigation, lat_long);
+      return enhancement.get_color (datum);
+
+   }
+   else
+   if (hrit_product == "Pseudo")
+   {
+
+      const auto& navigation_ir1 = navigation_map.at ("IR1");
+      const auto& navigation_vis = navigation_map.at ("VIS");
+      auto& disk_ir1 = *(disk_ptr_map.at ("IR1"));
+      auto& disk_vis = *(disk_ptr_map.at ("VIS"));
+
+      const auto ir1 = Hrit::get_datum (disk_ir1, navigation_ir1, lat_long);
+      const auto vis = Hrit::get_datum (disk_vis, navigation_vis, lat_long);
+      const Real brightness_ir1 = Real (ir1) / max_index;
+      const Real brightness_vis = Real (vis) / max_index;
+      return Color (brightness_vis, brightness_vis, brightness_ir1);
+
+   }
+   else
+   {
+      return Color::transparent ();
+   }
 
 }
 

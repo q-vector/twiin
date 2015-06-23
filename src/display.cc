@@ -26,7 +26,7 @@ Ffdi_Color_Chooser::get_color (const Real ffdi) const
    else
    if (ffdi < 25)
    {
-      const Real delta = ffdi - 10;
+      const Real delta = ffdi - 12;
       const Real r = 0.278 + delta * 0.02133;
       const Real g = 0.400 + delta * 0.03075;
       const Real b = 0.500 + delta * 0.03859;
@@ -45,25 +45,25 @@ Ffdi_Color_Chooser::get_color (const Real ffdi) const
    if (ffdi < 75)
    {
       const Real delta = ffdi - 50;
-      const Real r = 0.549 + delta * 0.01757 * 2;
-      const Real g = 0.549 + delta * 0.01757 * 2;
-      const Real b = 0.329 + delta * 0.02133 * 2;
+      const Real r = 0.549 + delta * 0.01757;
+      const Real g = 0.549 + delta * 0.01757;
+      const Real b = 0.329 + delta * 0.02133;
       return Color (r, g, b, alpha);
    }
    else
    if (ffdi < 100)
    {
       const Real delta = ffdi - 75;
-      const Real r = 0.097 + delta * 0.01553 * 2;
-      const Real g = 0.357 + delta * 0.00925 * 2;
-      const Real b = 0.000 + delta * 0.00000 * 2;
+      const Real r = 0.097 + delta * 0.01553;
+      const Real g = 0.357 + delta * 0.00925;
+      const Real b = 0.000 + delta * 0.00000;
       return Color (r, g, b, alpha);
    }
    else
    if (ffdi < 150)
    {
       const Real delta = ffdi - 100;
-      const Real r = 0.647 + delta * 0.01396;
+      const Real r = 0.647 + delta * 0.00706;
       const Real g = 0.000 + delta * 0.00000;
       const Real b = 0.000 + delta * 0.00000;
       return Color (r, g, b, alpha);
@@ -72,14 +72,14 @@ Ffdi_Color_Chooser::get_color (const Real ffdi) const
    if (ffdi < 200)
    {
       const Real delta = ffdi - 150;
-      const Real r = 0.698 + delta * 0.01176;
+      const Real r = 0.698 + delta * 0.00604;
       const Real g = 0.000 + delta * 0.00000;
-      const Real b = 0.463 + delta * 0.00784;
+      const Real b = 0.463 + delta * 0.00040;
       return Color (r, g, b, alpha);
    }
    else
    {
-      return Color (0, 0, 0, 0);
+      return Color::transparent ();
    }
 
 }
@@ -99,8 +99,7 @@ Display::get_terrain_raster_ptr (const Size_2D& size_2d,
    Real& longitude = lat_long.longitude;
 
    Real orog, lsm;
-   const Color transparent (0, 0, 0, 0);
-   const Model::Terrain::Stage& terrain_stage = model.terrain.get_stage (stage);
+   const auto& terrain_stage = model.terrain.get_stage (stage);
 
    for (Integer i = 0; i < size_2d.i; i++)
    {
@@ -115,7 +114,7 @@ Display::get_terrain_raster_ptr (const Size_2D& size_2d,
 
          if (terrain_stage.out_of_bounds (lat_long))
          {
-            raster.set_pixel (i, j, transparent);
+            raster.set_pixel (i, j, Color::transparent ());
             continue;
          }
 
@@ -154,8 +153,7 @@ Display::get_surface_raster_ptr (const Size_2D& size_2d,
    Real& latitude = lat_long.latitude;
    Real& longitude = lat_long.longitude;
 
-   const Color transparent (0, 0, 0, 0);
-   const Model::Surface::Stage& surface_stage = model.surface.get_stage (stage);
+   const auto& surface_stage = model.surface.get_stage (stage);
    const size_t l = surface_stage.get_l (dtime);
 
    for (Integer i = 0; i < size_2d.i; i++)
@@ -171,7 +169,7 @@ Display::get_surface_raster_ptr (const Size_2D& size_2d,
 
          if (surface_stage.out_of_bounds (lat_long))
          {
-            raster.set_pixel (i, j, transparent);
+            raster.set_pixel (i, j, Color::transparent ());
             continue;
          }
 
@@ -203,8 +201,7 @@ Display::get_uppers_raster_ptr (const Size_2D& size_2d,
    Real& latitude = lat_long.latitude;
    Real& longitude = lat_long.longitude;
 
-   const Color transparent (0, 0, 0, 0);
-   const Model::Uppers::Stage& uppers_stage = model.uppers.get_stage (stage);
+   const auto& uppers_stage = model.uppers.get_stage (stage);
    const size_t l = uppers_stage.get_l (dtime);
 
    for (Integer i = 0; i < size_2d.i; i++)
@@ -220,7 +217,7 @@ Display::get_uppers_raster_ptr (const Size_2D& size_2d,
 
          if (uppers_stage.out_of_bounds (lat_long))
          {
-            raster.set_pixel (i, j, transparent);
+            raster.set_pixel (i, j, Color::transparent ());
             continue;
          }
 
@@ -247,18 +244,15 @@ Display::get_hrit_raster_ptr (const Size_2D& size_2d,
    const string channel (product);
    const Integer max_index = (channel == "VIS" ? 1024 : 1024);
 
-   Raster* raster_ptr = new Raster (size_2d);
-   Raster& raster = *raster_ptr;
+   auto* raster_ptr = new Raster (size_2d);
+   auto& raster = *raster_ptr;
 
    const auto& navigation_map = hrit.get_navigation_map (dtime);
-   Hrit::Disk disk = hrit.get_disk (dtime, channel);
+   auto disk_ptr_map = hrit.get_disk_ptr_map (dtime);
 
    Lat_Long lat_long;
    Real& latitude = lat_long.latitude;
    Real& longitude = lat_long.longitude;
-
-   Real hrit_x, hrit_y;
-   Integer line, element;
 
    for (Integer i = 0; i < size_2d.i; i++)
    {
@@ -270,14 +264,9 @@ Display::get_hrit_raster_ptr (const Size_2D& size_2d,
 
          const Real y = Real (j);
          transform.reverse (latitude, longitude, x, y);
-         const auto navigation = navigation_map.at (channel);
-         navigation.transform (hrit_x, hrit_y, latitude, longitude);
-         const Integer line = Integer (round (hrit_y));
-         const Integer element = Integer (round (hrit_x));
 
-         const uint16_t datum = disk.get_datum (line, element);
-         const Real brightness = Real (datum) / max_index;
-         const Color& color = Color::hsb (0, 0, brightness);
+         const Color& color = Hrit::get_color (string (product),
+            disk_ptr_map, navigation_map, lat_long);
          //const Color& color = enhancement.get_color (raw_datum);
          raster.set_pixel (i, j, color);
 
@@ -302,8 +291,8 @@ Display::get_cross_section_raster_ptr (const Box_2D& box_2d,
    Raster* raster_ptr = new Raster (box_2d);
 
    Color color;
-   const Model::Terrain::Stage& terrain_stage = model.terrain.get_stage (stage);
-   const Model::Uppers::Stage& uppers_stage = model.uppers.get_stage (stage);
+   const auto& terrain_stage = model.terrain.get_stage (stage);
+   const auto& uppers_stage = model.uppers.get_stage (stage);
    const size_t l = uppers_stage.get_l (dtime);
 
    Real x;
@@ -329,7 +318,7 @@ Display::get_cross_section_raster_ptr (const Box_2D& box_2d,
       for (Integer j = index_2d.j; j < index_2d.j + size_2d.j; j++)
       {
          transform.reverse (x, z, Real (i), Real (j));
-         if (z < topography) { color = Color::hsb (0.0, 0.0, 0.0); }
+         if (z < topography) { color = Color::black (); }
          else
          {
             if (product == "WIND")
@@ -397,8 +386,6 @@ Display::get_color (const Product& product,
                     const Real datum)
 {
 
-   const Color transparent (0, 0, 0, 0);
-
    if (product == "T")
    {
       const Real hue = Domain_1D (35 + K, 10 + K).normalize (datum) * 0.833;
@@ -416,8 +403,10 @@ Display::get_color (const Product& product,
    if (product == "RH")
    {
       const Real hue = (datum < 0.5 ? 0.08 : 0.35);
-      const Real saturation = std::min ((fabs (datum - 0.5) * 2), 1.0);
-      return Color::hsb (hue, saturation, 1, 0.4);
+      //const Real saturation = std::min ((fabs (datum - 0.5) * 2), 1.0);
+      //return Color::hsb (hue, saturation, 1, 0.4);
+      const Real saturation = fabs (datum - 0.5) * 0.8;
+      return Color::hsb (hue, saturation, 1);
    }
    else
    if (product == "THETA")
@@ -471,7 +460,7 @@ Display::get_color (const Product& product,
    else
    if (product == "FFDI")
    {
-      const Ffdi_Color_Chooser ffdi_color_chooser (0.7);
+      const Ffdi_Color_Chooser ffdi_color_chooser (1.0);
       return ffdi_color_chooser.get_color (datum);
    }
    else
@@ -483,7 +472,7 @@ Display::get_color (const Product& product,
    }
    else
    {
-      return transparent;
+      return Color::transparent ();
    }
 
 }
@@ -569,7 +558,8 @@ Display::render_product (const RefPtr<Context>& cr,
        product == "IR2" ||
        product == "IR3" ||
        product == "IR4" ||
-       product == "VIS")
+       product == "VIS" ||
+       product == "Pseudo")
    {
       raster_ptr = get_hrit_raster_ptr (
          size_2d, transform, hrit, product, dtime);
@@ -609,7 +599,7 @@ Display::render_wind_barbs (const RefPtr<Context>& cr,
    const Real nan = GSL_NAN;
 
    const Real hue = 0.0;
-   const Color wind_barb_color (0.0, 0.0, 0.0, 0.5);
+   const Color wind_barb_color = Color::black (0.5);
    wind_barb_color.cairo (cr);
 
    for (point.x = start_x; point.x < width; point.x += h)
@@ -651,7 +641,7 @@ Display::render (const RefPtr<Context>& cr,
    cr->save ();
 
    //Color (0.86, 0.85, 0.47).cairo (cr);
-   Checkered (Color (0.55, 0.55, 0.55), Color (0.45, 0.45, 0.45)).cairo (cr);
+   Checkered (Color::gray (0.55), Color::gray (0.45)).cairo (cr);
    cr->paint();
 
    render_product (cr, transform, size_2d, model, hrit,
@@ -682,7 +672,7 @@ Display::render_cross_section (const RefPtr<Context>& cr,
 
    cr->save ();
 
-   Color::hsb (0.0, 0.0, 1.0).cairo (cr);
+   Color::white ().cairo (cr);
    cr->paint ();
 
    Raster* raster_ptr = Display::get_cross_section_raster_ptr (box_2d,
@@ -708,16 +698,16 @@ Display::render_cross_section (const RefPtr<Context>& cr,
    const Multi_Journey mj (multi_journey, geodesy, d_distance);
    const Tuple& tuple_x = mj.get_tuple_x (geodesy);
 
-   const Simple_Mesh_2D ma0 (Color (0, 0, 0, 0.05), 1e8, 10);
-   const Simple_Mesh_2D ma1 (Color (0, 0, 0, 0.1), 1e8, 100);
-   const Simple_Mesh_2D ma2 (Color (0, 0, 0, 0.4), 1e8, 1000);
+   const Simple_Mesh_2D ma0 (Color::black (0.05), 1e8, 10);
+   const Simple_Mesh_2D ma1 (Color::black (0.1), 1e8, 100);
+   const Simple_Mesh_2D ma2 (Color::black (0.4), 1e8, 1000);
    const Domain_1D domain_x (0, distance);
    const Domain_2D domain_2d (domain_x, domain_z);
    const Mesh_2D mesh_2d (Size_2D (2, 2), domain_2d, ma2);
 
    cr->set_line_width (2);
    mesh_2d.render (cr, transform);
-   Color (0, 0, 0, 0.3).cairo (cr);
+   Color::black (0.3).cairo (cr);
 
    mesh_2d.render_label_x (cr, transform, 0, 0,
       "%.0f", NUMBER_REAL, 'c', 't', 5);
@@ -735,13 +725,9 @@ Display::render_cross_section (const RefPtr<Context>& cr,
       const Integer i = std::distance (tuple_x.begin (), iterator);
       const string& str = string_render ("%d", i);
 
-      Color (0, 0, 0, 0.3).cairo (cr);
+      Color::black (0.3).cairo (cr);
       Label (str, point_a, 'c', 't', 6).cairo (cr);
 
-      //Color (0, 0, 0, 0.0).cairo (cr);
-      //cr->move_to (point_a.x, point_a.y);
-      //cr->line_to (point_b.x, point_b.y);
-      //cr->stroke ();
    }
 
    render_cross_section_arrows (cr, transform, box_2d,
@@ -769,9 +755,9 @@ Display::render_cross_section_arrows (const RefPtr<Context>& cr,
    const Real arrow_size = 15;
    const Real h = arrow_size * 1.5;
 
-   Color (0, 0, 0, 0.2).cairo (cr);
-   const Model::Terrain::Stage& terrain_stage = model.terrain.get_stage (stage);
-   const Model::Uppers::Stage& uppers_stage = model.uppers.get_stage (stage);
+   Color::black (0.2).cairo (cr);
+   const auto& terrain_stage = model.terrain.get_stage (stage);
+   const auto& uppers_stage = model.uppers.get_stage (stage);
    const size_t l = uppers_stage.get_l (dtime);
 
    const Geodesy geodesy;
@@ -786,6 +772,7 @@ Display::render_cross_section_arrows (const RefPtr<Context>& cr,
 
       transform.reverse (x, z, Real (i), 0);
       if (x < 0 || x > distance) { continue; }
+
       const Lat_Long lat_long = multi_journey.get_lat_long (x, geodesy);
       if (model.out_of_bounds (lat_long, stage)) { continue; }
 
@@ -797,23 +784,21 @@ Display::render_cross_section_arrows (const RefPtr<Context>& cr,
 
       for (Integer j = index_2d.j; j < index_2d.j + size_2d.j; j += Integer (h))
       {
+
          transform.reverse (x, z, Real (i), Real (j));
          if (z < topography) { continue; }
-         else
-         {
-            Real u = uppers_stage.evaluate (U, lat_long, z, l);
-            Real v = uppers_stage.evaluate (V, lat_long, z, l);
-            Real w = uppers_stage.evaluate (W, lat_long, z, l);
-            Real uu = u * s + v * c;
-            transform.transform_uv (uu, w, x, z);
-            const Real theta = atan2 (w, uu);
-            const Real mag = sqrt (uu*uu + w*w);
-            const Real as = std::min (3600 * mag, arrow_size);
-            const Arrow arrow (theta, as, 0.12);
-            arrow.cairo (cr, Point_2D (i, j));
-            cr->stroke ();
 
-         }
+         Real u = uppers_stage.evaluate (U, lat_long, z, l);
+         Real v = uppers_stage.evaluate (V, lat_long, z, l);
+         Real w = uppers_stage.evaluate (W, lat_long, z, l);
+         Real uu = u * s + v * c;
+         transform.transform_uv (uu, w, x, z);
+         const Real theta = atan2 (w, uu);
+         const Real mag = sqrt (uu*uu + w*w);
+         const Real as = std::min (3600 * mag, arrow_size);
+         const Arrow arrow (theta, as, 0.12);
+         arrow.cairo (cr, Point_2D (i, j));
+         cr->stroke ();
 
       }
 

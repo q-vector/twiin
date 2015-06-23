@@ -186,6 +186,7 @@ Console::Console (Gtk::Window& gtk_window,
    product_panel.add_product ("Misc", Product ("IR3"));
    product_panel.add_product ("Misc", Product ("IR4"));
    product_panel.add_product ("Misc", Product ("VIS"));
+   product_panel.add_product ("Misc", Product ("Pseudo"));
 
    const set<Dtime>& ts = model.get_valid_time_set (product, stage, level);
    time_chooser.set_shape (Time_Chooser::Shape (ts));
@@ -210,9 +211,10 @@ Console::Console (Gtk::Window& gtk_window,
 
    pack ();
 
-   const Lat_Long lat_long_a (-40, 140);
-   const Lat_Long lat_long_b (-35, 150);
-   get_route_store ().insert (lat_long_a, lat_long_b);
+   //
+   //const Lat_Long lat_long_a (-44.876, 132.417);
+   //const Lat_Long lat_long_b (-20.237, 163.378);
+   //get_route_store ().insert (lat_long_a, lat_long_b);
 
 }
 
