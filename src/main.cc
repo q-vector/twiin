@@ -35,7 +35,6 @@ Twiin::Transform_Ptr_Map::Transform_Ptr_Map (const Size_2D& size_2d,
 
    }
 
-
 }
 
 Twiin::Transform_Ptr_Map::~Transform_Ptr_Map ()
@@ -132,6 +131,25 @@ Twiin::command_line (const string& stage_str,
                      const bool is_bludge) const
 {
 
+   Gshhs* gshhs_ptr = NULL;
+
+   for (auto iterator = config_file_content.begin ();
+        iterator != config_file_content.end (); iterator++)
+   {
+
+      const Tokens tokens (*(iterator));
+      if (tokens.size () != 2) { continue; }
+      if (tokens[0] != "overlay") { continue; }
+
+      const Tokens overlay_tokens (tokens[1], ":");
+      if (overlay_tokens[0] != "GSHHS") { continue; }
+
+      const string gshhs_file_path (overlay_tokens[8]);
+      gshhs_ptr = new Gshhs (gshhs_file_path);
+      break;
+
+   }
+
    const Dtime::Set time_set (time_str);
    const Level level (level_str);
    const Tokens stage_tokens (stage_str, ":");
@@ -148,7 +166,7 @@ Twiin::command_line (const string& stage_str,
    {
 
       const twiin::Stage stage (*i);
-      const Transform_2D& transform = *(transform_ptr_map[stage]);
+      const Geodetic_Transform& transform = *(transform_ptr_map[stage]);
 
       for (Tokens::const_iterator j = product_tokens.begin ();
            j != product_tokens.end (); j++)
@@ -175,6 +193,39 @@ Twiin::command_line (const string& stage_str,
 
             Display::render (cr, transform, size_2d,
                model, hrit, dtime, level, stage, product);
+
+            if (gshhs_ptr != NULL)
+            {
+               cr->save ();
+
+               cr->set_line_width (2);
+               Color::black (0.6).cairo (cr);
+               gshhs_ptr->cairo (cr, transform);
+               cr->stroke ();
+
+               const Domain_1D domain_latitude (-50, -15);
+               const Domain_1D domain_longitude (130, 170);
+               const Domain_2D domain_2d (domain_latitude, domain_longitude);
+
+               const Simple_Mesh_2D sm0_2 (Color::black (0.05), 0.2, 0.2);
+               const Simple_Mesh_2D sm1 (Color::black (0.1), 1, 1);
+               const Simple_Mesh_2D sm5 (Color::black (0.1), 5, 5);
+               const Simple_Mesh_2D sm10 (Color::black (0.4), 10, 10);
+               const Simple_Mesh_2D sm30 (Color::black (0.4), 30, 30);
+               const Geodetic_Mesh mesh_small (sm1, sm10, size_2d, domain_2d);
+               const Geodetic_Mesh mesh_large (sm5, sm30, size_2d, domain_2d);
+
+               const Real latitude_span = domain_2d.domain_x.get_span ();
+               const Real longitude_span = domain_2d.domain_y.get_span ();
+               const Real span = std::min (latitude_span, longitude_span);
+               const Geodetic_Mesh& mesh = (span > 90 ? mesh_large : mesh_small);
+
+               cr->save ();
+               mesh.cairo (cr, transform);
+
+               cr->restore ();
+            }
+
             Display::set_title (title, stage, product, dtime, level);
             title.cairo (cr);
 
