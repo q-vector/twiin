@@ -443,6 +443,12 @@ Display::get_color (const Product& product,
    if (product == "W")
    {
       const Real hue = (datum < 0 ? 0.667 : 0.000);
+      return Color::hsb (hue, 1.0, 1.0);
+   }
+   else
+   if (product == "W_TRANSLUCENT")
+   {
+      const Real hue = (datum < 0 ? 0.667 : 0.000);
       const Real absolute = fabs (datum);
       const Real quantized = floor (absolute * 10) / 10;
       const Real alpha = Domain_1D (0, 1.5).normalize (quantized) * 0.7;
@@ -721,7 +727,8 @@ Display::render_cross_section (const RefPtr<Context>& cr,
    if (product == "RHO")
    {
       Raster* raster_ptr = Display::get_cross_section_raster_ptr (box_2d,
-         transform, model, stage, Product ("W"), dtime, multi_journey);
+         transform, model, stage, Product ("W_TRANSLUCENT"), dtime,
+         multi_journey);
       raster_ptr->blit (cr);
       delete raster_ptr;
    }
