@@ -443,7 +443,10 @@ Display::get_color (const Product& product,
    if (product == "W")
    {
       const Real hue = (datum < 0 ? 0.667 : 0.000);
-      return Color::hsb (hue, 1.0, 1.0);
+      const Real absolute = fabs (datum);
+      const Real quantized = floor (absolute * 10) / 10;
+      const Real saturation = Domain_1D (0, 1.5).normalize (quantized) * 0.7;
+      return Color::hsb (hue, saturation, 1.0);
    }
    else
    if (product == "W_TRANSLUCENT")
@@ -702,36 +705,28 @@ Display::render (const RefPtr<Context>& cr,
 
 }
 
-Raster*
-Display::render_cross_section (const RefPtr<Context>& cr,
-                               const Transform_2D& transform,
-                               const Box_2D& box_2d,
-                               const Domain_1D& domain_z,
-                               const Model& model,
-                               const Stage& stage,
-                               const Product& product,
-                               const Dtime& dtime,
-                               const Multi_Journey& multi_journey)
+void
+Display::render_cross_section_w (const RefPtr<Context>& cr,
+                                 const Transform_2D& transform,
+                                 const Box_2D& box_2d,
+                                 const Model& model,
+                                 const Stage& stage,
+                                 const Dtime& dtime,
+                                 const Multi_Journey& multi_journey)
 {
-
-   cr->save ();
-
-   Color::white ().cairo (cr);
-   cr->paint ();
-
    Raster* raster_ptr = Display::get_cross_section_raster_ptr (box_2d,
-      transform, model, stage, product, dtime, multi_journey);
+      transform, model, stage, Product ("W_TRANSLUCENT"), dtime,
+      multi_journey);
    raster_ptr->blit (cr);
    delete raster_ptr;
+}
 
-   if (product == "RHO")
-   {
-      Raster* raster_ptr = Display::get_cross_section_raster_ptr (box_2d,
-         transform, model, stage, Product ("W_TRANSLUCENT"), dtime,
-         multi_journey);
-      raster_ptr->blit (cr);
-      delete raster_ptr;
-   }
+void
+Display::render_cross_section_mesh (const RefPtr<Context>& cr,
+                                    const Transform_2D& transform,
+                                    const Domain_1D& domain_z,
+                                    const Multi_Journey& multi_journey)
+{
 
    const Geodesy geodesy;
    const Real distance = multi_journey.get_distance (geodesy);
@@ -775,14 +770,9 @@ Display::render_cross_section (const RefPtr<Context>& cr,
 
    }
 
-   render_cross_section_arrows (cr, transform, box_2d,
-      model, stage, product, dtime, multi_journey);
-
-   cr->restore ();
-
 }
 
-Raster*
+void
 Display::render_cross_section_arrows (const RefPtr<Context>& cr,
                                       const Transform_2D& transform,
                                       const Box_2D& box_2d,
@@ -849,6 +839,43 @@ Display::render_cross_section_arrows (const RefPtr<Context>& cr,
 
    }
 
+
+}
+
+void
+Display::render_cross_section (const RefPtr<Context>& cr,
+                               const Transform_2D& transform,
+                               const Box_2D& box_2d,
+                               const Domain_1D& domain_z,
+                               const Model& model,
+                               const Stage& stage,
+                               const Product& product,
+                               const Dtime& dtime,
+                               const Multi_Journey& multi_journey)
+{
+
+   cr->save ();
+
+   Color::white ().cairo (cr);
+   cr->paint ();
+
+   Raster* raster_ptr = Display::get_cross_section_raster_ptr (box_2d,
+      transform, model, stage, product, dtime, multi_journey);
+   raster_ptr->blit (cr);
+   delete raster_ptr;
+
+   if (product == "RHO")
+   {
+      render_cross_section_w (cr, transform, box_2d,
+         model, stage, dtime, multi_journey);
+   }
+
+   render_cross_section_mesh (cr, transform, domain_z, multi_journey);
+
+   render_cross_section_arrows (cr, transform, box_2d, model, stage,
+      product, dtime, multi_journey);
+
+   cr->restore ();
 
 }
 

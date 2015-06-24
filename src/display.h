@@ -137,7 +137,32 @@ namespace twiin
                  const twiin::Stage& stage,
                  const Product product);
 
-         static Raster*
+         static void
+         render_cross_section_w (const RefPtr<Context>& cr,
+                                 const Transform_2D& transform,
+                                 const Box_2D& box_2d,
+                                 const Model& model,
+                                 const Stage& stage,
+                                 const Dtime& dtime,
+                                 const Multi_Journey& multi_journey);
+
+         static void
+         render_cross_section_mesh (const RefPtr<Context>& cr,
+                                    const Transform_2D& transform,
+                                    const Domain_1D& domain_z,
+                                    const Multi_Journey& multi_journey);
+
+         static void
+         render_cross_section_arrows (const RefPtr<Context>& cr,
+                                      const Transform_2D& transform,
+                                      const Box_2D& box_2d,
+                                      const Model& model,
+                                      const Stage& stage,
+                                      const Product& product,
+                                      const Dtime& dtime,
+                                      const Multi_Journey& multi_journey);
+
+         static void
          render_cross_section (const RefPtr<Context>& cr,
                                const Transform_2D& transform,
                                const Box_2D& box_2d,
@@ -147,16 +172,6 @@ namespace twiin
                                const Product& product,
                                const Dtime& dtime,
                                const Multi_Journey& multi_journey);
-
-         static Raster*
-         render_cross_section_arrows (const RefPtr<Context>& cr,
-                                      const Transform_2D& transform,
-                                      const Box_2D& box_2d,
-                                      const Model& model,
-                                      const Stage& stage,
-                                      const Product& product,
-                                      const Dtime& dtime,
-                                      const Multi_Journey& multi_journey);
 
    };
 
