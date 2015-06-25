@@ -55,8 +55,8 @@ Console::get_tokens (const Marker& marker) const
    Tokens tokens = model.get_marker_tokens (lat_long,
       dtime, product, stage, level);
 
-   const string& lat_long_str = lat_long.get_string (false, "%.3f\u00b0");
-   tokens.insert (tokens.begin (), lat_long_str);
+   const string& ll_str = lat_long.get_string (false, string ("%.3f\u00b0"));
+   tokens.insert (tokens.begin (), ll_str);
 
    return tokens;
 
@@ -158,10 +158,12 @@ Console::Console (Gtk::Window& gtk_window,
    level_panel.add_extra_level (Level ("Surface"));
    level_panel.set_level (level);
 
+   option_panel.set_hidable (true);
    product_panel.set_hidable (true);
    time_chooser.set_hidable (true);
    level_panel.set_hidable (true);
 
+   register_widget (option_panel);
    register_widget (time_chooser);
    register_widget (level_panel);
    register_widget (product_panel);
@@ -254,6 +256,15 @@ Console::pack ()
    const Real pp_anchor_x = tc_width + 2 * margin;
    const Real pp_anchor_y = height - pp_height - margin;
    const Point_2D pp_anchor (pp_anchor_x, pp_anchor_y);
+
+   const Real op_width = width - lp_width - tc_width - 4 * margin;
+   const Real op_height = button_height;
+   const Real op_anchor_x = tc_width + 2 * margin;
+   const Real op_anchor_y = button_height + 2 * margin + title_height;
+   const Point_2D op_anchor (op_anchor_x, op_anchor_y);
+
+   option_panel.being_packed (op_anchor, op_width, op_height);
+   option_panel.pack ();
 
    time_chooser.being_packed (tc_anchor, tc_width, tc_height);
    time_chooser.pack ();

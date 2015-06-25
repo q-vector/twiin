@@ -895,12 +895,16 @@ Model::Uppers::Stage::get_color (const Product& product,
 const Model::Uppers::Stage&
 Model::Uppers::get_stage (const twiin::Stage& stage) const
 {
+   const bool no_match = (stage_map.find (stage) == stage_map.end ());
+   if (no_match) { cout << "no match" << endl; }
    return (const Model::Uppers::Stage&)(stage_map.at (stage));
 }
 
 Model::Uppers::Stage&
 Model::Uppers::get_stage (const twiin::Stage& stage)
 {
+   const bool no_match = (stage_map.find (stage) == stage_map.end ());
+   if (no_match) { cout << "no match" << endl; }
    return (Model::Uppers::Stage&)(stage_map.at (stage));
 }
 
