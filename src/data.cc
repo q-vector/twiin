@@ -54,6 +54,7 @@ Product::get_nwp_element () const
    if (*this == "SPEED") { return WIND_SPEED; }
    if (*this == "VORTICITY") { return RELATIVE_VORTICITY; }
    if (*this == "W") { return W; }
+   if (*this == "W_TRANSLUCENT") { return W; }
    if (*this == "FFDI") { return FFDI; }
    if (*this == "MSLP") { return MSLP; }
    if (*this == "PRECIP_RATE") { return PRECIP_RATE; }
