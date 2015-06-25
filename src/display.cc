@@ -864,7 +864,8 @@ Display::render_cross_section (const RefPtr<Context>& cr,
    raster_ptr->blit (cr);
    delete raster_ptr;
 
-   if (product == "RHO")
+   if (product == "RHO" ||
+       product == "THETA")
    {
       render_cross_section_w (cr, transform, box_2d,
          model, stage, dtime, multi_journey);

@@ -55,7 +55,7 @@ Console::get_tokens (const Marker& marker) const
    Tokens tokens = model.get_marker_tokens (lat_long,
       dtime, product, stage, level);
 
-   const string& lat_long_str = lat_long.get_string ("false", "%.3f\u00b0");
+   const string& lat_long_str = lat_long.get_string (false, "%.3f\u00b0");
    tokens.insert (tokens.begin (), lat_long_str);
 
    return tokens;
