@@ -9,6 +9,7 @@
 #include <denise/geodesy.h>
 #include <denise/nwp.h>
 #include "nc_file.h"
+#include "hrit.h"
 
 using namespace std;
 using namespace denise;
@@ -91,6 +92,101 @@ namespace twiin
                void
                render_stages (const RefPtr<Context>& cr,
                               const Transform_2D& transform) const;
+
+         };
+
+   };
+
+   class Aws
+   {
+
+      public:
+
+         class Obs
+         {
+
+            public:
+
+               const Real
+               temperature;
+
+               const Real
+               dew_point;
+
+               const Real
+               wind_direction;
+
+               const Real
+               wind_speed;
+
+               const Real
+               wind_gust;
+
+               Obs (const Real temperature,
+                    const Real dew_point,
+                    const Real wind_direction,
+                    const Real wind_speed,
+                    const Real wind_gust);
+
+               Obs (const Obs& obs);
+
+         };
+
+         class Key
+         {
+
+            public:
+
+               const Integer
+               station_id;
+
+               const Dtime
+               dtime;
+
+               Key (const Integer station_id,
+                    const Dtime& dtime);
+
+               Key (const Key& key);
+
+               bool
+               operator == (const Key& key) const;
+
+               bool
+               operator > (const Key& key) const;
+
+               bool
+               operator < (const Key& key) const;
+
+         };
+
+         class Repository : map<Key, Obs>
+         {
+
+            private:
+
+               set<Integer>
+               station_id_set;
+
+               set<Dtime>
+               valid_time_set;
+
+               void
+               read (const string& file_path);
+
+            public:
+
+               Repository ();
+
+               Repository (const string& file_path);
+
+               void
+               ingest (const string& file_path);
+
+               const set<Integer>&
+               get_station_id_set () const;
+
+               const set<Dtime>&
+               get_valid_time_set () const;
 
          };
 
@@ -217,8 +313,8 @@ namespace twiin
                init (const Tokens& stage_tokens);
 
                virtual void
-               init2 (const twiin::Stage& twiin_stage,
-                      const Model::File_Path_Map& file_path_map);
+               init_stage (const twiin::Stage& twiin_stage,
+                           const Model::File_Path_Map& file_path_map);
 
          };
 
@@ -294,8 +390,8 @@ namespace twiin
                init (const Tokens& stage_tokens);
 
                virtual void
-               init2 (const twiin::Stage& twiin_stage,
-                      const Model::File_Path_Map& file_path_map);
+               init_stage (const twiin::Stage& twiin_stage,
+                           const Model::File_Path_Map& file_path_map);
 
          };
 
@@ -364,8 +460,8 @@ namespace twiin
                init (const Tokens& stage_tokens);
 
                virtual void
-               init2 (const twiin::Stage& twiin_stage,
-                      const Model::File_Path_Map& file_path_map);
+               init_stage (const twiin::Stage& twiin_stage,
+                           const Model::File_Path_Map& file_path_map);
 
          };
 
@@ -480,6 +576,35 @@ namespace twiin
                             const Product& product,
                             const twiin::Stage& stage,
                             const Level& level) const;
+
+   };
+
+   class Data
+   {
+
+      private:
+
+         Model
+         model;
+
+         Hrit
+         hrit;
+
+         Aws::Repository
+         aws_repository;
+
+      public:
+
+         Data (const Tokens& config_file_content);
+
+         const Model&
+         get_model () const;
+
+         const Hrit&
+         get_hrit () const;
+
+         const Aws::Repository&
+         get_aws_repository () const;
 
    };
 

@@ -44,6 +44,7 @@ Console::get_tokens (const Marker& marker) const
    const Lat_Long lat_long (marker);
    const Real latitude = marker.x;
    const Real longitude = marker.y;
+   const Model& model = data.get_model ();
 
    if (model.out_of_bounds (lat_long, stage))
    {
@@ -118,6 +119,7 @@ Console::process_cross_section (const Integer route_id)
 
    const Size_2D size_2d (960, 480);
    const Dtime& dtime = get_time_chooser ().get_time ();
+   const Model& model = data.get_model ();
 
    Cross_Section* cross_section_ptr = new Cross_Section (
       gtk_window, size_2d, model, route, stage, product, dtime);
@@ -134,6 +136,7 @@ Console::process_cross_section (const Integer route_id)
 Console::Console (Gtk::Window& gtk_window,
                   const Size_2D& size_2d,
                   const Tokens& config_file_content,
+                  const Data& data,
                   const Stage& stage,
                   const Product& product,
                   const Level& level)
@@ -141,8 +144,7 @@ Console::Console (Gtk::Window& gtk_window,
      Time_Canvas (*this, 12),
      Level_Canvas (*this, 12),
      product_panel (*this, 12),
-     model (config_file_content),
-     hrit (config_file_content),
+     data (data),
      stage (stage),
      product (product),
      level (level)
@@ -192,6 +194,7 @@ Console::Console (Gtk::Window& gtk_window,
    product_panel.add_product ("Misc", Product ("VIS"));
    product_panel.add_product ("Misc", Product ("Pseudo"));
 
+   const Model& model = data.get_model ();
    const set<Dtime>& ts = model.get_valid_time_set (product, stage, level);
    time_chooser.set_shape (Time_Chooser::Shape (ts));
    time_chooser.set_leap (1);
@@ -304,6 +307,9 @@ Console::render_queue_draw ()
 void
 Console::render_image_buffer (const RefPtr<Context>& cr)
 {
+
+   const Model& model = data.get_model ();
+   const Hrit& hrit = data.get_hrit ();
 
    const Size_2D& size_2d = get_size_2d ();
    const Transform_2D& transform = get_transform ();

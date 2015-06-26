@@ -60,9 +60,9 @@ Cross_Section::get_tokens (const Marker& marker) const
    tokens = model.get_marker_tokens (
       lat_long, dtime, product, stage, level);
 
-   const string& lat_long_str = lat_long.get_string (false, "%.3f\u00b0");
+   const string& ll_str = lat_long.get_string (false, string ("%.3f\u00b0"));
    const string& height_str = level.get_string ();
-   tokens.insert (tokens.begin (), lat_long_str);
+   tokens.insert (tokens.begin (), ll_str);
    tokens.insert (tokens.begin (), height_str);
 
    //return Console_2D::get_tokens (marker);

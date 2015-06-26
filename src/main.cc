@@ -110,9 +110,11 @@ Twiin::interactive (const string& stage_str,
    const Product product (product_tokens[0]);
    const Level level (level_str);
 
+   const Data data (config_file_content);
+
    Gtk::Window gtk_window;
    Console console (gtk_window, size_2d,
-      config_file_content, stage, product, level);
+      config_file_content, data, stage, product, level);
    gtk_window.add (console);
    gtk_window.show_all_children ();
    gtk_window.show ();
@@ -158,8 +160,9 @@ Twiin::command_line (const string& stage_str,
    Transform_Ptr_Map transform_ptr_map (size_2d, config_file_content);
 
    Title title (size_2d);
-   const Model model (config_file_content);
-   const Hrit hrit (config_file_content);
+   const Data data (config_file_content);
+   const Model& model = data.get_model ();
+   const Hrit& hrit = data.get_hrit ();
 
    for (Tokens::const_iterator i = stage_tokens.begin ();
         i != stage_tokens.end (); i++)
@@ -260,7 +263,8 @@ Twiin::cross_section (const string& stage_str,
    const Domain_1D domain_z (0, 8000);
 
    Title title (size_2d);
-   const Model model (config_file_content);
+   const Data data (config_file_content);
+   const Model& model = data.get_model ();
 
    const Real margin_l = 60;
    const Real margin_r = 40;

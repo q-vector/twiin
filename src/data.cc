@@ -1,4 +1,5 @@
 #include <denise/dstring.h>
+#include <denise/gzstream.h>
 #include <denise/nwp.h>
 #include "data.h"
 #include "display.h"
@@ -143,6 +144,141 @@ Station::Map::render_stages (const RefPtr<Context>& cr,
    Polygon (stage_5).cairo (cr, transform);
    cr->stroke ();
 
+}
+
+Aws::Obs::Obs (const Real temperature,
+               const Real dew_point,
+               const Real wind_direction,
+               const Real wind_speed,
+               const Real wind_gust)
+   : temperature (temperature),
+     dew_point (dew_point),
+     wind_direction (wind_direction),
+     wind_speed (wind_speed),
+     wind_gust (wind_gust)
+{
+}
+
+Aws::Obs::Obs (const Aws::Obs& obs)
+   : temperature (temperature),
+     dew_point (dew_point),
+     wind_direction (wind_direction),
+     wind_speed (wind_speed),
+     wind_gust (wind_gust)
+{
+}
+
+Aws::Key::Key (const Integer station_id,
+               const Dtime& dtime)
+   : station_id (station_id),
+     dtime (dtime)
+{
+}
+
+Aws::Key::Key (const Key& key)
+   : station_id (key.station_id),
+     dtime (key.dtime)
+{
+}
+
+bool
+Aws::Key::operator == (const Key& key) const
+{
+   return (station_id == key.station_id) && (dtime == key.dtime);
+}
+      
+bool
+Aws::Key::operator > (const Key& key) const
+{
+   if (station_id == key.station_id)
+   {
+      return dtime > key.dtime;
+   }
+   else
+   {
+      return station_id > key.station_id;
+   }
+}
+
+bool
+Aws::Key::operator < (const Key& key) const
+{
+   if (station_id == key.station_id)
+   {
+      return dtime < key.dtime;
+   }
+   else
+   {
+      return station_id < key.station_id;
+   }
+}
+
+void
+Aws::Repository::read (const string& file_path)
+{
+
+   igzstream file (file_path);
+
+   for (string input_line; std::getline (file, input_line); )
+   {
+
+      const Tokens tokens (input_line);
+
+      const Integer station_id = stoi (tokens[0]);
+      const Dtime dtime (tokens[1]);
+      const Real t          = stof (tokens[2]);
+      const Real td         = stof (tokens[3]);
+      const Real wind_dir   = stof (tokens[4]);
+      const Real wind_speed = stof (tokens[5]);
+      const Real wind_gust  = stof (tokens[6]);
+
+      Aws::Key key (station_id, dtime);
+      Aws::Obs obs (t, td, wind_dir, wind_speed, wind_gust);
+
+      insert (make_pair (key, obs));
+
+   }
+
+   file.close ();
+
+}
+
+Aws::Repository::Repository ()
+{
+}
+
+Aws::Repository::Repository (const string& file_path)
+{
+   ingest (file_path);
+}
+
+void
+Aws::Repository::ingest (const string& file_path)
+{
+
+   for (auto iterator = begin (); iterator != end (); iterator++) 
+   {
+      const Aws::Key& key = iterator->first;
+      station_id_set.insert (key.station_id);
+   }
+
+   for (auto iterator = begin (); iterator != end (); iterator++)
+   {
+      const Aws::Key& key = iterator->first;
+      valid_time_set.insert (key.dtime);
+   }
+}
+
+const set<Integer>&
+Aws::Repository::get_station_id_set () const
+{
+   return station_id_set;
+}
+
+const set<Dtime>&
+Aws::Repository::get_valid_time_set () const
+{
+   return valid_time_set;
 }
 
 Model::Varname::Varname (const string& str)
@@ -334,8 +470,8 @@ Model::Terrain::init (const Tokens& stage_tokens)
 }
 
 void
-Model::Terrain::init2 (const twiin::Stage& twiin_stage,
-                       const Model::File_Path_Map& file_path_map)
+Model::Terrain::init_stage (const twiin::Stage& twiin_stage,
+                            const Model::File_Path_Map& file_path_map)
 {
    Model::Terrain::Stage& stage = stage_map.at (twiin_stage);
    stage.init (file_path_map);
@@ -651,8 +787,8 @@ Model::Surface::init (const Tokens& stage_tokens)
 }
 
 void
-Model::Surface::init2 (const twiin::Stage& twiin_stage,
-                       const Model::File_Path_Map& file_path_map)
+Model::Surface::init_stage (const twiin::Stage& twiin_stage,
+                            const Model::File_Path_Map& file_path_map)
 {
    Model::Surface::Stage& stage = stage_map.at (twiin_stage);
    stage.init (file_path_map);
@@ -930,8 +1066,8 @@ Model::Uppers::init (const Tokens& stage_tokens)
 }
 
 void
-Model::Uppers::init2 (const twiin::Stage& twiin_stage,
-                      const Model::File_Path_Map& file_path_map)
+Model::Uppers::init_stage (const twiin::Stage& twiin_stage,
+                           const Model::File_Path_Map& file_path_map)
 {
    Model::Uppers::Stage& stage = stage_map.at (twiin_stage);
    stage.init (file_path_map);
@@ -1171,19 +1307,19 @@ Model::Model (const Tokens& config_file_content)
    const Tokens stage_tokens ("STAGE3 STAGE4 STAGE5");
 
    terrain.init (stage_tokens);
-   terrain.init2 (string ("STAGE3"), terrain_file_path_3_map);
-   terrain.init2 (string ("STAGE4"), terrain_file_path_4_map);
-   terrain.init2 (string ("STAGE5"), terrain_file_path_5_map);
+   terrain.init_stage (string ("STAGE3"), terrain_file_path_3_map);
+   terrain.init_stage (string ("STAGE4"), terrain_file_path_4_map);
+   terrain.init_stage (string ("STAGE5"), terrain_file_path_5_map);
 
    surface.init (stage_tokens);
-   surface.init2 (string ("STAGE3"), surface_file_path_3_map);
-   surface.init2 (string ("STAGE4"), surface_file_path_4_map);
-   surface.init2 (string ("STAGE5"), surface_file_path_5_map);
+   surface.init_stage (string ("STAGE3"), surface_file_path_3_map);
+   surface.init_stage (string ("STAGE4"), surface_file_path_4_map);
+   surface.init_stage (string ("STAGE5"), surface_file_path_5_map);
 
    uppers.init (stage_tokens);
-   uppers.init2 (string ("STAGE3"), uppers_file_path_3_map);
-   uppers.init2 (string ("STAGE4"), uppers_file_path_4_map);
-   uppers.init2 (string ("STAGE5"), uppers_file_path_5_map);
+   uppers.init_stage (string ("STAGE3"), uppers_file_path_3_map);
+   uppers.init_stage (string ("STAGE4"), uppers_file_path_4_map);
+   uppers.init_stage (string ("STAGE5"), uppers_file_path_5_map);
 
 }
 
@@ -1457,4 +1593,44 @@ Model::get_marker_tokens (const Lat_Long& lat_long,
    return tokens;
 
 }
+
+Data::Data (const Tokens& config_file_content)
+   : model (config_file_content),
+     hrit (config_file_content)
+{
+
+   for (auto iterator = config_file_content.begin ();
+        iterator != config_file_content.end (); iterator++)
+   {
+
+      const Tokens tokens (*(iterator));
+      if (tokens.size () == 2 || tokens[0] != "aws")
+      {
+         const string& aws_file_path = tokens[1];
+         aws_repository.ingest (aws_file_path);
+      }
+
+   }
+
+}
+
+const Model&
+Data::get_model () const
+{
+   return model;
+}
+
+const Hrit&
+Data::get_hrit () const
+{
+   return hrit;
+}
+
+const Aws::Repository&
+Data::get_aws_repository () const
+{
+   return aws_repository;
+}
+
+
 

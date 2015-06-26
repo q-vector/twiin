@@ -62,11 +62,8 @@ namespace twiin
          Product_Panel
          product_panel;
 
-         const Model
-         model;
-
-         const Hrit
-         hrit;
+         const Data&
+         data;
 
          //const Station::Map
          //station_map;
@@ -100,6 +97,7 @@ namespace twiin
          Console (Gtk::Window& gtk_window,
                   const Size_2D& size_2d,
                   const Tokens& config_file_content,
+                  const Data& data,
                   const Stage& stage,
                   const Product& product,
                   const Level& level);
