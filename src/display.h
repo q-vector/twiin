@@ -96,6 +96,12 @@ namespace twiin
                     const Dtime& dtime,
                     const Multi_Journey& multi_journey);
 
+         static void
+         set_title (Title& title,
+                    const Stage& stage,
+                    const Dtime& dtime,
+                    const Lat_Long& lat_long);
+
          static Color
          get_color (const Product& product,
                     const Real datum);
@@ -131,7 +137,7 @@ namespace twiin
                  const Size_2D& size_2d,
                  const Model& model,
                  const Hrit& hrit,
-                 //const Station::Map& station_map,
+                 const Station::Map& station_map,
                  const Dtime& dtime,
                  const Level& level,
                  const twiin::Stage& stage,
@@ -172,6 +178,21 @@ namespace twiin
                                const Product& product,
                                const Dtime& dtime,
                                const Multi_Journey& multi_journey);
+
+         static void
+         render_meteogram (const RefPtr<Context>& cr,
+                           const Size_2D& size_2d,
+                           const Model& model,
+                           const Stage& stage,
+                           const Lat_Long& lat_long);
+
+         static void
+         render_vertical_profile (const RefPtr<Context>& cr,
+                                  const Thermo_Diagram& thermo_diagram,
+                                  const Model& model,
+                                  const Stage& stage,
+                                  const Dtime& dtime,
+                                  const Lat_Long& lat_long);
 
    };
 

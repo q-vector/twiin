@@ -381,6 +381,20 @@ Display::set_title (Title& title,
 
 }
 
+void
+Display::set_title (Title& title,
+                    const Stage& stage,
+                    const Dtime& dtime,
+                    const Lat_Long& lat_long)
+{
+
+   const string& ll_str = lat_long.get_string (3);
+   const string& time_str = dtime.get_string ("%Y.%m.%d %H:%M UTC");
+
+   title.set (time_str, "", ll_str, stage, "");
+
+}
+
 Color
 Display::get_color (const Product& product,
                     const Real datum)
@@ -678,7 +692,7 @@ Display::render (const RefPtr<Context>& cr,
                  const Size_2D& size_2d,
                  const Model& model,
                  const Hrit& hrit,
-                 //const Station::Map& station_map,
+                 const Station::Map& station_map,
                  const Dtime& dtime,
                  const Level& level,
                  const Stage& stage,
@@ -875,6 +889,171 @@ Display::render_cross_section (const RefPtr<Context>& cr,
 
    render_cross_section_arrows (cr, transform, box_2d, model, stage,
       product, dtime, multi_journey);
+
+   cr->restore ();
+
+}
+
+void
+Display::render_meteogram (const RefPtr<Context>& cr,
+                           const Size_2D& size_2d,
+                           const Model& model, 
+                           const Stage& stage, 
+                           const Lat_Long& lat_long)
+{
+
+   cr->save ();
+
+   Color::white ().cairo (cr);
+   cr->paint ();
+
+   const Aws::Repository* aws_repository_ptr =
+      model.get_aws_repository_ptr (lat_long, stage);
+   const Aws::Repository& aws_repository = *aws_repository_ptr;
+
+   const Dtime& start_time = aws_repository.begin ()->first.dtime;
+   const Dtime& end_time = aws_repository.rbegin ()->first.dtime;
+   const Domain_1D domain_t (start_time.t, end_time.t);
+
+   const Domain_1D domain_temperature (-15, 35);
+   const Domain_1D domain_speed (0, 30);
+   const Domain_1D domain_direction (0, 360);
+   const Domain_1D domain_pressure (990e2, 1030e2);
+
+   Affine_Transform_2D transform_temperature;
+   Affine_Transform_2D transform_speed;
+   Affine_Transform_2D transform_direction;
+   Affine_Transform_2D transform_pressure;
+
+   const Real margin = 50;
+   const Real title_height = 100;
+
+   const Real width = size_2d.i - 2 * margin;
+   const Real height = (size_2d.j - title_height - 5 * margin) / 4;
+
+   const Real span_t = domain_t.get_span ();
+   const Real span_temperature = domain_temperature.get_span ();
+   const Real span_speed = domain_speed.get_span ();
+   const Real span_direction = domain_direction.get_span ();
+   const Real span_pressure = domain_pressure.get_span ();
+
+   const Real scale_t = width / span_t;
+   const Real scale_temperature = height / span_temperature;
+   const Real scale_speed = height / span_speed;
+   const Real scale_direction = height / span_direction;
+   const Real scale_pressure = height / span_pressure;
+
+   const Real position_temperature = 3 * height + 4 * margin;
+   const Real position_speed = 2 * height + 3 * margin;
+   const Real position_direction = height + 2 * margin;
+   const Real position_pressure = margin;
+
+   transform_temperature.scale (1, -1);
+   transform_speed.scale (1, -1);
+   transform_direction.scale (1, -1);
+   transform_pressure.scale (1, -1);
+
+   transform_temperature.scale (scale_t, scale_temperature);
+   transform_speed.scale (scale_t, scale_speed);
+   transform_direction.scale (scale_t, scale_direction);
+   transform_pressure.scale (scale_t, scale_pressure);
+
+   transform_temperature.translate (0, size_2d.j);
+   transform_speed.translate (0, size_2d.j);
+   transform_direction.translate (0, size_2d.j);
+   transform_pressure.translate (0, size_2d.j);
+
+   transform_temperature.translate (margin, position_temperature);
+   transform_speed.translate (margin, position_speed);
+   transform_direction.translate (margin, position_direction);
+   transform_pressure.translate (margin, position_pressure);
+
+   for (auto iterator = aws_repository.begin ();
+        iterator != aws_repository.end (); iterator++)
+   {
+
+      const Aws::Key& key = iterator->first;
+      const Aws::Obs& obs = iterator->second;
+      const Dtime& dtime = key.dtime;
+
+      const Real temperature = obs.temperature - K;
+      const Real dew_point = obs.dew_point - K;
+      const Real direction = obs.wind_direction;
+      const Real speed = obs.wind_speed;
+      const Real mslp = obs.mslp;
+
+      const string& time_str = dtime.get_string ("%Y%m%d%H%M");
+
+      Color::black ().cairo (cr);
+      const Point_2D p_temperature (dtime.t, temperature);
+      const Point_2D& tp_temperature = transform_temperature.transform (p_temperature);
+      Ring (2).cairo (cr, tp_temperature);
+      cr->stroke ();
+
+      Color::red ().cairo (cr);
+      const Point_2D p_dew_point (dtime.t, dew_point);
+      const Point_2D& tp_dew_point = transform_temperature.transform (p_dew_point);
+      Ring (2).cairo (cr, tp_dew_point);
+      cr->stroke ();
+
+      Color::green ().cairo (cr);
+      const Point_2D p_speed (dtime.t, speed);
+      const Point_2D& tp_speed = transform_speed.transform (p_speed);
+      Ring (2).cairo (cr, tp_speed);
+      cr->stroke ();
+
+      Color::yellow ().cairo (cr);
+      const Point_2D p_direction (dtime.t, direction);
+      const Point_2D& tp_direction = transform_direction.transform (p_direction);
+      Ring (2).cairo (cr, tp_direction);
+      cr->stroke ();
+
+      Color::magenta ().cairo (cr);
+      const Point_2D p_mslp (dtime.t, mslp);
+      const Point_2D& tp_mslp = transform_pressure.transform (p_mslp);
+      Ring (2).cairo (cr, tp_mslp);
+      cr->stroke ();
+
+      cout << time_str << " " << temperature << " " << dew_point <<
+         " " << direction << " " << speed << endl;
+      cout << "   " << p_temperature << " " << tp_temperature << endl;
+      cout << "   " << p_dew_point   << " " << tp_dew_point   << endl;
+      cout << "   " << p_speed       << " " << tp_speed       << endl;
+      cout << "   " << p_direction   << " " << tp_direction   << endl;
+      cout << "   " << p_mslp        << " " << tp_mslp        << endl;
+
+   }
+
+   delete aws_repository_ptr;
+
+   cr->restore ();
+
+}
+
+void
+Display::render_vertical_profile (const RefPtr<Context>& cr,
+                                  const Thermo_Diagram& thermo_diagram,
+                                  const Model& model,
+                                  const Stage& stage,
+                                  const Dtime& dtime,
+                                  const Lat_Long& lat_long)
+{
+
+   cr->save ();
+
+   Color::white ().cairo (cr);
+   cr->paint ();
+
+   const Sounding* sounding_ptr =
+      model.get_sounding_ptr (lat_long, dtime, stage);
+   const Sounding& sounding = *sounding_ptr;
+
+   cr->set_line_width (1);
+   thermo_diagram.render (cr, 900);
+   cr->set_line_width (2);
+   sounding.render (cr, thermo_diagram);
+
+   delete sounding_ptr;
 
    cr->restore ();
 

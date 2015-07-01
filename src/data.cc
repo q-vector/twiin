@@ -73,10 +73,17 @@ Station::Station (const Integer id,
 {
 }
 
+Station::Map::Map ()
+{
+}
+
 Station::Map::Map (const string& file_path)
-   : stage_3 (-47.2, -20.236, 132.416, 168.6824),
-     stage_4 (-39.46, -27.952, 143.648, 157.4648),
-     stage_5 (-35.38, -32.024, 148.544, 152.5712)
+{
+   ingest (file_path);
+}
+
+void
+Station::Map::ingest (const string& file_path)
 {
 
    string input_string;
@@ -102,47 +109,82 @@ Station::Map::Map (const string& file_path)
 
 }
 
-void
-Station::Map::cairo (const RefPtr<Context>& cr,
-                     const Transform_2D& transform) const
+const Station&
+Station::Map::get_station (const Lat_Long& lat_long,
+                           const Real tolerance) const
 {
 
-   const Color stage_5_color = Color::hsb (0.00, 0.9, 0.9, 0.2);
-   const Color stage_4_color = Color::hsb (0.33, 0.9, 0.9, 0.2);
-   const Color stage_3_color = Color::hsb (0.67, 0.9, 0.9, 0.2);
-
-   for (Station::Map::const_iterator iterator = begin ();
-        iterator != end (); iterator++)
+   for (auto iterator = begin (); iterator != end (); iterator++)
    {
 
       const Station& station = iterator->second;
-                                                stage_5_color.cairo (cr);
-      if (stage_5.is_out_of_bounds (station)) { stage_4_color.cairo (cr); }
-      if (stage_4.is_out_of_bounds (station)) { stage_3_color.cairo (cr); }
+      const Real distance = Geodesy::get_distance (lat_long, station);
+      if (distance >= tolerance) { continue; }
 
-      Ring (1).cairo (cr, transform.transform (station));
-      cr->fill ();
+      return station;
 
    }
 
 }
 
-void
-Station::Map::render_stages (const RefPtr<Context>& cr,
-                             const Transform_2D& transform) const
+const Station&
+Station::Map::get_nearest_station (const Lat_Long& lat_long) const
 {
 
-   cr->set_line_width (4);
-   Color::hsb (0.00, 0.00, 0.00, 0.5).cairo (cr);
+   Integer nearest_station_id = -1;
+   Real min_distance = GSL_POSINF;
 
-   Polygon (stage_3).cairo (cr, transform);
-   cr->stroke ();
+   for (auto iterator = begin (); iterator != end (); iterator++)
+   {
 
-   Polygon (stage_4).cairo (cr, transform);
-   cr->stroke ();
+      const Station& station = iterator->second;
+      const Real distance = Geodesy::get_distance (lat_long, station);
+      if (distance >= min_distance) { continue; }
 
-   Polygon (stage_5).cairo (cr, transform);
-   cr->stroke ();
+      min_distance = distance;
+      nearest_station_id = station.id;
+
+   }
+
+   return at (nearest_station_id);
+
+}
+
+void
+Station::Map::attract (Real& latitude,
+                       Real& longitude) const
+{
+   const Lat_Long lat_long (latitude, longitude);
+   const Station& station = get_nearest_station (lat_long);
+   latitude = station.latitude;
+   longitude = station.longitude;
+}
+
+pair<string, Lat_Long>
+Station::Map::nearest (const Lat_Long& lat_long) const
+{
+   const Station& station = get_nearest_station (lat_long);
+   const string& str = string_render ("%d", station.id);
+   return make_pair (str, station);
+}
+
+void
+Station::Map::cairo (const RefPtr<Context>& cr,
+                     const Transform_2D& transform,
+                     const Color& color) const
+{
+
+   cr->save ();
+   color.cairo (cr);
+
+   for (auto iterator = begin (); iterator != end (); iterator++)
+   {
+      const Station& station = iterator->second;
+      Ring (3).cairo (cr, transform.transform (station));
+      cr->fill ();
+   }
+
+   cr->restore ();
 
 }
 
@@ -150,21 +192,24 @@ Aws::Obs::Obs (const Real temperature,
                const Real dew_point,
                const Real wind_direction,
                const Real wind_speed,
+               const Real mslp,
                const Real wind_gust)
    : temperature (temperature),
      dew_point (dew_point),
      wind_direction (wind_direction),
      wind_speed (wind_speed),
+     mslp (mslp),
      wind_gust (wind_gust)
 {
 }
 
 Aws::Obs::Obs (const Aws::Obs& obs)
-   : temperature (temperature),
-     dew_point (dew_point),
-     wind_direction (wind_direction),
-     wind_speed (wind_speed),
-     wind_gust (wind_gust)
+   : temperature (obs.temperature),
+     dew_point (obs.dew_point),
+     wind_direction (obs.wind_direction),
+     wind_speed (obs.wind_speed),
+     mslp (obs.mslp),
+     wind_gust (obs.wind_gust)
 {
 }
 
@@ -213,8 +258,26 @@ Aws::Key::operator < (const Key& key) const
    }
 }
 
+Aws::Repository::Repository ()
+{
+}
+
+Aws::Repository::Repository (const string& file_path)
+{
+   ingest (file_path);
+}
+
 void
-Aws::Repository::read (const string& file_path)
+Aws::Repository::insert (const Aws::Key& key,
+                         const Aws::Obs& obs)
+{
+   map<Key, Obs>::insert (make_pair (key, obs));
+   station_id_set.insert (key.station_id);
+   valid_time_set.insert (key.dtime);
+}
+
+void
+Aws::Repository::ingest (const string& file_path)
 {
 
    igzstream file (file_path);
@@ -227,46 +290,24 @@ Aws::Repository::read (const string& file_path)
       const Integer station_id = stoi (tokens[0]);
       const Dtime dtime (tokens[1]);
       const Real t          = stof (tokens[2]);
-      const Real td         = stof (tokens[3]);
+      const Real t_d        = stof (tokens[3]);
       const Real wind_dir   = stof (tokens[4]);
       const Real wind_speed = stof (tokens[5]);
       const Real wind_gust  = stof (tokens[6]);
+      const Real mslp       = stof (tokens[7]);
+      //const Real station_p  = stof (tokens[7]);
+      //const Real mslp       = stof (tokens[8]);
 
       Aws::Key key (station_id, dtime);
-      Aws::Obs obs (t, td, wind_dir, wind_speed, wind_gust);
+      Aws::Obs obs (t, t_d, wind_dir, wind_speed, mslp, wind_gust);
+      //Aws::Obs obs (t, t_d, wind_dir, wind_speed, station_p, mslp, wind_gust);
 
-      insert (make_pair (key, obs));
+      insert (key, obs);
 
    }
 
    file.close ();
 
-}
-
-Aws::Repository::Repository ()
-{
-}
-
-Aws::Repository::Repository (const string& file_path)
-{
-   ingest (file_path);
-}
-
-void
-Aws::Repository::ingest (const string& file_path)
-{
-
-   for (auto iterator = begin (); iterator != end (); iterator++) 
-   {
-      const Aws::Key& key = iterator->first;
-      station_id_set.insert (key.station_id);
-   }
-
-   for (auto iterator = begin (); iterator != end (); iterator++)
-   {
-      const Aws::Key& key = iterator->first;
-      valid_time_set.insert (key.dtime);
-   }
 }
 
 const set<Integer>&
@@ -344,8 +385,7 @@ Model::Terrain::Stage::init (const File_Path_Map& file_path_map)
    int ret;
    int varid;
 
-   typedef map<Model::Varname, string>::const_iterator Iterator;
-   for (Iterator iterator = file_path_map.begin ();
+   for (auto iterator = file_path_map.begin ();
         iterator != file_path_map.end (); iterator++)
    {
 
@@ -550,7 +590,7 @@ Model::Surface::Stage::get_valid_time_set () const
 size_t
 Model::Surface::Stage::get_l (const Dtime& dtime) const
 {
-   const set<Dtime>::const_iterator begin = valid_time_set.begin ();
+   const auto begin = valid_time_set.begin ();
    return std::distance (begin, valid_time_set.find (dtime));
 }
 
@@ -725,6 +765,59 @@ Model::Surface::Stage::evaluate_raw (const string& varname,
    if (ret != NC_NOERR) { throw Exception ("nc_get_var1"); }
 
    return Real (datum);
+
+}
+
+Aws::Obs
+Model::Surface::Stage::get_aws_obs (const Lat_Long& lat_long,
+                                    const Dtime& dtime) const
+{
+
+   size_t i, j;
+   acquire_ij (i, j, lat_long);
+   const Integer l = get_l (dtime);
+
+   const Real t = evaluate (T, i, j, l);
+   const Real t_d = evaluate (TD, i, j, l);
+   const Real u = evaluate (U, i, j, l);
+   const Real v = evaluate (V, i, j, l);
+
+   const Real mslp = evaluate (MSLP, i, j, l);
+   //const Real topography = get_topography (i, j);
+   //const Real surface_p = mslp - 11.76 * topography;
+
+   const Wind wind (u, v);
+   const Real wind_direction = wind.get_direction ();
+   const Real wind_speed = wind.get_speed ();
+
+   //return Aws::Obs (t, t_d, wind_direction, wind_speed, surface_p, mslp);   
+   return Aws::Obs (t, t_d, wind_direction, wind_speed, mslp);   
+
+}
+
+void
+Model::Surface::Stage::fill_sounding (Sounding& sounding,
+                                      const Lat_Long& lat_long,
+                                      const Dtime& dtime) const
+{
+
+   size_t i, j;
+   acquire_ij (i, j, lat_long);
+   const Integer l = get_l (dtime);
+
+   const Real t = evaluate (T, i, j, l);
+   const Real t_d = evaluate (TD, i, j, l);
+   const Real u = evaluate (U, i, j, l);
+   const Real v = evaluate (V, i, j, l);
+
+   const Real topography = get_topography (i, j);
+   const Real mslp = evaluate (MSLP, i, j, l);
+   const Real surface_p = mslp - 11.76 * topography;
+
+   sounding.get_t_line ().add (surface_p, t - K);
+   sounding.get_t_d_line ().add (surface_p, t_d - K);
+   sounding.get_wind_profile ().add (surface_p, Wind (u, v));
+   sounding.get_height_profile ().add (surface_p, 0);
 
 }
 
@@ -995,6 +1088,45 @@ Model::Uppers::Stage::evaluate_raw (const string& varname,
    if (ret != NC_NOERR) { throw Exception ("nc_get_var1"); }
 
    return Real (datum);
+
+}
+
+void
+Model::Uppers::Stage::fill_sounding (Sounding& sounding,
+                                     const Lat_Long& lat_long,
+                                     const Dtime& dtime) const
+{
+
+   size_t i, j;
+   acquire_ij (i, j, lat_long);
+   const Integer l = get_l (dtime);
+
+   const Real topography = get_topography (i, j);
+   const Tuple& A_rho = model.vertical_coefficients.get_A_rho ();
+   const Tuple& B_rho = model.vertical_coefficients.get_B_rho ();
+   const Tuple& A_theta = model.vertical_coefficients.get_A_theta ();
+   const Tuple& B_theta = model.vertical_coefficients.get_B_theta ();
+
+   for (Integer k = 0; k < 70; k++)
+   {
+
+      const Real t = evaluate (T, i, j, k, l);
+      const Real t_d = evaluate (TD, i, j, k, l);
+      const Real u = evaluate (U, i, j, k, l);
+      const Real v = evaluate (V, i, j, k, l);
+      const Real z_rho = model.get_z (k, topography, A_rho, B_rho);
+      const Real z_theta = model.get_z (k, topography, A_theta, B_theta);
+      const Real p_rho = evaluate (P_RHO, i, j, k, l);
+      const Real p_theta = evaluate (P_THETA, i, j, k, l);
+
+      sounding.get_t_line ().add (p_theta, t - K);
+      sounding.get_t_d_line ().add (p_theta, t_d - K); 
+      sounding.get_wind_profile ().add (p_rho, Wind (u, v));
+      sounding.get_height_profile ().add (p_rho, z_rho);
+      sounding.get_height_profile ().add (p_theta, z_theta);
+
+   }
+
 
 }
 
@@ -1398,6 +1530,62 @@ Model::evaluate (const Nwp_Element& nwp_element,
    }
 }
 
+Aws::Obs
+Model::get_aws_obs (const Lat_Long& lat_long,
+                    const Dtime& dtime,
+                    const twiin::Stage& stage) const
+{
+
+   const Model::Surface::Stage& surface_stage = surface.get_stage (stage);
+   return surface_stage.get_aws_obs (lat_long, dtime);
+}
+
+const Aws::Repository*
+Model::get_aws_repository_ptr (const Lat_Long& lat_long,
+                               const twiin::Stage& stage) const
+
+   
+{
+
+   Aws::Repository* aws_repository_ptr = new Aws::Repository ();
+   const Model::Surface::Stage& surface_stage = surface.get_stage (stage);
+   const auto& valid_time_set = surface_stage.get_valid_time_set ();
+
+   for (auto iterator = valid_time_set.begin ();
+        iterator != valid_time_set.end (); iterator++)
+   {
+
+      const Dtime& dtime = *(iterator);
+      //if (!time_set.match (dtime)) { continue; }
+
+      const Aws::Key key (-1, dtime);
+      const Aws::Obs& obs = surface_stage.get_aws_obs (lat_long, dtime);
+      aws_repository_ptr->insert (key, obs);
+
+   }
+
+   return aws_repository_ptr;
+
+}
+
+Sounding*
+Model::get_sounding_ptr (const Lat_Long& lat_long,
+                         const Dtime& dtime,
+                         const twiin::Stage& stage) const
+{
+
+   Sounding* sounding_ptr = new Sounding ();
+
+   const Model::Surface::Stage& surface_stage = surface.get_stage (stage);
+   const Model::Uppers::Stage& uppers_stage = uppers.get_stage (stage);
+
+   surface_stage.fill_sounding (*sounding_ptr, lat_long, dtime);
+   uppers_stage.fill_sounding (*sounding_ptr, lat_long, dtime);
+
+   return sounding_ptr;
+
+}
+
 const set<Dtime>&
 Model::get_valid_time_set (const Product& product,
                            const twiin::Stage& stage,
@@ -1604,10 +1792,17 @@ Data::Data (const Tokens& config_file_content)
    {
 
       const Tokens tokens (*(iterator));
-      if (tokens.size () == 2 || tokens[0] != "aws")
+
+      if (tokens.size () == 2 && tokens[0] == "aws")
       {
          const string& aws_file_path = tokens[1];
          aws_repository.ingest (aws_file_path);
+      }
+
+      if (tokens.size () == 2 && tokens[0] == "stations")
+      {
+         const string& station_map_file_path = tokens[1];
+         station_map.ingest (station_map_file_path);
       }
 
    }
@@ -1624,6 +1819,12 @@ const Hrit&
 Data::get_hrit () const
 {
    return hrit;
+}
+
+const Station::Map&
+Data::get_station_map () const
+{
+   return station_map;
 }
 
 const Aws::Repository&

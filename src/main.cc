@@ -85,6 +85,26 @@ Twiin::get_png_file_path (const Stage& stage,
 
 }
 
+string
+Twiin::get_png_file_path (const Stage& stage,
+                          const Dtime& dtime,
+                          const Lat_Long& lat_long) const
+{
+   const string& ll_str = lat_long.get_string (true, string ("%.3f"));;
+   const string& time_str = dtime.get_string ("%Y%m%d%H%M");
+   const string& file_name =  ll_str + "_" + stage + "_" + time_str + ".png";
+   return output_dir + "/" + file_name;
+}
+
+string
+Twiin::get_png_file_path (const Stage& stage,
+                          const Lat_Long& lat_long) const
+{
+   const string& ll_str = lat_long.get_string (true, string ("%.3f"));;
+   const string& file_name =  ll_str + "_" + stage + ".png";
+   return output_dir + "/" + file_name;
+}
+
 Twiin::Twiin (const Size_2D& size_2d,
               const Tokens& config_file_content,
               const string& output_dir)
@@ -163,6 +183,7 @@ Twiin::command_line (const string& stage_str,
    const Data data (config_file_content);
    const Model& model = data.get_model ();
    const Hrit& hrit = data.get_hrit ();
+   const Station::Map& station_map = data.get_station_map ();
 
    for (Tokens::const_iterator i = stage_tokens.begin ();
         i != stage_tokens.end (); i++)
@@ -194,8 +215,8 @@ Twiin::command_line (const string& stage_str,
             RefPtr<ImageSurface> surface = denise::get_surface (size_2d);
             RefPtr<Context> cr = denise::get_cr (surface);
 
-            Display::render (cr, transform, size_2d,
-               model, hrit, dtime, level, stage, product);
+            Display::render (cr, transform, size_2d, model, hrit,
+               station_map, dtime, level, stage, product);
 
             if (gshhs_ptr != NULL)
             {
@@ -332,6 +353,103 @@ Twiin::cross_section (const string& stage_str,
 
 };
 
+void
+Twiin::meteogram (const string& stage_str,
+                  const Lat_Long& lat_long,
+                  const string& time_str,
+                  const bool is_bludge) const
+{
+
+   const Dtime::Set time_set (time_str);
+   const Tokens stage_tokens (stage_str, ":");
+
+   Title title (size_2d);
+   const Data data (config_file_content);
+   const Model& model = data.get_model ();
+
+   for (Tokens::const_iterator i = stage_tokens.begin ();
+        i != stage_tokens.end (); i++)
+   {
+
+      const twiin::Stage stage (*i);
+
+      const auto& valid_time_set = model.get_valid_time_set (
+         Product ("T"), stage, Level ("Surface"));
+
+      const string& png_file_path =
+         get_png_file_path (stage, lat_long);
+      cout << "Rendering " << png_file_path << endl;
+      if (is_bludge) { continue; }
+
+      RefPtr<ImageSurface> surface = denise::get_surface (size_2d);
+      RefPtr<Context> cr = denise::get_cr (surface);
+
+      Display::render_meteogram (cr, size_2d,
+         model, stage, lat_long);
+
+      //Display::set_title (title, stage, dtime, lat_long);
+      //title.cairo (cr);
+
+      surface->write_to_png (png_file_path);
+
+   }
+
+}
+
+void
+Twiin::vertical_profile (const string& stage_str,
+                         const Lat_Long& lat_long,
+                         const string& time_str,
+                         const bool is_bludge) const
+{
+
+   const Dtime::Set time_set (time_str);
+   const Tokens stage_tokens (stage_str, ":");
+
+   Title title (size_2d);
+   const Data data (config_file_content);
+   const Model& model = data.get_model ();
+
+   const Tephigram tephigram (size_2d);
+
+   for (Tokens::const_iterator i = stage_tokens.begin ();
+        i != stage_tokens.end (); i++)
+   {
+
+      const twiin::Stage stage (*i);
+
+      const auto& valid_time_set = model.get_valid_time_set (
+         Product ("T"), stage, Level ("100m"));
+
+      for (auto iterator = valid_time_set.begin ();
+           iterator != valid_time_set.end (); iterator++)
+      {
+
+         const Dtime& dtime = *(iterator);
+         if (!time_set.match (dtime)) { continue; }
+
+         const string& png_file_path =
+            get_png_file_path (stage, dtime, lat_long);
+         cout << "Rendering " << png_file_path << endl;
+         if (is_bludge) { continue; }
+
+         RefPtr<ImageSurface> surface = denise::get_surface (size_2d);
+         RefPtr<Context> cr = denise::get_cr (surface);
+
+         Display::render_vertical_profile (cr, tephigram,
+            model, stage, dtime, lat_long);
+
+         Display::set_title (title, stage, dtime, lat_long);
+         title.cairo (cr);
+
+         surface->write_to_png (png_file_path);
+
+      }
+
+   }
+
+}
+
 int
 main (int argc,
       char** argv)
@@ -343,11 +461,13 @@ main (int argc,
       { "geometry", 1, 0, 'g' },
       { "interactive", 0, 0, 'i' },
       { "level", 1, 0, 'l' },
+      { "meteogram", 1, 0, 'm' },
       { "output-dir", 1, 0, 'o' },
       { "product", 1, 0, 'p' },
       { "stage", 1, 0, 's' },
       { "time", 1, 0, 't' },
       { "cross-section", 1, 0, 'x' },
+      { "vertical-profile", 1, 0, 'v' },
       { NULL, 0, NULL, 0 }
    };
 
@@ -360,12 +480,16 @@ main (int argc,
 
    int c;
    bool is_bludge = false;
+   bool is_cross_section = false;
    bool is_interactive = false;
+   bool is_meteogram = false;
+   bool is_vertical_profile = false;
    int option_index = 0;
 
+   Lat_Long lat_long (GSL_NAN, GSL_NAN);
    Multi_Journey multi_journey;
 
-   while ((c = getopt_long (argc, argv, "bg:il:o:p:s:t:x:",
+   while ((c = getopt_long (argc, argv, "bg:il:m:o:p:s:t:x:v:",
           long_options, &option_index)) != -1)
    {
 
@@ -398,6 +522,16 @@ main (int argc,
             break;
          }
 
+         case 'm':
+         {
+            is_interactive = false;
+            is_meteogram = true;
+            Tokens tokens (string (optarg), ":");
+            if (tokens.size () != 2) { throw Exception ("Parsing error"); }
+            lat_long = Lat_Long (stof (tokens[0]), stof (tokens[1]));
+            break;
+         }
+
          case 'o':
          {
             output_dir = (string (optarg));
@@ -425,6 +559,7 @@ main (int argc,
          case 'x':
          {
             is_interactive = false;
+            is_cross_section = true;
             Tokens tokens (string (optarg), ":");
             while (tokens.size () >= 2)
             {
@@ -432,6 +567,16 @@ main (int argc,
                tokens.erase (tokens.begin (), tokens.begin () + 2);
                multi_journey.push_back (lat_long);
             }
+            break;
+         }
+
+         case 'v':
+         {
+            is_interactive = false;
+            is_vertical_profile = true;
+            Tokens tokens (string (optarg), ":");
+            if (tokens.size () != 2) { throw Exception ("Parsing error"); }
+            lat_long = Lat_Long (stof (tokens[0]), stof (tokens[1]));
             break;
          }
 
@@ -464,11 +609,21 @@ main (int argc,
       }
       else
       {
-         const bool is_cross_section = (multi_journey.size () >= 2);
+
          if (is_cross_section)
          {
             twiin.cross_section (stage_str, product_str,
                multi_journey, time_str, is_bludge);
+         }
+         else
+         if (is_meteogram)
+         {
+            twiin.meteogram (stage_str, lat_long, time_str, is_bludge);
+         }
+         else
+         if (is_vertical_profile)
+         {
+            twiin.vertical_profile (stage_str, lat_long, time_str, is_bludge);
          }
          else
          {

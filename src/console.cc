@@ -111,10 +111,68 @@ Console::unify_drawers (const bool expand)
 }
 
 void
+Console::process_tephigram (const Integer marker_id)
+{
+
+   const auto& marker = get_marker_store ().get_marker (marker_id);
+   const Lat_Long lat_long (marker);
+   const Dtime& dtime = get_time_chooser ().get_time ();
+
+   const Model& model = data.get_model ();
+   Sounding* sounding_ptr = model.get_sounding_ptr (lat_long, dtime, stage);
+   const Sounding& sounding = *sounding_ptr;
+
+   const Tuple tuple_p ("1000e2:925e2:850e2:700e2:500e2:300e2:200e2", ":");
+   const Tephigram tephigram (Size_2D (100, 100));
+ 
+   for (auto iterator = tuple_p.begin ();
+        iterator != tuple_p.end (); iterator++)
+   {
+
+      const Real p = *(iterator);
+
+      try
+      {
+
+      const Real t = sounding.get_temperature (tephigram, p);
+      const Real t_d = sounding.get_dew_point (tephigram, p);
+      const Real z = sounding.get_height (p);
+
+      const Wind& wind = sounding.get_wind ( p);
+      const Real wind_direction = wind.get_direction ();
+      const Real wind_speed = wind.get_speed ();
+
+      cout << p << " " << t << " " << t_d << " " << z <<
+         " " << wind_direction << " " << wind_speed << endl;
+
+      }
+      catch (const Exception& e)
+      {
+         cerr << e << endl;
+      }
+
+   }
+
+   delete sounding_ptr;
+
+}
+
+void
+Console::process_aws (const Integer marker_id)
+{
+
+   const auto& marker = get_marker_store ().get_marker (marker_id);
+   const Lat_Long lat_long (marker);
+
+   cout << "aws for " << lat_long.get_string () << endl;
+
+}
+
+void
 Console::process_cross_section (const Integer route_id)
 {
 
-   const Console_2D::Route& route = get_route_store ().get_route (route_id);
+   const auto& route = get_route_store ().get_route (route_id);
    const Multi_Journey multi_journey (route);
 
    const Size_2D size_2d (960, 480);
@@ -199,6 +257,14 @@ Console::Console (Gtk::Window& gtk_window,
    time_chooser.set_shape (Time_Chooser::Shape (ts));
    time_chooser.set_leap (1);
 
+   marker_popup_menu.append ("Tephigram");
+   marker_popup_menu.get_id_signal ("Tephigram").connect (
+      sigc::mem_fun (*this, &Console::process_tephigram));
+
+   marker_popup_menu.append ("AWS");
+   marker_popup_menu.get_id_signal ("AWS").connect (
+      sigc::mem_fun (*this, &Console::process_aws));
+
    route_popup_menu.append ("Cross Section");
    route_popup_menu.get_id_signal ("Cross Section").connect (
       sigc::mem_fun (*this, &Console::process_cross_section));
@@ -216,12 +282,17 @@ Console::Console (Gtk::Window& gtk_window,
 
    }
 
+   option_panel.setup_overlay ();
+
    pack ();
 
+   const Station::Map& station_map = data.get_station_map ();
+   get_marker_store ().set_attractor (station_map);
+
    //
-   //const Lat_Long lat_long_a (-44.876, 132.417);
-   //const Lat_Long lat_long_b (-20.237, 163.378);
-   //get_route_store ().insert (lat_long_a, lat_long_b);
+   const Lat_Long lat_long_a (-34.957, 150.211);
+   const Lat_Long lat_long_b (-32.670, 151.632);
+   get_route_store ().insert (lat_long_a, lat_long_b);
 
 }
 
@@ -310,14 +381,15 @@ Console::render_image_buffer (const RefPtr<Context>& cr)
 
    const Model& model = data.get_model ();
    const Hrit& hrit = data.get_hrit ();
+   const Station::Map& station_map = data.get_station_map ();
 
    const Size_2D& size_2d = get_size_2d ();
    const Transform_2D& transform = get_transform ();
    const Dtime& dtime = get_time_chooser ().get_time ();
    const Level& level = get_level_panel ().get_level ();
 
-   Display::render (cr, transform, size_2d, model, hrit, //station_map,
-      dtime, level, stage, product);
+   Display::render (cr, transform, size_2d, model, hrit,
+      station_map, dtime, level, stage, product);
    render_mesh (cr);
    render_overlays (cr);
 

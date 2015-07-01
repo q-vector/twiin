@@ -90,6 +90,12 @@ namespace twiin
          unify_drawers (const bool expand);
 
          void
+         process_tephigram (const Integer marker_id);
+
+         void
+         process_aws (const Integer marker_id);
+
+         void
          process_cross_section (const Integer route_id);
 
       public:

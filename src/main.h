@@ -52,6 +52,15 @@ namespace twiin
                             const Dtime& dtime,
                             const Multi_Journey& multi_journey) const;
 
+         string
+         get_png_file_path (const Stage& stage,
+                            const Dtime& dtime,
+                            const Lat_Long& lat_long) const;
+
+         string
+         get_png_file_path (const Stage& stage,
+                            const Lat_Long& lat_long) const;
+
       public:
 
          Twiin (const Size_2D& size_2d,
@@ -80,6 +89,18 @@ namespace twiin
                         const Multi_Journey& multi_journey,
                         const string& time_str,
                         const bool is_bludge) const;
+
+         void
+         meteogram (const string& stage_str,
+                    const Lat_Long& lat_long,
+                    const string& time_str,
+                    const bool is_bludge) const;
+
+         void
+         vertical_profile (const string& stage_str,
+                           const Lat_Long& lat_long,
+                           const string& time_str,
+                           const bool is_bludge) const;
 
    };
 

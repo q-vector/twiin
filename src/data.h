@@ -69,29 +69,38 @@ namespace twiin
                   const Real height,
                   const string& name);
 
-         class Map : public map<Integer, Station>
+         class Map : public map<Integer, Station>,
+                     public Attractor,
+                     public Geodetic_Attractor
          {
 
             public:
 
-               const Domain_2D
-               stage_3;
-
-               const Domain_2D
-               stage_4;
-
-               const Domain_2D
-               stage_5;
+               Map ();
 
                Map (const string& file_path);
 
                void
-               cairo (const RefPtr<Context>& cr,
-                      const Transform_2D& transform) const;
+               ingest (const string& file_path);
+
+               const Station&
+               get_station (const Lat_Long& lat_long,
+                            const Real tolerance = 1) const;
+
+               const Station&
+               get_nearest_station (const Lat_Long& lat_long) const;
 
                void
-               render_stages (const RefPtr<Context>& cr,
-                              const Transform_2D& transform) const;
+               attract (Real& latitude,
+                        Real& longitude) const;
+
+               pair<string, Lat_Long>
+               nearest (const Lat_Long& lat_long) const;
+
+               void
+               cairo (const RefPtr<Context>& cr,
+                      const Transform_2D& transform,
+                      const Color& color = Color::green ()) const;
 
          };
 
@@ -122,11 +131,15 @@ namespace twiin
                const Real
                wind_gust;
 
+               const Real
+               mslp;
+
                Obs (const Real temperature,
                     const Real dew_point,
                     const Real wind_direction,
                     const Real wind_speed,
-                    const Real wind_gust);
+                    const Real mslp,
+                    const Real wind_gust = GSL_NAN);
 
                Obs (const Obs& obs);
 
@@ -159,7 +172,7 @@ namespace twiin
 
          };
 
-         class Repository : map<Key, Obs>
+         class Repository : public map<Key, Obs>
          {
 
             private:
@@ -170,14 +183,15 @@ namespace twiin
                set<Dtime>
                valid_time_set;
 
-               void
-               read (const string& file_path);
-
             public:
 
                Repository ();
 
                Repository (const string& file_path);
+
+               void
+               insert (const Key& key,
+                       const Obs& obs);
 
                void
                ingest (const string& file_path);
@@ -365,6 +379,15 @@ namespace twiin
                                    const size_t j,
                                    const size_t l) const;
 
+                     Aws::Obs
+                     get_aws_obs (const Lat_Long& lat_long,
+                                  const Dtime& dtime) const;
+
+                     void
+                     fill_sounding (Sounding& sounding,
+                                    const Lat_Long& lat_long,
+                                    const Dtime& dtime) const;
+
                      Color
                      get_color (const Product& product,
                                 const Lat_Long& lat_long,
@@ -433,6 +456,11 @@ namespace twiin
                                    const size_t j,
                                    const size_t k,
                                    const size_t l) const;
+
+                     void
+                     fill_sounding (Sounding& sounding,
+                                    const Lat_Long& lat_long,
+                                    const Dtime& dtime) const;
 
                      Color
                      get_color (const Product& product,
@@ -565,6 +593,20 @@ namespace twiin
                    const Dtime& dtime,
                    const twiin::Stage& stage) const;
 
+         Aws::Obs
+         get_aws_obs (const Lat_Long& lat_long,
+                      const Dtime& dtime,
+                      const twiin::Stage& stage) const;
+
+         const Aws::Repository*
+         get_aws_repository_ptr (const Lat_Long& lat_long,
+                                 const twiin::Stage& stage) const;
+
+         Sounding*
+         get_sounding_ptr (const Lat_Long& lat_long,
+                           const Dtime& dtime,
+                           const twiin::Stage& stage) const;
+
          const set<Dtime>&
          get_valid_time_set (const Product& product,
                              const twiin::Stage& stage,
@@ -590,6 +632,9 @@ namespace twiin
          Hrit
          hrit;
 
+         Station::Map
+         station_map;
+
          Aws::Repository
          aws_repository;
 
@@ -602,6 +647,9 @@ namespace twiin
 
          const Hrit&
          get_hrit () const;
+
+         const Station::Map&
+         get_station_map () const;
 
          const Aws::Repository&
          get_aws_repository () const;
