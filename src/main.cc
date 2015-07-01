@@ -458,6 +458,7 @@ main (int argc,
    static struct option long_options[] =
    {
       { "bludge", 0, 0, 'b' },
+      { "config", 0, 0, 'c' },
       { "geometry", 1, 0, 'g' },
       { "interactive", 0, 0, 'i' },
       { "level", 1, 0, 'l' },
@@ -486,10 +487,12 @@ main (int argc,
    bool is_vertical_profile = false;
    int option_index = 0;
 
+   string config_file_path (string (getenv ("HOME")) + "/.twiin.rc");
+
    Lat_Long lat_long (GSL_NAN, GSL_NAN);
    Multi_Journey multi_journey;
 
-   while ((c = getopt_long (argc, argv, "bg:il:m:o:p:s:t:x:v:",
+   while ((c = getopt_long (argc, argv, "bc:g:il:m:o:p:s:t:x:v:",
           long_options, &option_index)) != -1)
    {
 
@@ -499,6 +502,12 @@ main (int argc,
          case 'b':
          {
             is_bludge = true;
+            break;
+         }
+
+         case 'c':
+         {
+            config_file_path = (string (optarg));
             break;
          }
 
@@ -593,9 +602,7 @@ main (int argc,
    try
    {
 
-      const string config_file_path (string (getenv ("HOME")) + "/.twiin.rc");
       const Tokens& config_file_content = read_config_file (config_file_path);
-
       const Twiin twiin (size_2d, config_file_content, output_dir);
 
       if (is_interactive)
