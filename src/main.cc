@@ -570,6 +570,14 @@ main (int argc,
             break;
          }
 
+         case 'v':
+         {
+            is_interactive = false;
+            is_vertical_profile = true;
+            location_str = (string (optarg));
+            break;
+         }
+
          case 'x':
          {
             is_interactive = false;
@@ -582,14 +590,6 @@ main (int argc,
                tokens.erase (tokens.begin (), tokens.begin () + 2);
                multi_journey.push_back (lat_long);
             }
-            break;
-         }
-
-         case 'v':
-         {
-            is_interactive = false;
-            is_vertical_profile = true;
-            location_str = (string (optarg));
             break;
          }
 
