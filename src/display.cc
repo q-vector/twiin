@@ -204,6 +204,11 @@ Display::get_uppers_raster_ptr (const Size_2D& size_2d,
    const auto& uppers_stage = model.uppers.get_stage (stage);
    const size_t l = uppers_stage.get_l (dtime);
 
+   const bool is_speed = (product == "SPEED");
+   const bool is_higher = (level.type == HEIGHT_LEVEL) && (level.value > 1500);
+   const Product& p = ((is_speed && is_higher) ?
+      Product ("SPEED_HIGHER") : product);
+
    for (Integer i = 0; i < size_2d.i; i++)
    {
 
@@ -221,8 +226,7 @@ Display::get_uppers_raster_ptr (const Size_2D& size_2d,
             continue;
          }
 
-         const Color& color = uppers_stage.get_color (
-            product, lat_long, level, l);
+         const Color& color = uppers_stage.get_color (p, lat_long, level, l);
          raster.set_pixel (i, j, color);
 
       }
@@ -333,9 +337,11 @@ Display::get_cross_section_raster_ptr (const Box_2D& box_2d,
             }
             else
             {
+               const bool is_speed = (product == "SPEED");
                const Nwp_Element nwp_element = product.get_nwp_element ();
                const Real datum = uppers_stage.evaluate (nwp_element, ll, z, l);
-               color = Display::get_color (product, datum);
+               const Product& p = (is_speed ? Product ("SPEED_HIGHER") : product);
+               color = Display::get_color (p, datum);
             }
          }
          raster_ptr->set_pixel (i - index_2d.i, j - index_2d.j, color);
@@ -349,22 +355,39 @@ Display::get_cross_section_raster_ptr (const Box_2D& box_2d,
 
 void
 Display::set_title (Title& title,
+                    const Dtime& basetime,
                     const Stage& stage,
                     const Product& product,
                     const Dtime& dtime,
                     const Level& level)
 {
-   const string& time_str = dtime.get_string ("%Y.%m.%d %H:%M UTC");
-   title.set (time_str, "", product, stage, level.get_string ());
+
+   const Integer forecast_minutes = (dtime.t - basetime.t) * 60;
+   const Integer fh = forecast_minutes / 60;
+   const Integer fm = forecast_minutes % 60;
+
+   const string fmt ("%Y.%m.%d %H:%M UTC");
+   const string& time_str = dtime.get_string (fmt);
+   const string& basetime_str = basetime.get_string () +
+      string_render (" +%d:%02d", fh, fm);
+   const string stage_product = stage + " / " + product;
+
+   title.set (time_str, "", stage_product, basetime_str, level.get_string ());
+
 }
 
 void
 Display::set_title (Title& title,
+                    const Dtime& basetime,
                     const Stage& stage,
                     const Product& product,
                     const Dtime& dtime,
                     const Multi_Journey& multi_journey)
 {
+
+   const Integer forecast_minutes = (dtime.t - basetime.t) * 60;
+   const Integer fh = forecast_minutes / 60;
+   const Integer fm = forecast_minutes % 60;
 
    const Lat_Long origin (multi_journey.front ());
    const Lat_Long destination (multi_journey.back ());
@@ -372,27 +395,53 @@ Display::set_title (Title& title,
 
    const string o_suffix (complex_mj ? " ..." : "");
    const string d_preffix (complex_mj ? "... " : "");
-   const string& o_str = origin.get_string (3) + o_suffix;
-   const string& d_str = d_preffix + destination.get_string (3);
+   const string& o_str = origin.get_string (4) + o_suffix;
+   const string& d_str = d_preffix + destination.get_string (4);
 
-   const string& time_str = dtime.get_string ("%Y.%m.%d %H:%M UTC");
+   const string fmt ("%Y.%m.%d %H:%M UTC");
+   const string& time_str = dtime.get_string (fmt);
+   const string& basetime_str = basetime.get_string () +
+      string_render (" +%d:%02d", fh, fm);
+   const string stage_product = stage + " / " + product;
 
-   title.set (time_str, o_str, product, stage, d_str);
+   title.set (time_str, o_str, stage_product, basetime_str, d_str);
 
 }
 
 void
 Display::set_title (Title& title,
+                    const Dtime& basetime,
                     const Stage& stage,
                     const Dtime& dtime,
-                    const Lat_Long& lat_long)
+                    const Location& location)
 {
 
-   const string& ll_str = lat_long.get_string (3);
-   const string& time_str = dtime.get_string ("%Y.%m.%d %H:%M UTC");
+   const Integer forecast_minutes = (dtime.t - basetime.t) * 60;
+   const Integer fh = forecast_minutes / 60;
+   const Integer fm = forecast_minutes % 60;
 
-   title.set (time_str, "", ll_str, stage, "");
+   const Lat_Long& lat_long (location);
+   const string& ll_str = lat_long.get_string (4);
 
+   const string fmt ("%Y.%m.%d %H:%M UTC");
+   const string& time_str = dtime.get_string (fmt);
+   const string& basetime_str = basetime.get_string () +
+      string_render (" +%d:%02d", fh, fm);
+
+   title.set (time_str, stage, location.get_long_str (), basetime_str, ll_str);
+
+}
+
+void
+Display::set_title (Title& title,
+                    const Dtime& basetime,
+                    const Stage& stage,
+                    const Location& location)
+{
+   const string& basetime_str = basetime.get_string ();
+   const Lat_Long& lat_long (location);
+   const string& ll_str = lat_long.get_string (4);
+   title.set ("", stage, location.get_long_str (), basetime_str, ll_str);
 }
 
 Color
@@ -425,9 +474,12 @@ Display::get_color (const Product& product,
    else
    if (product == "THETA")
    {
-      const Real hue = Domain_1D (60+K, 0+K).normalize (datum) * 0.833;
-      const Real brightness = (Integer (floor ((datum-K) / 2)) % 2) ? 0.83:0.77;
-      return Color::hsb (hue, 0.8, brightness);
+      const Real jump = 28+K;
+      const Real deviate = datum - jump;
+      const Real x = atan (deviate / 1);
+      const Real fluctuation = (Integer (floor ((datum-K) / 1)) % 2) ? 0.03 : -0.03;
+      const Real brightness = Domain_1D (-M_PI_2, M_PI_2).normalize (x) * 0.5 + 0.45;
+      return Color::hsb (0.0, 0.0, brightness + fluctuation);
    }
    else
    if (product == "THETA_E")
@@ -468,27 +520,49 @@ Display::get_color (const Product& product,
       const Real hue = (datum < 0 ? 0.667 : 0.000);
       const Real absolute = fabs (datum);
       const Real quantized = floor (absolute * 10) / 10;
-      const Real alpha = Domain_1D (0, 1.5).normalize (quantized) * 0.7;
+      const Real alpha = Domain_1D (0, 1.5).normalize (quantized);
       return Color::hsb (hue, 1.0, 1.0, alpha);
+   }
+   else
+   if (product == "SPEED_HIGHER")
+   {
+      const Real knots = datum * 3.6/1.852;
+      const Real m0 = modulo (knots, 5.0) / 5.0 * 0.15 + 0.85;
+      const Real m = modulo (knots - 5, 10.0) / 10.0 * 0.15 + 0.85;
+           if (knots <   5) { return Color::hsb (0.000, 0.00 * m0, 1.00 * m0); }
+      else if (knots <  15) { return Color::hsb (0.167, 0.30 * m, 1.00 * m); }
+      else if (knots <  25) { return Color::hsb (0.150, 0.35 * m, 0.95 * m); }
+      else if (knots <  35) { return Color::hsb (0.133, 0.40 * m, 0.90 * m); }
+      else if (knots <  45) { return Color::hsb (0.333, 0.40 * m, 0.95 * m); }
+      else if (knots <  55) { return Color::hsb (0.333, 0.40 * m, 0.75 * m); }
+      else if (knots <  65) { return Color::hsb (0.333, 0.40 * m, 0.65 * m); }
+      else if (knots <  75) { return Color::hsb (0.600, 0.40 * m, 1.00 * m); }
+      else if (knots <  85) { return Color::hsb (0.633, 0.40 * m, 0.90 * m); }
+      else if (knots <  95) { return Color::hsb (0.667, 0.40 * m, 0.80 * m); }
+      else if (knots < 105) { return Color::hsb (0.033, 0.40 * m, 0.65 * m); }
+      else if (knots < 115) { return Color::hsb (0.016, 0.45 * m, 0.80 * m); }
+      else if (knots < 125) { return Color::hsb (0.000, 0.50 * m, 0.95 * m); }
+      else                  { return Color (1.000, 1.000, 1.000); }
    }
    else
    if (product == "SPEED")
    {
       const Real knots = datum * 3.6/1.852;
-           if (knots <  5) { return Color::hsb (0.000, 0.00, 1.00); }
-      else if (knots < 10) { return Color::hsb (0.167, 0.30, 1.00); }
-      else if (knots < 15) { return Color::hsb (0.150, 0.35, 0.95); }
-      else if (knots < 20) { return Color::hsb (0.133, 0.40, 0.90); }
-      else if (knots < 25) { return Color::hsb (0.333, 0.40, 0.95); }
-      else if (knots < 30) { return Color::hsb (0.333, 0.40, 0.75); }
-      else if (knots < 35) { return Color::hsb (0.333, 0.40, 0.65); }
-      else if (knots < 40) { return Color::hsb (0.600, 0.40, 1.00); }
-      else if (knots < 45) { return Color::hsb (0.633, 0.40, 0.90); }
-      else if (knots < 50) { return Color::hsb (0.667, 0.40, 0.80); }
-      else if (knots < 55) { return Color::hsb (0.033, 0.40, 0.65); }
-      else if (knots < 60) { return Color::hsb (0.016, 0.45, 0.80); }
-      else if (knots < 65) { return Color::hsb (0.000, 0.50, 0.95); }
-      else                 { return Color::transparent (); }
+      const Real m = modulo (knots, 5.0) / 5.0 * 0.15 + 0.85;
+           if (knots <  5) { return Color::hsb (0.000, 0.00 * m, 1.00 * m); }
+      else if (knots < 10) { return Color::hsb (0.167, 0.30 * m, 1.00 * m); }
+      else if (knots < 15) { return Color::hsb (0.150, 0.35 * m, 0.95 * m); }
+      else if (knots < 20) { return Color::hsb (0.133, 0.40 * m, 0.90 * m); }
+      else if (knots < 25) { return Color::hsb (0.333, 0.40 * m, 0.95 * m); }
+      else if (knots < 30) { return Color::hsb (0.333, 0.40 * m, 0.75 * m); }
+      else if (knots < 35) { return Color::hsb (0.333, 0.40 * m, 0.65 * m); }
+      else if (knots < 40) { return Color::hsb (0.600, 0.40 * m, 1.00 * m); }
+      else if (knots < 45) { return Color::hsb (0.633, 0.40 * m, 0.90 * m); }
+      else if (knots < 50) { return Color::hsb (0.667, 0.40 * m, 0.80 * m); }
+      else if (knots < 55) { return Color::hsb (0.033, 0.40 * m, 0.65 * m); }
+      else if (knots < 60) { return Color::hsb (0.016, 0.45 * m, 0.80 * m); }
+      else if (knots < 65) { return Color::hsb (0.000, 0.50 * m, 0.95 * m); }
+      else                 { return Color (1.000, 1.000, 1.000); }
    }
    else
    if (product == "VORTICITY")
@@ -752,21 +826,19 @@ Display::render_cross_section_mesh (const RefPtr<Context>& cr,
    const Multi_Journey mj (multi_journey, geodesy, d_distance);
    const Tuple& tuple_x = mj.get_tuple_x (geodesy);
 
-   const Simple_Mesh_2D ma0 (Color::black (0.05), 1e8, 10);
-   const Simple_Mesh_2D ma1 (Color::black (0.1), 1e8, 100);
-   const Simple_Mesh_2D ma2 (Color::black (0.4), 1e8, 1000);
    const Domain_1D domain_x (0, distance);
    const Domain_2D domain_2d (domain_x, domain_z);
-   const Mesh_2D mesh_2d (Size_2D (2, 2), domain_2d, ma2);
+   const Mesh_2D mesh_2d (Size_2D (2, 2),
+      domain_2d, Color::black (0.4), 1e8, 1000);
 
    cr->set_line_width (2);
    mesh_2d.render (cr, transform);
-   Color::black (0.3).cairo (cr);
+   Color::black ().cairo (cr);
 
-   mesh_2d.render_label_x (cr, transform, 0, 0,
-      "%.0f", NUMBER_REAL, 'c', 't', 5);
+   //mesh_2d.render_label_x (cr, transform, 0, 0,
+   //   "%.0f", NUMBER_REAL, 'c', 't', 5);
    mesh_2d.render_label_y (cr, transform, 0, 0,
-      "%.0f", NUMBER_REAL, 'r', 'c', 5);
+      "%.0fm", NUMBER_REAL, 'r', 'c', 5);
 
    for (Tuple::const_iterator iterator = tuple_x.begin ();
         iterator != tuple_x.end (); iterator++)
@@ -779,7 +851,6 @@ Display::render_cross_section_mesh (const RefPtr<Context>& cr,
       const Integer i = std::distance (tuple_x.begin (), iterator);
       const string& str = string_render ("%d", i);
 
-      Color::black (0.3).cairo (cr);
       Label (str, point_a, 'c', 't', 6).cairo (cr);
 
    }
@@ -895,78 +966,125 @@ Display::render_cross_section (const RefPtr<Context>& cr,
 }
 
 void
-Display::render_meteogram (const RefPtr<Context>& cr,
-                           const Size_2D& size_2d,
-                           const Model& model, 
-                           const Stage& stage, 
-                           const Lat_Long& lat_long)
+Display::render_meteogram_mesh (const RefPtr<Context>& cr,
+                                const Domain_1D& domain_t,
+                                const Domain_1D& domain_temperature,
+                                const Domain_1D& domain_direction,
+                                const Domain_1D& domain_speed,
+                                const Domain_1D& domain_pressure,
+                                const Transform_2D& transform_temperature,
+                                const Transform_2D& transform_direction,
+                                const Transform_2D& transform_speed,
+                                const Transform_2D& transform_pressure)
 {
 
    cr->save ();
 
-   Color::white ().cairo (cr);
-   cr->paint ();
+   const Real start_t = domain_t.start;
+   const Real end_t = domain_t.end;
+   const Real start_temperature = domain_temperature.start;
+   const Real end_temperature = domain_temperature.end;
+   const Real start_direction = domain_direction.start;
+   const Real end_direction = domain_direction.end;
+   const Real start_speed = domain_speed.start;
+   const Real end_speed = domain_speed.end;
+   const Real start_pressure = domain_pressure.start;
+   const Real end_pressure = domain_pressure.end;
 
-   const Aws::Repository* aws_repository_ptr =
-      model.get_aws_repository_ptr (lat_long, stage);
-   const Aws::Repository& aws_repository = *aws_repository_ptr;
+   const Point_2D& bl_temperature =
+      transform_temperature.transform (start_t, start_temperature);
+   const Point_2D& bl_direction =
+      transform_direction.transform (start_t, start_direction);
+   const Point_2D& bl_speed =
+      transform_speed.transform (start_t, start_speed);
+   const Point_2D& bl_pressure =
+      transform_pressure.transform (start_t, start_pressure);
 
-   const Dtime& start_time = aws_repository.begin ()->first.dtime;
-   const Dtime& end_time = aws_repository.rbegin ()->first.dtime;
-   const Domain_1D domain_t (start_time.t, end_time.t);
+   const Point_2D& ur_temperature =
+      transform_temperature.transform (end_t, end_temperature);
+   const Point_2D& ur_direction =
+      transform_direction.transform (end_t, end_direction);
+   const Point_2D& ur_speed =
+      transform_speed.transform (end_t, end_speed);
+   const Point_2D& ur_pressure =
+      transform_pressure.transform (end_t, end_pressure);
 
-   const Domain_1D domain_temperature (-15, 35);
-   const Domain_1D domain_speed (0, 30);
-   const Domain_1D domain_direction (0, 360);
-   const Domain_1D domain_pressure (990e2, 1030e2);
+   Color::black (0.3).cairo (cr);
+   Rect (bl_temperature, ur_temperature).cairo (cr);
+   Rect (bl_direction,   ur_direction  ).cairo (cr);
+   Rect (bl_speed,       ur_speed      ).cairo (cr);
+   Rect (bl_pressure,    ur_pressure   ).cairo (cr);
+   cr->stroke ();
 
-   Affine_Transform_2D transform_temperature;
-   Affine_Transform_2D transform_speed;
-   Affine_Transform_2D transform_direction;
-   Affine_Transform_2D transform_pressure;
+   Mesh_2D mesh_temperature (Size_2D (2, 2),
+      Domain_2D (domain_t, domain_temperature),
+      Color::black (0.1), 6, 1, Color::black (0.5), 24, 10);
+   Mesh_2D mesh_direction (Size_2D (2, 2),
+      Domain_2D (domain_t, domain_direction),
+      Color::black (0.1), 6, 10, Color::black (0.5), 24, 90);
+   Mesh_2D mesh_speed (Size_2D (2, 2),
+      Domain_2D (domain_t, domain_speed),
+      Color::black (0.1), 6, 1, Color::black (0.5), 24, 5);
+   Mesh_2D mesh_pressure (Size_2D (2, 2),
+      Domain_2D (domain_t, domain_pressure),
+      Color::black (0.1), 6, 1, Color::black (0.5), 24, 10);
 
-   const Real margin = 50;
-   const Real title_height = 100;
+   mesh_temperature.set_offset_multiplier_y (-K, 1);
+   mesh_pressure.set_offset_multiplier_y (0, 1e-2);
 
-   const Real width = size_2d.i - 2 * margin;
-   const Real height = (size_2d.j - title_height - 5 * margin) / 4;
+   mesh_temperature.render (cr, transform_temperature);
+   mesh_direction.render (cr, transform_direction);
+   mesh_speed.render (cr, transform_speed);
+   mesh_pressure.render (cr, transform_pressure);
 
-   const Real span_t = domain_t.get_span ();
-   const Real span_temperature = domain_temperature.get_span ();
-   const Real span_speed = domain_speed.get_span ();
-   const Real span_direction = domain_direction.get_span ();
-   const Real span_pressure = domain_pressure.get_span ();
+   Color::black ().cairo (cr);
+   mesh_temperature.render_label_y (cr, transform_temperature, 1,
+      start_t, "%.0f\u00b0C", NUMBER_REAL, 'r', 'c', 5);
+   mesh_direction.render_label_y (cr, transform_direction, 1,
+      start_t, "%03.0f\u00b0", NUMBER_REAL, 'r', 'c', 5);
+   mesh_speed.render_label_y (cr, transform_speed, 1,
+      start_t, "%.0fms\u207b\u00b9", NUMBER_REAL, 'r', 'c', 5);
+   mesh_pressure.render_label_y (cr, transform_pressure, 1,
+      start_t, "%.0fPa", NUMBER_REAL, 'r', 'c', 5);
 
-   const Real scale_t = width / span_t;
-   const Real scale_temperature = height / span_temperature;
-   const Real scale_speed = height / span_speed;
-   const Real scale_direction = height / span_direction;
-   const Real scale_pressure = height / span_pressure;
+   mesh_temperature.render_label_x (cr, transform_temperature, 1,
+      domain_temperature.end, "%b %d", NUMBER_TIME, 'c', 't', 15);
+   mesh_direction.render_label_x (cr, transform_direction, 1,
+      domain_direction.end, "%b %d", NUMBER_TIME, 'c', 't', 15);
+   mesh_speed.render_label_x (cr, transform_speed, 1,
+      domain_speed.end, "%b %d", NUMBER_TIME, 'c', 't', 15);
+   mesh_pressure.render_label_x (cr, transform_pressure, 1,
+      domain_pressure.end, "%b %d", NUMBER_TIME, 'c', 't', 15);
 
-   const Real position_temperature = 3 * height + 4 * margin;
-   const Real position_speed = 2 * height + 3 * margin;
-   const Real position_direction = height + 2 * margin;
-   const Real position_pressure = margin;
+   mesh_temperature.render_label_x (cr, transform_temperature, 0,
+      domain_temperature.end, "%HZ", NUMBER_TIME, 'c', 't', 5);
+   mesh_direction.render_label_x (cr, transform_direction, 0,
+      domain_direction.end, "%HZ", NUMBER_TIME, 'c', 't', 5);
+   mesh_speed.render_label_x (cr, transform_speed, 0,
+      domain_speed.end, "%HZ", NUMBER_TIME, 'c', 't', 5);
+   mesh_pressure.render_label_x (cr, transform_pressure, 0,
+      domain_pressure.end, "%HZ", NUMBER_TIME, 'c', 't', 5);
 
-   transform_temperature.scale (1, -1);
-   transform_speed.scale (1, -1);
-   transform_direction.scale (1, -1);
-   transform_pressure.scale (1, -1);
+   cr->restore ();
 
-   transform_temperature.scale (scale_t, scale_temperature);
-   transform_speed.scale (scale_t, scale_speed);
-   transform_direction.scale (scale_t, scale_direction);
-   transform_pressure.scale (scale_t, scale_pressure);
+}
 
-   transform_temperature.translate (0, size_2d.j);
-   transform_speed.translate (0, size_2d.j);
-   transform_direction.translate (0, size_2d.j);
-   transform_pressure.translate (0, size_2d.j);
+void
+Display::render_meteogram (const RefPtr<Context>& cr,
+                           const Transform_2D& transform_temperature,
+                           const Transform_2D& transform_direction,
+                           const Transform_2D& transform_speed,
+                           const Transform_2D& transform_pressure,
+                           const Aws::Repository& aws_repository,
+                           const bool faint)
+{
 
-   transform_temperature.translate (margin, position_temperature);
-   transform_speed.translate (margin, position_speed);
-   transform_direction.translate (margin, position_direction);
-   transform_pressure.translate (margin, position_pressure);
+   cr->save ();
+   cr->set_line_width (0.2);
+
+   const Real alpha = faint ? 0.04 : 1.0;
+   const Real ring_size = faint ? 4.0 : 2.0;
+   const Ring ring (ring_size);
 
    for (auto iterator = aws_repository.begin ();
         iterator != aws_repository.end (); iterator++)
@@ -976,55 +1094,178 @@ Display::render_meteogram (const RefPtr<Context>& cr,
       const Aws::Obs& obs = iterator->second;
       const Dtime& dtime = key.dtime;
 
-      const Real temperature = obs.temperature - K;
-      const Real dew_point = obs.dew_point - K;
+      const Real temperature = obs.temperature;
+      const Real dew_point = obs.dew_point;
       const Real direction = obs.wind_direction;
       const Real speed = obs.wind_speed;
+      const Real gust = obs.wind_gust;
       const Real mslp = obs.mslp;
 
       const string& time_str = dtime.get_string ("%Y%m%d%H%M");
 
-      Color::black ().cairo (cr);
       const Point_2D p_temperature (dtime.t, temperature);
       const Point_2D& tp_temperature = transform_temperature.transform (p_temperature);
-      Ring (2).cairo (cr, tp_temperature);
-      cr->stroke ();
+      ring.cairo (cr, tp_temperature);
+      Color::hsb (0.000, 0.00, 0.40, alpha).cairo (cr);
+      if (faint) { cr->fill (); }
+      else { cr->fill_preserve (); Color::black ().cairo (cr); cr->stroke (); }
 
-      Color::red ().cairo (cr);
       const Point_2D p_dew_point (dtime.t, dew_point);
       const Point_2D& tp_dew_point = transform_temperature.transform (p_dew_point);
-      Ring (2).cairo (cr, tp_dew_point);
-      cr->stroke ();
+      ring.cairo (cr, tp_dew_point);
+      Color::hsb (0.000, 0.80, 0.80, alpha).cairo (cr);
+      if (faint) { cr->fill (); }
+      else { cr->fill_preserve (); Color::black ().cairo (cr); cr->stroke (); }
 
-      Color::green ().cairo (cr);
-      const Point_2D p_speed (dtime.t, speed);
-      const Point_2D& tp_speed = transform_speed.transform (p_speed);
-      Ring (2).cairo (cr, tp_speed);
-      cr->stroke ();
-
-      Color::yellow ().cairo (cr);
       const Point_2D p_direction (dtime.t, direction);
       const Point_2D& tp_direction = transform_direction.transform (p_direction);
-      Ring (2).cairo (cr, tp_direction);
-      cr->stroke ();
+      ring.cairo (cr, tp_direction);
+      Color::hsb (0.167, 0.80, 0.60, alpha).cairo (cr);
+      if (faint) { cr->fill (); }
+      else { cr->fill_preserve (); Color::black ().cairo (cr); cr->stroke (); }
 
-      Color::magenta ().cairo (cr);
+      const Point_2D p_speed (dtime.t, speed);
+      const Point_2D& tp_speed = transform_speed.transform (p_speed);
+      ring.cairo (cr, tp_speed);
+      Color::hsb (0.333, 0.80, 0.80, alpha).cairo (cr);
+      if (faint) { cr->fill (); }
+      else { cr->fill_preserve (); Color::black ().cairo (cr); cr->stroke (); }
+
+      const Point_2D p_gust (dtime.t, gust);
+      const Point_2D& tp_gust = transform_speed.transform (p_gust);
+      ring.cairo (cr, tp_gust);
+      Color::hsb (0.500, 0.80, 0.80, alpha).cairo (cr);
+      if (faint) { cr->fill (); }
+      else { cr->fill_preserve (); Color::black ().cairo (cr); cr->stroke (); }
+
       const Point_2D p_mslp (dtime.t, mslp);
       const Point_2D& tp_mslp = transform_pressure.transform (p_mslp);
-      Ring (2).cairo (cr, tp_mslp);
-      cr->stroke ();
-
-      cout << time_str << " " << temperature << " " << dew_point <<
-         " " << direction << " " << speed << endl;
-      cout << "   " << p_temperature << " " << tp_temperature << endl;
-      cout << "   " << p_dew_point   << " " << tp_dew_point   << endl;
-      cout << "   " << p_speed       << " " << tp_speed       << endl;
-      cout << "   " << p_direction   << " " << tp_direction   << endl;
-      cout << "   " << p_mslp        << " " << tp_mslp        << endl;
+      ring.cairo (cr, tp_mslp);
+      Color::hsb (0.833, 0.80, 0.80, alpha).cairo (cr);
+      if (faint) { cr->fill (); }
+      else { cr->fill_preserve (); Color::black ().cairo (cr); cr->stroke (); }
 
    }
 
+   cr->restore ();
+
+}
+
+void
+Display::render_meteogram (const RefPtr<Context>& cr,
+                           const Size_2D& size_2d,
+                           const Model& model, 
+                           const Aws::Repository& aws_repository,
+                           const Stage& stage, 
+                           const Location& location)
+{
+
+   cr->save ();
+
+   Color::white ().cairo (cr);
+   cr->paint ();
+
+   const Aws::Repository* model_aws_repository_ptr =
+      model.get_aws_repository_ptr (location, stage);
+   const Aws::Repository& model_aws_repository = *model_aws_repository_ptr;
+
+   const Dtime& start_time = model.get_basetime ();
+   const Dtime& end_time = model_aws_repository.rbegin ()->first.dtime;
+   const Domain_1D domain_t (start_time.t, end_time.t);
+
+   const Integer station_id = location.get_station_id ();
+
+   const Dtime::Span time_span (start_time, end_time);
+   const Aws::Repository* aws_repository_ptr = NULL;
+
+   Real start_temperature = model_aws_repository.get_dew_point_domain ().start;
+   Real end_temperature = model_aws_repository.get_temperature_domain ().end;
+   Real end_speed = model_aws_repository.get_wind_speed_domain ().end;
+   Real start_pressure = model_aws_repository.get_mslp_domain ().start;
+   Real end_pressure = model_aws_repository.get_mslp_domain ().end;
+
+   if (station_id > 0)
+   {
+
+      aws_repository_ptr =
+         aws_repository.get_aws_repository_ptr (station_id, time_span);
+
+      start_temperature = std::min (start_temperature,
+         aws_repository_ptr->get_dew_point_domain ().start);
+      end_temperature = std::max (end_temperature,
+         aws_repository_ptr->get_temperature_domain ().end);
+
+      end_speed = std::max (end_speed,
+         aws_repository_ptr->get_wind_speed_domain ().end);
+
+      start_pressure = std::min (start_pressure,
+         aws_repository_ptr->get_mslp_domain ().start);
+      end_pressure = std::max (end_pressure,
+         aws_repository_ptr->get_mslp_domain ().end);
+
+   }
+
+   const Domain_1D domain_temperature (end_temperature, start_temperature);
+   const Domain_1D domain_direction (360, 0);
+   const Domain_1D domain_speed (end_speed, 0);
+   const Domain_1D domain_pressure (end_pressure, start_pressure);
+
+   const Real margin = 35;
+   const Real margin_l = 70;
+   const Real margin_r = 35;
+   const Real title_height = 50;
+
+   const Real width = size_2d.i - margin_l - margin_r;
+   const Real height = (size_2d.j - title_height - 5 * margin) / 4;
+
+   const Real span_t = domain_t.get_span ();
+   const Real span_temperature = domain_temperature.get_span ();
+   const Real span_direction = domain_direction.get_span ();
+   const Real span_speed = domain_speed.get_span ();
+   const Real span_pressure = domain_pressure.get_span ();
+
+   const Real scale_t = width / span_t;
+   const Real scale_temperature = height / span_temperature;
+   const Real scale_speed = height / span_speed;
+   const Real scale_direction = height / span_direction;
+   const Real scale_pressure = height / span_pressure;
+
+   const Real position_temperature = title_height + 0 * height + 1 * margin;
+   const Real position_direction   = title_height + 1 * height + 2 * margin;
+   const Real position_speed       = title_height + 2 * height + 3 * margin;
+   const Real position_pressure    = title_height + 3 * height + 4 * margin;
+
+   const Point_2D origin_temperature (margin_l, position_temperature);
+   const Point_2D origin_direction (margin_l, position_direction);
+   const Point_2D origin_speed (margin_l, position_speed);
+   const Point_2D origin_pressure (margin_l, position_pressure);
+
+   const Cartesian_Transform_2D transform_temperature (
+      domain_t, domain_temperature, width, height, origin_temperature);
+   const Cartesian_Transform_2D transform_direction (
+      domain_t, domain_direction, width, height, origin_direction);
+   const Cartesian_Transform_2D transform_speed (
+      domain_t, domain_speed, width, height, origin_speed);
+   const Cartesian_Transform_2D transform_pressure (
+      domain_t, domain_pressure, width, height, origin_pressure);
+
+   render_meteogram_mesh (cr, domain_t, domain_temperature,
+      domain_direction, domain_speed, domain_pressure,
+      transform_temperature, transform_direction,
+      transform_speed, transform_pressure);
+
+   if (aws_repository_ptr != NULL)
+   {
+      render_meteogram (cr, transform_temperature, transform_direction,
+         transform_speed, transform_pressure, *aws_repository_ptr, true);
+   }
+
+   render_meteogram (cr, transform_temperature, transform_direction,
+      transform_speed, transform_pressure, *model_aws_repository_ptr, false);
+
+
    delete aws_repository_ptr;
+   delete model_aws_repository_ptr;
 
    cr->restore ();
 

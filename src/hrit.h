@@ -138,7 +138,7 @@ class Hrit
 
       Hrit (const string& data_path);
 
-      Hrit (const Tokens& config_file_content);
+      Hrit (const Config_File& config_file);
 
       const string&
       get_data_path () const;

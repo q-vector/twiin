@@ -84,6 +84,7 @@ namespace twiin
 
          static void
          set_title (Title& title,
+                    const Dtime& basetime,
                     const Stage& stage,
                     const Product& product,
                     const Dtime& dtime,
@@ -91,6 +92,7 @@ namespace twiin
 
          static void
          set_title (Title& title,
+                    const Dtime& basetime,
                     const Stage& stage,
                     const Product& product,
                     const Dtime& dtime,
@@ -98,9 +100,16 @@ namespace twiin
 
          static void
          set_title (Title& title,
+                    const Dtime& basetime,
                     const Stage& stage,
                     const Dtime& dtime,
-                    const Lat_Long& lat_long);
+                    const Location& location);
+
+         static void
+         set_title (Title& title,
+                    const Dtime& basetime,
+                    const Stage& stage,
+                    const Location& location);
 
          static Color
          get_color (const Product& product,
@@ -180,11 +189,33 @@ namespace twiin
                                const Multi_Journey& multi_journey);
 
          static void
+         render_meteogram_mesh (const RefPtr<Context>& cr,
+                                const Domain_1D& domaint_t,
+                                const Domain_1D& domain_temperature,
+                                const Domain_1D& domain_direction,
+                                const Domain_1D& domain_speed,
+                                const Domain_1D& domain_pressure,
+                                const Transform_2D& transform_temperature,
+                                const Transform_2D& transform_direction,
+                                const Transform_2D& transform_speed,
+                                const Transform_2D& transform_pressure);
+
+         static void
+         render_meteogram (const RefPtr<Context>& cr,
+                           const Transform_2D& transform_temperature,
+                           const Transform_2D& transform_direction,
+                           const Transform_2D& transform_speed,
+                           const Transform_2D& transform_pressure,
+                           const Aws::Repository& aws_repository,
+                           const bool faint);
+
+         static void
          render_meteogram (const RefPtr<Context>& cr,
                            const Size_2D& size_2d,
                            const Model& model,
+                           const Aws::Repository& aws_repository,
                            const Stage& stage,
-                           const Lat_Long& lat_long);
+                           const Location& location);
 
          static void
          render_vertical_profile (const RefPtr<Context>& cr,

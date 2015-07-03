@@ -305,12 +305,12 @@ Hrit::Hrit (const string& data_path)
    init (data_path);
 }
 
-Hrit::Hrit (const Tokens& config_file_content)
+Hrit::Hrit (const Config_File& config_file)
    : channel_tokens ("IR1 IR2 IR3 IR4 VIS")
 {
 
-   for (auto iterator = config_file_content.begin ();
-        iterator != config_file_content.end (); iterator++)
+   for (auto iterator = config_file.begin ();
+        iterator != config_file.end (); iterator++)
    {
 
       const Tokens tokens (*(iterator));

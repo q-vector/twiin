@@ -26,7 +26,7 @@ namespace twiin
             public:
 
                Transform_Ptr_Map (const Size_2D& size_2d,
-                                  const Tokens& config_file_content);
+                                  const Config_File& config_file);
 
                ~Transform_Ptr_Map ();
 
@@ -35,8 +35,8 @@ namespace twiin
          const Size_2D
          size_2d;
 
-         const Tokens
-         config_file_content;
+         const Config_File
+         config_file;
 
          const string
          output_dir;
@@ -55,16 +55,16 @@ namespace twiin
          string
          get_png_file_path (const Stage& stage,
                             const Dtime& dtime,
-                            const Lat_Long& lat_long) const;
+                            const Location& location) const;
 
          string
          get_png_file_path (const Stage& stage,
-                            const Lat_Long& lat_long) const;
+                            const Location& location) const;
 
       public:
 
          Twiin (const Size_2D& size_2d,
-                const Tokens& config_file_content,
+                const Config_File& config_file,
                 const string& output_dir);
 
 #ifndef ENABLE_GTKMM
@@ -92,13 +92,13 @@ namespace twiin
 
          void
          meteogram (const string& stage_str,
-                    const Lat_Long& lat_long,
+                    const string& location_str,
                     const string& time_str,
                     const bool is_bludge) const;
 
          void
          vertical_profile (const string& stage_str,
-                           const Lat_Long& lat_long,
+                           const string& location_str,
                            const string& time_str,
                            const bool is_bludge) const;
 

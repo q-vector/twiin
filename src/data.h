@@ -106,6 +106,38 @@ namespace twiin
 
    };
 
+   class Location : public Lat_Long
+   {
+
+      private:
+
+         Integer
+         station_id;
+
+         string
+         str;
+
+         string
+         long_str;
+
+      public:
+
+         Location (const Lat_Long& lat_long);
+
+         Location (const string& str,
+                   const Station::Map& station_map);
+
+         Integer
+         get_station_id () const;
+
+         const string&
+         get_str () const;
+
+         const string&
+         get_long_str () const;
+
+   };
+
    class Aws
    {
 
@@ -132,12 +164,16 @@ namespace twiin
                wind_gust;
 
                const Real
+               station_p;
+
+               const Real
                mslp;
 
                Obs (const Real temperature,
                     const Real dew_point,
                     const Real wind_direction,
                     const Real wind_speed,
+                    const Real station_p,
                     const Real mslp,
                     const Real wind_gust = GSL_NAN);
 
@@ -183,6 +219,9 @@ namespace twiin
                set<Dtime>
                valid_time_set;
 
+               static Real
+               to_real (const string& token);
+
             public:
 
                Repository ();
@@ -202,6 +241,25 @@ namespace twiin
                const set<Dtime>&
                get_valid_time_set () const;
 
+               const Aws::Repository*
+               get_aws_repository_ptr (const Integer station_id,
+                                       const Dtime::Span& time_span) const;
+
+               Domain_1D
+               get_temperature_domain () const;
+
+               Domain_1D
+               get_dew_point_domain () const;
+
+               Domain_1D
+               get_wind_speed_domain () const;
+
+               Domain_1D
+               get_station_p_domain () const;
+
+               Domain_1D
+               get_mslp_domain () const;
+
          };
 
    };
@@ -209,7 +267,7 @@ namespace twiin
    class Model
    {
 
-      public:
+      private:
 
          class Varname : public string
          {
@@ -235,6 +293,8 @@ namespace twiin
                        const string& file_path);
 
          };
+
+      public:
 
          class Terrain
          {
@@ -533,16 +593,10 @@ namespace twiin
 
          };
 
-      public:
+      private:
 
-         Terrain
-         terrain;
-
-         Uppers
-         uppers;
-
-         Surface
-         surface;
+         Dtime
+         basetime;
 
          Vertical_Coefficients
          vertical_coefficients;
@@ -564,9 +618,23 @@ namespace twiin
                 Integer start_k = -1,
                 Integer end_k = -1) const;
 
-         Model (const Tokens& config_file_content);
+      public:
+
+         Terrain
+         terrain;
+
+         Surface
+         surface;
+
+         Uppers
+         uppers;
+
+         Model (const Config_File& config_file);
 
          ~Model ();
+
+         const Dtime&
+         get_basetime () const;
 
          Domain_2D
          get_domain_2d (const twiin::Stage& stage) const;
@@ -640,7 +708,7 @@ namespace twiin
 
       public:
 
-         Data (const Tokens& config_file_content);
+         Data (const Config_File& config_file);
 
          const Model&
          get_model () const;
@@ -653,6 +721,13 @@ namespace twiin
 
          const Aws::Repository&
          get_aws_repository () const;
+
+         const Aws::Repository*
+         get_aws_repository_ptr (const Integer station_id,
+                                 const Dtime::Span& time_Span) const;
+
+         Lat_Long
+         get_lat_long (const string& location_str) const;
 
    };
 

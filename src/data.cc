@@ -53,6 +53,7 @@ Product::get_nwp_element () const
    if (*this == "RHO") { return RHO; }
    if (*this == "WIND") { return WIND_DIRECTION; }
    if (*this == "SPEED") { return WIND_SPEED; }
+   if (*this == "SPEED_HIGHER") { return WIND_SPEED; }
    if (*this == "VORTICITY") { return RELATIVE_VORTICITY; }
    if (*this == "W") { return W; }
    if (*this == "W_TRANSLUCENT") { return W; }
@@ -188,16 +189,74 @@ Station::Map::cairo (const RefPtr<Context>& cr,
 
 }
 
+Location::Location (const Lat_Long& lat_long)
+   : Lat_Long (lat_long),
+     station_id (-1)
+{
+   this->str = Lat_Long::get_string (4, true);
+   this->long_str = Lat_Long::get_string (4, false);
+}
+
+Location::Location (const string& str,
+                    const Station::Map& station_map)
+   : Lat_Long (GSL_NAN, GSL_NAN),
+     station_id (-1),
+     str (str),
+     long_str ("")
+{
+
+   const Tokens tokens (str, ":");
+
+   if (tokens.size () == 1)
+   {
+      const string& station_id_str = tokens[0];
+      const Integer station_id = stof (station_id_str);
+      const Station& station = station_map.at (station_id);
+      this->latitude = station.latitude;
+      this->longitude = station.longitude;
+      this->station_id = station_id;
+      this->long_str = station.name + " (" + station_id_str + ")";
+   }
+   else
+   if (tokens.size () == 2)
+   {
+      this->latitude = stof (tokens[0]);
+      this->longitude = stof (tokens[1]);
+      this->str = Lat_Long::get_string (true, string ("%.4f"));
+   }
+
+}
+
+Integer
+Location::get_station_id () const
+{
+   return station_id;
+}
+
+const string&
+Location::get_str () const
+{
+   return str;
+}
+
+const string&
+Location::get_long_str () const
+{
+   return long_str;
+}
+
 Aws::Obs::Obs (const Real temperature,
                const Real dew_point,
                const Real wind_direction,
                const Real wind_speed,
+               const Real station_p,
                const Real mslp,
                const Real wind_gust)
    : temperature (temperature),
      dew_point (dew_point),
      wind_direction (wind_direction),
      wind_speed (wind_speed),
+     station_p (station_p),
      mslp (mslp),
      wind_gust (wind_gust)
 {
@@ -208,6 +267,7 @@ Aws::Obs::Obs (const Aws::Obs& obs)
      dew_point (obs.dew_point),
      wind_direction (obs.wind_direction),
      wind_speed (obs.wind_speed),
+     station_p (obs.station_p),
      mslp (obs.mslp),
      wind_gust (obs.wind_gust)
 {
@@ -258,6 +318,12 @@ Aws::Key::operator < (const Key& key) const
    }
 }
 
+Real
+Aws::Repository::to_real (const string& token)
+{
+  return (token == "-9999" ? GSL_NAN : stof (token));
+}
+
 Aws::Repository::Repository ()
 {
 }
@@ -285,22 +351,20 @@ Aws::Repository::ingest (const string& file_path)
    for (string input_line; std::getline (file, input_line); )
    {
 
-      const Tokens tokens (input_line);
+      const Tokens tokens (input_line, ":");
 
       const Integer station_id = stoi (tokens[0]);
       const Dtime dtime (tokens[1]);
-      const Real t          = stof (tokens[2]);
-      const Real t_d        = stof (tokens[3]);
-      const Real wind_dir   = stof (tokens[4]);
-      const Real wind_speed = stof (tokens[5]);
-      const Real wind_gust  = stof (tokens[6]);
-      const Real mslp       = stof (tokens[7]);
-      //const Real station_p  = stof (tokens[7]);
-      //const Real mslp       = stof (tokens[8]);
+      const Real t          = Aws::Repository::to_real (tokens[2]) + K;
+      const Real t_d        = Aws::Repository::to_real (tokens[3]) + K;
+      const Real wind_dir   = Aws::Repository::to_real (tokens[4]);
+      const Real wind_speed = Aws::Repository::to_real (tokens[5]);
+      const Real wind_gust  = Aws::Repository::to_real (tokens[6]);
+      const Real station_p  = Aws::Repository::to_real (tokens[7]) * 1e2;
+      const Real mslp       = Aws::Repository::to_real (tokens[8]) * 1e2;
 
       Aws::Key key (station_id, dtime);
-      Aws::Obs obs (t, t_d, wind_dir, wind_speed, mslp, wind_gust);
-      //Aws::Obs obs (t, t_d, wind_dir, wind_speed, station_p, mslp, wind_gust);
+      Aws::Obs obs (t, t_d, wind_dir, wind_speed, station_p, mslp, wind_gust);
 
       insert (key, obs);
 
@@ -320,6 +384,172 @@ const set<Dtime>&
 Aws::Repository::get_valid_time_set () const
 {
    return valid_time_set;
+}
+
+const Aws::Repository*
+Aws::Repository::get_aws_repository_ptr (const Integer station_id,
+                                         const Dtime::Span& time_span) const
+{
+
+   Aws::Repository* aws_repository_ptr = new Aws::Repository ();
+   Aws::Repository& aws_repository = *aws_repository_ptr;
+
+   for (auto iterator = begin (); iterator != end (); iterator++)
+   {
+
+      const Aws::Key& key = iterator->first;
+      if (station_id != key.station_id) { continue; }
+
+      const Dtime& dtime = key.dtime;
+      if (!time_span.match (dtime)) { continue; }
+
+      const Aws::Obs& obs = iterator->second;
+      aws_repository.insert (key, obs);
+
+   }
+
+   return aws_repository_ptr;
+
+}
+
+Domain_1D
+Aws::Repository::get_temperature_domain () const
+{
+
+   Domain_1D temperature_domain (GSL_POSINF, GSL_NEGINF);
+
+   for (auto iterator = begin (); iterator != end (); iterator++)
+   {
+
+      const Aws::Obs& obs = iterator->second;
+      const Real temperature = obs.temperature;
+
+      if (temperature > temperature_domain.end)
+      {
+         temperature_domain.end = temperature;
+      }
+
+      if (temperature < temperature_domain.start)
+      {
+         temperature_domain.start = temperature;
+      }
+
+   }
+
+   return temperature_domain;
+
+}
+
+Domain_1D
+Aws::Repository::get_dew_point_domain () const
+{
+
+   Domain_1D dew_point_domain (GSL_POSINF, GSL_NEGINF);
+
+   for (auto iterator = begin (); iterator != end (); iterator++)
+   {
+
+      const Aws::Obs& obs = iterator->second;
+      const Real dew_point = obs.dew_point;
+
+      if (dew_point > dew_point_domain.end)
+      {
+         dew_point_domain.end = dew_point;
+      }
+
+      if (dew_point < dew_point_domain.start)
+      {
+         dew_point_domain.start = dew_point;
+      }
+
+   }
+
+   return dew_point_domain;
+
+}
+
+Domain_1D
+Aws::Repository::get_wind_speed_domain () const
+{
+
+   Domain_1D wind_speed_domain (GSL_POSINF, GSL_NEGINF);
+
+   for (auto iterator = begin (); iterator != end (); iterator++)
+   {
+
+      const Aws::Obs& obs = iterator->second;
+      const Real wind_speed = obs.wind_speed;
+
+      if (wind_speed > wind_speed_domain.end)
+      {
+         wind_speed_domain.end = wind_speed;
+      }
+
+      if (wind_speed < wind_speed_domain.start)
+      {
+         wind_speed_domain.start = wind_speed;
+      }
+
+   }
+
+   return wind_speed_domain;
+
+}
+
+Domain_1D
+Aws::Repository::get_mslp_domain () const
+{
+
+   Domain_1D mslp_domain (GSL_POSINF, GSL_NEGINF);
+
+   for (auto iterator = begin (); iterator != end (); iterator++)
+   {
+
+      const Aws::Obs& obs = iterator->second;
+      const Real mslp = obs.mslp;
+
+      if (mslp > mslp_domain.end)
+      {
+         mslp_domain.end = mslp;
+      }
+
+      if (mslp < mslp_domain.start)
+      {
+         mslp_domain.start = mslp;
+      }
+
+   }
+
+   return mslp_domain;
+
+}
+
+Domain_1D
+Aws::Repository::get_station_p_domain () const
+{
+
+   Domain_1D station_p_domain (GSL_POSINF, GSL_NEGINF);
+
+   for (auto iterator = begin (); iterator != end (); iterator++)
+   {
+
+      const Aws::Obs& obs = iterator->second;
+      const Real station_p = obs.station_p;
+
+      if (station_p > station_p_domain.end)
+      {
+         station_p_domain.end = station_p;
+      }
+
+      if (station_p < station_p_domain.start)
+      {
+         station_p_domain.start = station_p;
+      }
+
+   }
+
+   return station_p_domain;
+
 }
 
 Model::Varname::Varname (const string& str)
@@ -783,15 +1013,14 @@ Model::Surface::Stage::get_aws_obs (const Lat_Long& lat_long,
    const Real v = evaluate (V, i, j, l);
 
    const Real mslp = evaluate (MSLP, i, j, l);
-   //const Real topography = get_topography (i, j);
-   //const Real surface_p = mslp - 11.76 * topography;
+   const Real topography = get_topography (i, j);
+   const Real surface_p = mslp - 11.76 * topography;
 
    const Wind wind (u, v);
    const Real wind_direction = wind.get_direction ();
    const Real wind_speed = wind.get_speed ();
 
-   //return Aws::Obs (t, t_d, wind_direction, wind_speed, surface_p, mslp);   
-   return Aws::Obs (t, t_d, wind_direction, wind_speed, mslp);   
+   return Aws::Obs (t, t_d, wind_direction, wind_speed, surface_p, mslp);   
 
 }
 
@@ -1329,7 +1558,7 @@ Model::get_k (const Real z,
 }
 
 
-Model::Model (const Tokens& config_file_content)
+Model::Model (const Config_File& config_file)
    : terrain (*this),
      uppers (*this),
      surface (*this)
@@ -1350,29 +1579,36 @@ Model::Model (const Tokens& config_file_content)
    map<string, Model::File_Path_Map> surface_file_path_map;
    map<string, Model::File_Path_Map> uppers_file_path_map;
 
-   for (auto iterator = config_file_content.begin ();
-        iterator != config_file_content.end (); iterator++)
+   for (auto iterator = config_file.begin ();
+        iterator != config_file.end (); iterator++)
    {
 
       const Tokens tokens (*(iterator));
       if (tokens.size () != 2 || tokens[0] != "model") { continue; }
-      const string& argument = tokens[1];
 
-      const Tokens unstaged_tokens (argument, ":");
-      if (unstaged_tokens[0] == "AB" && unstaged_tokens.size () == 2)
+      const string& argument = tokens[1];
+      const Tokens argument_tokens (argument, ":");
+      const string& model_identifier = argument_tokens[0];
+
+      if (model_identifier == "RUN" && argument_tokens.size () == 2)
       {
-         vertical_coefficients_file_path = get_trimmed (unstaged_tokens[1]);
+         basetime = Dtime (argument_tokens[1]);
          continue;
       }
 
-      const Tokens staged_tokens (argument, ":");
-      if (staged_tokens[0].substr (0, 5) == "STAGE" &&
-          staged_tokens.size () == 3)
+      if (model_identifier == "AB" && argument_tokens.size () == 2)
+      {
+         vertical_coefficients_file_path = get_trimmed (argument_tokens[1]);
+         continue;
+      }
+
+      if (model_identifier.substr (0, 5) == "STAGE" &&
+          argument_tokens.size () == 3)
       {
 
-         const string& stage_str = get_trimmed (staged_tokens[0]);
-         const string& var_str = get_trimmed (staged_tokens[1]);
-         const string& file_path = get_trimmed (staged_tokens[2]);
+         const string& stage_str = get_trimmed (argument_tokens[0]);
+         const string& var_str = get_trimmed (argument_tokens[1]);
+         const string& file_path = get_trimmed (argument_tokens[2]);
 
          const bool is_terrain = (var_str == "orog" || var_str == "lsm");
          const bool is_uppers = (var_str.substr (0, 3) == "ml_");
@@ -1457,6 +1693,12 @@ Model::Model (const Tokens& config_file_content)
 
 Model::~Model ()
 {
+}
+
+const Dtime&
+Model::get_basetime () const
+{
+   return basetime;
 }
 
 Domain_2D
@@ -1782,13 +2024,13 @@ Model::get_marker_tokens (const Lat_Long& lat_long,
 
 }
 
-Data::Data (const Tokens& config_file_content)
-   : model (config_file_content),
-     hrit (config_file_content)
+Data::Data (const Config_File& config_file)
+   : model (config_file),
+     hrit (config_file)
 {
 
-   for (auto iterator = config_file_content.begin ();
-        iterator != config_file_content.end (); iterator++)
+   for (auto iterator = config_file.begin ();
+        iterator != config_file.end (); iterator++)
    {
 
       const Tokens tokens (*(iterator));
@@ -1833,5 +2075,33 @@ Data::get_aws_repository () const
    return aws_repository;
 }
 
+const Aws::Repository*
+Data::get_aws_repository_ptr (const Integer station_id,
+                              const Dtime::Span& time_span) const
+{
+   return aws_repository.get_aws_repository_ptr (station_id, time_span);
+}
 
+Lat_Long
+Data::get_lat_long (const string& location_str) const
+{
+
+   const Tokens tokens (location_str, ":");
+
+   if (tokens.size () == 1)
+   {
+      const Integer station_id = stof (tokens[0]);
+      return station_map.at (station_id);
+   }
+   else
+   if (tokens.size () == 2)
+   {
+      const Real latitude = stof (tokens[0]);
+      const Real longitude = stof (tokens[1]);
+      return Lat_Long (latitude, longitude);
+   }
+
+   return Lat_Long (GSL_NAN, GSL_NAN);
+
+}
 

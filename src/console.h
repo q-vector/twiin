@@ -102,7 +102,7 @@ namespace twiin
 
          Console (Gtk::Window& gtk_window,
                   const Size_2D& size_2d,
-                  const Tokens& config_file_content,
+                  const Config_File& config_file,
                   const Data& data,
                   const Stage& stage,
                   const Product& product,

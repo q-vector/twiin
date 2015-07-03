@@ -60,7 +60,7 @@ Cross_Section::get_tokens (const Marker& marker) const
    tokens = model.get_marker_tokens (
       lat_long, dtime, product, stage, level);
 
-   const string& ll_str = lat_long.get_string (false, string ("%.3f\u00b0"));
+   const string& ll_str = lat_long.get_string (false, string ("%.4f\u00b0"));
    const string& height_str = level.get_string ();
    tokens.insert (tokens.begin (), ll_str);
    tokens.insert (tokens.begin (), height_str);
@@ -249,8 +249,9 @@ void
 Cross_Section::render_queue_draw ()
 {
 
+   const Dtime& basetime = model.get_basetime ();
    const Dtime& dtime = get_time_chooser ().get_time ();
-   Display::set_title (title, stage, product, dtime, multi_journey);
+   Display::set_title (title, basetime, stage, product, dtime, multi_journey);
 
    set_foreground_ready (false);
    Console_2D::render_queue_draw ();

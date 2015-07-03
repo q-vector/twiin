@@ -56,7 +56,7 @@ Console::get_tokens (const Marker& marker) const
    Tokens tokens = model.get_marker_tokens (lat_long,
       dtime, product, stage, level);
 
-   const string& ll_str = lat_long.get_string (false, string ("%.3f\u00b0"));
+   const string& ll_str = lat_long.get_string (false, string ("%.4f\u00b0"));
    tokens.insert (tokens.begin (), ll_str);
 
    return tokens;
@@ -193,12 +193,12 @@ Console::process_cross_section (const Integer route_id)
 
 Console::Console (Gtk::Window& gtk_window,
                   const Size_2D& size_2d,
-                  const Tokens& config_file_content,
+                  const Config_File& config_file,
                   const Data& data,
                   const Stage& stage,
                   const Product& product,
                   const Level& level)
-   : Map_Console (gtk_window, size_2d, config_file_content),
+   : Map_Console (gtk_window, size_2d, config_file),
      Time_Canvas (*this, 12),
      Level_Canvas (*this, 12),
      product_panel (*this, 12),
@@ -271,8 +271,8 @@ Console::Console (Gtk::Window& gtk_window,
 
    Map_Console::Overlay_Store& overlay_store = get_overlay_store ();
 
-   for (auto iterator = config_file_content.begin ();
-        iterator != config_file_content.end (); iterator++)
+   for (auto iterator = config_file.begin ();
+        iterator != config_file.end (); iterator++)
    {
 
       const Tokens tokens (*(iterator));
@@ -369,8 +369,10 @@ Console::set_product (const Product& product)
 void
 Console::render_queue_draw ()
 {
+   const Model& model = data.get_model ();
+   const Dtime& basetime = model.get_basetime ();
    const Dtime& dtime = get_time_chooser ().get_time ();
-   Display::set_title (title, stage, product, dtime, level);
+   Display::set_title (title, basetime, stage, product, dtime, level);
    set_foreground_ready (false);
    Map_Console::render_queue_draw ();
 }

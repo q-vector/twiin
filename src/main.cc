@@ -14,14 +14,14 @@ using namespace Cairo;
 using namespace twiin;
 
 Twiin::Transform_Ptr_Map::Transform_Ptr_Map (const Size_2D& size_2d,
-                                             const Tokens& config_file_content)
+                                             const Config_File& config_file)
 {
 
    typedef Geodetic_Transform Gt;
    const Point_2D centre (size_2d.i/2, size_2d.j/2);
 
-   for (auto iterator = config_file_content.begin ();
-        iterator != config_file_content.end (); iterator++)
+   for (auto iterator = config_file.begin ();
+        iterator != config_file.end (); iterator++)
    {
 
       const Tokens tokens (*(iterator));
@@ -74,13 +74,13 @@ Twiin::get_png_file_path (const Stage& stage,
         iterator != multi_journey.end (); iterator++)
    {
       const Lat_Long lat_long (*(iterator));
-      const string& ll_str = lat_long.get_string (true, string ("%.3f"));
+      const string& ll_str = lat_long.get_string (true, string ("%.4f"));
       mj_str += ll_str;
    }
 
    const string& time_str = dtime.get_string ("%Y%m%d%H%M");
-   const string& file_name =  mj_str + "_" + stage +
-      "_" + product + "_" + time_str + ".png";
+   const string& file_name = stage + "_" + product + "_" +
+      time_str + "_" + mj_str + ".png";
    return output_dir + "/" + file_name;
 
 }
@@ -88,28 +88,29 @@ Twiin::get_png_file_path (const Stage& stage,
 string
 Twiin::get_png_file_path (const Stage& stage,
                           const Dtime& dtime,
-                          const Lat_Long& lat_long) const
+                          const Location& location) const
 {
-   const string& ll_str = lat_long.get_string (true, string ("%.3f"));;
+   const string& location_str = location.get_str ();
    const string& time_str = dtime.get_string ("%Y%m%d%H%M");
-   const string& file_name =  ll_str + "_" + stage + "_" + time_str + ".png";
+   const string& file_name = stage + "_" + time_str + "_"
+      + location_str + ".png";
    return output_dir + "/" + file_name;
 }
 
 string
 Twiin::get_png_file_path (const Stage& stage,
-                          const Lat_Long& lat_long) const
+                          const Location& location) const
 {
-   const string& ll_str = lat_long.get_string (true, string ("%.3f"));;
-   const string& file_name =  ll_str + "_" + stage + ".png";
+   const string& location_str = location.get_str ();
+   const string& file_name = stage + "_" + location_str + ".png";
    return output_dir + "/" + file_name;
 }
 
 Twiin::Twiin (const Size_2D& size_2d,
-              const Tokens& config_file_content,
+              const Config_File& config_file,
               const string& output_dir)
    : size_2d (size_2d),
-     config_file_content (config_file_content),
+     config_file (config_file),
      output_dir (output_dir)
 {
 }
@@ -130,11 +131,11 @@ Twiin::interactive (const string& stage_str,
    const Product product (product_tokens[0]);
    const Level level (level_str);
 
-   const Data data (config_file_content);
+   const Data data (config_file);
 
    Gtk::Window gtk_window;
    Console console (gtk_window, size_2d,
-      config_file_content, data, stage, product, level);
+      config_file, data, stage, product, level);
    gtk_window.add (console);
    gtk_window.show_all_children ();
    gtk_window.show ();
@@ -155,8 +156,8 @@ Twiin::command_line (const string& stage_str,
 
    Gshhs* gshhs_ptr = NULL;
 
-   for (auto iterator = config_file_content.begin ();
-        iterator != config_file_content.end (); iterator++)
+   for (auto iterator = config_file.begin ();
+        iterator != config_file.end (); iterator++)
    {
 
       const Tokens tokens (*(iterator));
@@ -177,11 +178,12 @@ Twiin::command_line (const string& stage_str,
    const Tokens stage_tokens (stage_str, ":");
    const Tokens product_tokens (product_str, ":");
 
-   Transform_Ptr_Map transform_ptr_map (size_2d, config_file_content);
+   Transform_Ptr_Map transform_ptr_map (size_2d, config_file);
 
    Title title (size_2d);
-   const Data data (config_file_content);
+   const Data data (config_file);
    const Model& model = data.get_model ();
+   const Dtime& basetime = model.get_basetime ();
    const Hrit& hrit = data.get_hrit ();
    const Station::Map& station_map = data.get_station_map ();
 
@@ -231,13 +233,11 @@ Twiin::command_line (const string& stage_str,
                const Domain_1D domain_longitude (130, 170);
                const Domain_2D domain_2d (domain_latitude, domain_longitude);
 
-               const Simple_Mesh_2D sm0_2 (Color::black (0.05), 0.2, 0.2);
-               const Simple_Mesh_2D sm1 (Color::black (0.1), 1, 1);
-               const Simple_Mesh_2D sm5 (Color::black (0.1), 5, 5);
-               const Simple_Mesh_2D sm10 (Color::black (0.4), 10, 10);
-               const Simple_Mesh_2D sm30 (Color::black (0.4), 30, 30);
-               const Geodetic_Mesh mesh_small (sm1, sm10, size_2d, domain_2d);
-               const Geodetic_Mesh mesh_large (sm5, sm30, size_2d, domain_2d);
+               //const Simple_Mesh_2D sm0_2 (Color::black (0.05), 0.2, 0.2);
+               const Geodetic_Mesh mesh_small (Color::black (0.10), 1.0, 1.0,
+                  Color::black (0.40), 10., 10., size_2d, domain_2d);
+               const Geodetic_Mesh mesh_large (Color::black (0.10), 5.0, 5.0,
+                  Color::black (0.40), 30., 30., size_2d, domain_2d);
 
                const Real latitude_span = domain_2d.domain_x.get_span ();
                const Real longitude_span = domain_2d.domain_y.get_span ();
@@ -250,7 +250,7 @@ Twiin::command_line (const string& stage_str,
                cr->restore ();
             }
 
-            Display::set_title (title, stage, product, dtime, level);
+            Display::set_title (title, basetime, stage, product, dtime, level);
             title.cairo (cr);
 
             surface->write_to_png (png_file_path);
@@ -284,8 +284,9 @@ Twiin::cross_section (const string& stage_str,
    const Domain_1D domain_z (0, 8000);
 
    Title title (size_2d);
-   const Data data (config_file_content);
+   const Data data (config_file);
    const Model& model = data.get_model ();
+   const Dtime& basetime = model.get_basetime ();
 
    const Real margin_l = 60;
    const Real margin_r = 40;
@@ -299,8 +300,7 @@ Twiin::cross_section (const string& stage_str,
    const Real span_z = domain_z.get_span ();
    transform.scale (1, -1);
    transform.scale (w / span_x, h / span_z);
-   transform.translate (0, size_2d.j);
-   transform.translate (margin_l, -margin_b);
+   transform.translate (margin_l, size_2d.j - margin_b);
 
    for (Tokens::const_iterator i = stage_tokens.begin ();
         i != stage_tokens.end (); i++)
@@ -341,7 +341,8 @@ Twiin::cross_section (const string& stage_str,
             Display::render_cross_section (cr, transform, box_2d,
                domain_z, model, stage, product, dtime, multi_journey);
 
-            Display::set_title (title, stage, product, dtime, multi_journey);
+            Display::set_title (title, basetime, stage,
+               product, dtime, multi_journey);
             title.cairo (cr);
 
             surface->write_to_png (png_file_path);
@@ -355,7 +356,7 @@ Twiin::cross_section (const string& stage_str,
 
 void
 Twiin::meteogram (const string& stage_str,
-                  const Lat_Long& lat_long,
+                  const string& location_str,
                   const string& time_str,
                   const bool is_bludge) const
 {
@@ -364,8 +365,13 @@ Twiin::meteogram (const string& stage_str,
    const Tokens stage_tokens (stage_str, ":");
 
    Title title (size_2d);
-   const Data data (config_file_content);
+   const Data data (config_file);
    const Model& model = data.get_model ();
+   const Dtime& basetime = model.get_basetime ();
+   const Station::Map& station_map = data.get_station_map ();
+   const Aws::Repository& aws_repository = data.get_aws_repository ();
+
+   const Location location (location_str, station_map);
 
    for (Tokens::const_iterator i = stage_tokens.begin ();
         i != stage_tokens.end (); i++)
@@ -377,7 +383,7 @@ Twiin::meteogram (const string& stage_str,
          Product ("T"), stage, Level ("Surface"));
 
       const string& png_file_path =
-         get_png_file_path (stage, lat_long);
+         get_png_file_path (stage, location);
       cout << "Rendering " << png_file_path << endl;
       if (is_bludge) { continue; }
 
@@ -385,10 +391,10 @@ Twiin::meteogram (const string& stage_str,
       RefPtr<Context> cr = denise::get_cr (surface);
 
       Display::render_meteogram (cr, size_2d,
-         model, stage, lat_long);
+         model, aws_repository, stage, location);
 
-      //Display::set_title (title, stage, dtime, lat_long);
-      //title.cairo (cr);
+      Display::set_title (title, basetime, stage, location);
+      title.cairo (cr);
 
       surface->write_to_png (png_file_path);
 
@@ -398,7 +404,7 @@ Twiin::meteogram (const string& stage_str,
 
 void
 Twiin::vertical_profile (const string& stage_str,
-                         const Lat_Long& lat_long,
+                         const string& location_str,
                          const string& time_str,
                          const bool is_bludge) const
 {
@@ -407,8 +413,11 @@ Twiin::vertical_profile (const string& stage_str,
    const Tokens stage_tokens (stage_str, ":");
 
    Title title (size_2d);
-   const Data data (config_file_content);
+   const Data data (config_file);
    const Model& model = data.get_model ();
+   const Dtime& basetime = model.get_basetime ();
+   const Station::Map& station_map = data.get_station_map ();
+   const Location location (location_str, station_map);
 
    const Tephigram tephigram (size_2d);
 
@@ -429,7 +438,7 @@ Twiin::vertical_profile (const string& stage_str,
          if (!time_set.match (dtime)) { continue; }
 
          const string& png_file_path =
-            get_png_file_path (stage, dtime, lat_long);
+            get_png_file_path (stage, dtime, location);
          cout << "Rendering " << png_file_path << endl;
          if (is_bludge) { continue; }
 
@@ -437,9 +446,9 @@ Twiin::vertical_profile (const string& stage_str,
          RefPtr<Context> cr = denise::get_cr (surface);
 
          Display::render_vertical_profile (cr, tephigram,
-            model, stage, dtime, lat_long);
+            model, stage, dtime, location);
 
-         Display::set_title (title, stage, dtime, lat_long);
+         Display::set_title (title, basetime, stage, dtime, location);
          title.cairo (cr);
 
          surface->write_to_png (png_file_path);
@@ -479,19 +488,17 @@ main (int argc,
    string level_str ("Surface");
    string time_str;
 
-   int c;
    bool is_bludge = false;
    bool is_cross_section = false;
    bool is_interactive = false;
    bool is_meteogram = false;
    bool is_vertical_profile = false;
-   int option_index = 0;
-
+   string location_str ("");
+   Multi_Journey multi_journey;
    string config_file_path (string (getenv ("HOME")) + "/.twiin.rc");
 
-   Lat_Long lat_long (GSL_NAN, GSL_NAN);
-   Multi_Journey multi_journey;
-
+   int c;
+   int option_index = 0;
    while ((c = getopt_long (argc, argv, "bc:g:il:m:o:p:s:t:x:v:",
           long_options, &option_index)) != -1)
    {
@@ -535,9 +542,7 @@ main (int argc,
          {
             is_interactive = false;
             is_meteogram = true;
-            Tokens tokens (string (optarg), ":");
-            if (tokens.size () != 2) { throw Exception ("Parsing error"); }
-            lat_long = Lat_Long (stof (tokens[0]), stof (tokens[1]));
+            location_str = (string (optarg));
             break;
          }
 
@@ -569,6 +574,7 @@ main (int argc,
          {
             is_interactive = false;
             is_cross_section = true;
+ 
             Tokens tokens (string (optarg), ":");
             while (tokens.size () >= 2)
             {
@@ -583,9 +589,7 @@ main (int argc,
          {
             is_interactive = false;
             is_vertical_profile = true;
-            Tokens tokens (string (optarg), ":");
-            if (tokens.size () != 2) { throw Exception ("Parsing error"); }
-            lat_long = Lat_Long (stof (tokens[0]), stof (tokens[1]));
+            location_str = (string (optarg));
             break;
          }
 
@@ -602,8 +606,8 @@ main (int argc,
    try
    {
 
-      const Tokens& config_file_content = read_config_file (config_file_path);
-      const Twiin twiin (size_2d, config_file_content, output_dir);
+      const Config_File config_file (config_file_path);
+      const Twiin twiin (size_2d, config_file, output_dir);
 
       if (is_interactive)
       {
@@ -625,12 +629,13 @@ main (int argc,
          else
          if (is_meteogram)
          {
-            twiin.meteogram (stage_str, lat_long, time_str, is_bludge);
+            twiin.meteogram (stage_str, location_str, time_str, is_bludge);
          }
          else
          if (is_vertical_profile)
          {
-            twiin.vertical_profile (stage_str, lat_long, time_str, is_bludge);
+            twiin.vertical_profile (stage_str, location_str,
+               time_str, is_bludge);
          }
          else
          {
