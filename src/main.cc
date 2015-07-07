@@ -418,6 +418,7 @@ Twiin::vertical_profile (const string& stage_str,
 
    const Dtime::Set time_set (time_str);
    const Tokens stage_tokens (stage_str, ":");
+   const Tokens location_tokens (location_str, ":");
 
    Title title (size_2d);
    const Data data (config_file);
@@ -437,28 +438,36 @@ Twiin::vertical_profile (const string& stage_str,
       const auto& valid_time_set = model.get_valid_time_set (
          Product ("T"), stage, Level ("100m"));
 
-      for (auto iterator = valid_time_set.begin ();
-           iterator != valid_time_set.end (); iterator++)
+      for (Tokens::const_iterator j = location_tokens.begin ();
+           j != location_tokens.end (); j++)
       {
 
-         const Dtime& dtime = *(iterator);
-         if (!time_set.match (dtime)) { continue; }
+         const Location location (*j, station_map);
 
-         const string& png_file_path =
-            get_png_file_path (stage, dtime, location);
-         cout << "Rendering " << png_file_path << endl;
-         if (is_bludge) { continue; }
+         for (auto iterator = valid_time_set.begin ();
+              iterator != valid_time_set.end (); iterator++)
+         {
 
-         RefPtr<ImageSurface> surface = denise::get_surface (size_2d);
-         RefPtr<Context> cr = denise::get_cr (surface);
+            const Dtime& dtime = *(iterator);
+            if (!time_set.match (dtime)) { continue; }
 
-         Display::render_vertical_profile (cr, tephigram,
-            model, stage, dtime, location);
+            const string& png_file_path =
+               get_png_file_path (stage, dtime, location);
+            cout << "Rendering " << png_file_path << endl;
+            if (is_bludge) { continue; }
 
-         Display::set_title (title, basetime, stage, dtime, location);
-         title.cairo (cr);
+            RefPtr<ImageSurface> surface = denise::get_surface (size_2d);
+            RefPtr<Context> cr = denise::get_cr (surface);
 
-         surface->write_to_png (png_file_path);
+            Display::render_vertical_profile (cr, tephigram,
+               model, stage, dtime, location);
+
+            Display::set_title (title, basetime, stage, dtime, location);
+            title.cairo (cr);
+
+            surface->write_to_png (png_file_path);
+
+         }
 
       }
 
