@@ -363,6 +363,7 @@ Twiin::meteogram (const string& stage_str,
 
    const Dtime::Set time_set (time_str);
    const Tokens stage_tokens (stage_str, ":");
+   const Tokens location_tokens (location_str, ":");
 
    Title title (size_2d);
    const Data data (config_file);
@@ -370,8 +371,6 @@ Twiin::meteogram (const string& stage_str,
    const Dtime& basetime = model.get_basetime ();
    const Station::Map& station_map = data.get_station_map ();
    const Aws::Repository& aws_repository = data.get_aws_repository ();
-
-   const Location location (location_str, station_map);
 
    for (Tokens::const_iterator i = stage_tokens.begin ();
         i != stage_tokens.end (); i++)
@@ -382,21 +381,29 @@ Twiin::meteogram (const string& stage_str,
       const auto& valid_time_set = model.get_valid_time_set (
          Product ("T"), stage, Level ("Surface"));
 
-      const string& png_file_path =
-         get_png_file_path (stage, location);
-      cout << "Rendering " << png_file_path << endl;
-      if (is_bludge) { continue; }
+      for (Tokens::const_iterator j = location_tokens.begin ();
+           j != location_tokens.end (); j++)
+      {
 
-      RefPtr<ImageSurface> surface = denise::get_surface (size_2d);
-      RefPtr<Context> cr = denise::get_cr (surface);
+         const Location location (*j, station_map);
 
-      Display::render_meteogram (cr, size_2d,
-         model, aws_repository, stage, location);
+         const string& png_file_path =
+            get_png_file_path (stage, location);
+         cout << "Rendering " << png_file_path << endl;
+         if (is_bludge) { continue; }
 
-      Display::set_title (title, basetime, stage, location);
-      title.cairo (cr);
+         RefPtr<ImageSurface> surface = denise::get_surface (size_2d);
+         RefPtr<Context> cr = denise::get_cr (surface);
 
-      surface->write_to_png (png_file_path);
+         Display::render_meteogram (cr, size_2d,
+            model, aws_repository, stage, location);
+
+         Display::set_title (title, basetime, stage, location);
+         title.cairo (cr);
+
+         surface->write_to_png (png_file_path);
+
+      }
 
    }
 
