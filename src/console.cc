@@ -289,10 +289,14 @@ Console::Console (Gtk::Window& gtk_window,
    const Station::Map& station_map = data.get_station_map ();
    get_marker_store ().set_attractor (station_map);
 
-   //
-   const Lat_Long lat_long_a (-34.957, 150.211);
-   const Lat_Long lat_long_b (-32.670, 151.632);
+/*
+   const Lat_Long lat_long_a (-45.0310, 132.4160);
+   const Lat_Long lat_long_b (-20.2361, 163.6665);
+   const Lat_Long lat_long_c (-33.6185, 150.2741);
    get_route_store ().insert (lat_long_a, lat_long_b);
+   get_route_store ().insert (lat_long_a, lat_long_c);
+   get_route_store ().insert (lat_long_c, lat_long_b);
+*/
 
 }
 
