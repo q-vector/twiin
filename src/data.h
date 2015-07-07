@@ -124,7 +124,7 @@ namespace twiin
 
          Location (const Lat_Long& lat_long);
 
-         Location (const string& str,
+         Location (const string& location_str,
                    const Station::Map& station_map);
 
          Integer

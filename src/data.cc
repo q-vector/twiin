@@ -205,24 +205,33 @@ Location::Location (const string& str,
      long_str ("")
 {
 
-   const Tokens tokens (str, ":");
+   const char c = str[0];
 
-   if (tokens.size () == 1)
+   switch (c)
    {
-      const string& station_id_str = tokens[0];
-      const Integer station_id = stof (station_id_str);
-      const Station& station = station_map.at (station_id);
-      this->latitude = station.latitude;
-      this->longitude = station.longitude;
-      this->station_id = station_id;
-      this->long_str = station.name + " (" + station_id_str + ")";
-   }
-   else
-   if (tokens.size () == 2)
-   {
-      this->latitude = stof (tokens[0]);
-      this->longitude = stof (tokens[1]);
-      this->str = Lat_Long::get_string (true, string ("%.4f"));
+
+      case 'a':
+      {
+         const string& station_id_str = str.substr (1);
+         const Integer station_id = stof (station_id_str);
+         const Station& station = station_map.at (station_id);
+         this->latitude = station.latitude;
+         this->longitude = station.longitude;
+         this->station_id = station_id;
+         this->str = station_id_str;
+         this->long_str = station.name + " (" + station_id_str + ")";
+         break;
+      }
+
+      case 'l':
+      {
+         const Tokens tokens (str.substr (1), ",");
+         this->latitude = stof (tokens[0]);
+         this->longitude = stof (tokens[1]);
+         this->str = Lat_Long::get_string (true, string ("%.4f"));
+         break;
+      }
+
    }
 
 }
