@@ -44,6 +44,7 @@ namespace twiin
          string
          get_png_file_path (const Stage& stage,
                             const Product& product,
+                            const Level& level,
                             const Dtime& dtime) const;
 
          string
@@ -81,6 +82,8 @@ namespace twiin
                        const string& product_str,
                        const string& level_str,
                        const string& time_str,
+                       const string& zoom_str,
+                       const Tokens& annotation_tokens,
                        const bool is_bludge) const;
 
          void

@@ -612,7 +612,7 @@ Display::get_color (const Product& product,
 
 void
 Display::render_stages (const RefPtr<Context>& cr,
-                        const Transform_2D& transform,
+                        const Geodetic_Transform& transform,
                         const Model& model)
 {
 
@@ -637,7 +637,7 @@ Display::render_stages (const RefPtr<Context>& cr,
 
 void
 Display::render_product (const RefPtr<Context>& cr,
-                         const Transform_2D& transform,
+                         const Geodetic_Transform& transform,
                          const Size_2D& size_2d,
                          const Model& model,
                          const Hrit& hrit,
@@ -707,7 +707,7 @@ Display::render_product (const RefPtr<Context>& cr,
 
 void
 Display::render_wind_barbs (const RefPtr<Context>& cr,
-                            const Transform_2D& transform,
+                            const Geodetic_Transform& transform,
                             const Size_2D& size_2d,
                             const Model& model,
                             const Dtime& dtime,
@@ -761,8 +761,109 @@ Display::render_wind_barbs (const RefPtr<Context>& cr,
 }
 
 void
+Display::render_scale_bar (const RefPtr<Context>& cr,
+                           const Geodetic_Transform& geodetic_transform,
+                           const Size_2D& size_2d)
+{
+
+   const Real bar_length = 50e3;
+
+   const Real bar_height = 6;
+   const Real margin = 10;
+   const Real font_size = 10;
+   const Real scale = geodetic_transform.data.scale;
+   const Real pixels = bar_length / scale;
+   const Real box_height = bar_height + font_size*2 + margin*2;
+   const Point_2D point (2*margin, size_2d.j - 2*margin - box_height / 2);
+
+   cr->save ();
+   cr->set_line_width (1);
+   cr->set_font_size (font_size);
+
+   Color::white (0.5).cairo (cr);
+   Rect (Point_2D (point.x - margin, point.y - bar_height/2 - font_size - margin), 2 * pixels + 2*margin, bar_height + 2 * font_size + 2 * margin).cairo (cr);
+   cr->fill ();
+
+   Color::black ().cairo (cr);
+   Rect (Point_2D (point.x, point.y - bar_height/2), 2 * pixels, bar_height).cairo (cr);
+   cr->stroke ();
+
+   const Real tick = pixels/5;
+   for (Integer i = 0; i < 5; i += 2)
+   {
+      const Real x = point.x + i * tick;
+      Rect (Point_2D (x, point.y - bar_height/2), tick, bar_height).cairo (cr);
+      cr->fill ();
+   }
+
+   for (Integer i = 0; i < 5; i++)
+   {
+      const Real x = point.x + i * tick;
+      const Point_2D p (x, point.y);
+      const Real tick_length = fabs ((bar_length - i * bar_length/5) * 1e-3);
+      const string& str = string_render ("%.0f", tick_length);
+      Label (str, p, 'c', 't', bar_height*1.5).cairo (cr);
+   }
+
+   const Real x = point.x + pixels;
+   Label ("0", point + Point_2D (pixels, 0), 'c', 't', bar_height*1.5).cairo (cr);
+   Label ("50", point + Point_2D (2 * pixels, 0), 'c', 't', bar_height*1.5).cairo (cr);
+
+   Label ("kilometres", point + Point_2D (pixels, 0), 'c', 'b', bar_height*1.5).cairo (cr);
+
+   cr->restore ();
+
+}
+
+void
+Display::render_annotation (const RefPtr<Context>& cr,
+                            const Geodetic_Transform& transform,
+                            const Tokens& annotation_tokens)
+{
+
+   const Real ring_size = 4;
+   const Ring ring (ring_size);
+   const Real font_size = 12;
+
+   cr->save ();
+   cr->set_line_width (1);
+   cr->set_font_size (font_size);
+
+   for (auto iterator = annotation_tokens.begin ();
+        iterator != annotation_tokens.end (); iterator++)
+   {
+
+      const string& annotation_str = *(iterator);
+      const Tokens tokens (annotation_str, ":");
+
+      const Location location (tokens[0]);
+      const Point_2D& point = transform.transform (location);
+      ring.cairo (cr, point);
+
+      Color::green (0.8).cairo (cr);
+      cr->fill_preserve ();
+      Color::black ().cairo (cr);
+      cr->stroke ();
+
+      if (tokens.size () > 1)
+      {
+         const string& str = tokens[1];
+         const Point_2D anchor (point.x + font_size/2, point.y);
+         Color::gray (0.8).cairo (cr);
+         Label (str, anchor + Point_2D (2, 2), 'l', 'c', font_size/2).cairo (cr);
+         Color::gray (0.2).cairo (cr);
+         Label (str, anchor, 'l', 'c', font_size/2).cairo (cr);
+      }
+
+   }
+
+   cr->restore ();
+
+}
+
+void
 Display::render (const RefPtr<Context>& cr,
-                 const Transform_2D& transform,
+                 const Geodetic_Transform& transform,
                  const Size_2D& size_2d,
                  const Model& model,
                  const Hrit& hrit,

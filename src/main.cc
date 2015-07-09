@@ -52,10 +52,12 @@ Twiin::Transform_Ptr_Map::~Transform_Ptr_Map ()
 string
 Twiin::get_png_file_path (const Stage& stage,
                           const Product& product,
+                          const Level& level,
                           const Dtime& dtime) const
 {
    const string& time_str = dtime.get_string ("%Y%m%d%H%M");
-   const string& file_name = stage + "_" + product + "_" + time_str + ".png";
+   const string& file_name = stage + "_" + product + "_" +
+      level.get_string () + "_" + time_str + ".png";
    return output_dir + "/" + file_name;
 }
 
@@ -126,10 +128,11 @@ Twiin::interactive (const string& stage_str,
 
    const Tokens stage_tokens (stage_str, ":");
    const Tokens product_tokens (product_str, ":");
+   const Tokens level_tokens (level_str, ":");
 
    const Stage stage (stage_tokens[0]);
    const Product product (product_tokens[0]);
-   const Level level (level_str);
+   const Level level (level_tokens[0]);
 
    const Data data (config_file);
 
@@ -151,6 +154,8 @@ Twiin::command_line (const string& stage_str,
                      const string& product_str,
                      const string& level_str,
                      const string& time_str,
+                     const string& zoom_str,
+                     const Tokens& annotation_tokens,
                      const bool is_bludge) const
 {
 
@@ -174,7 +179,7 @@ Twiin::command_line (const string& stage_str,
    }
 
    const Dtime::Set time_set (time_str);
-   const Level level (level_str);
+   const Tokens level_tokens (level_str, ":");
    const Tokens stage_tokens (stage_str, ":");
    const Tokens product_tokens (product_str, ":");
 
@@ -187,79 +192,99 @@ Twiin::command_line (const string& stage_str,
    const Hrit& hrit = data.get_hrit ();
    const Station::Map& station_map = data.get_station_map ();
 
+   const Point_2D centre (size_2d.i/2, size_2d.j/2);
+   Geodetic_Transform* gt_ptr = (zoom_str == "" ? NULL :
+      Geodetic_Transform::get_transform_ptr (zoom_str, centre)); 
+
    for (Tokens::const_iterator i = stage_tokens.begin ();
         i != stage_tokens.end (); i++)
    {
 
       const twiin::Stage stage (*i);
-      const Geodetic_Transform& transform = *(transform_ptr_map[stage]);
+      const Geodetic_Transform& transform = gt_ptr == NULL ?
+         *(transform_ptr_map[stage]) : *gt_ptr;
 
       for (Tokens::const_iterator j = product_tokens.begin ();
            j != product_tokens.end (); j++)
       {
 
          const Product product (*j);
-         const auto& valid_time_set = model.get_valid_time_set (
-            product, stage, level);
 
-         for (auto k = valid_time_set.begin ();
-              k != valid_time_set.end (); k++)
+         for (auto k = level_tokens.begin ();
+              k != level_tokens.end (); k++)
          {
+
+
+            const Level level (*k);
            
-            const Dtime& dtime = *(k);
-            if (!time_set.match (dtime)) { continue; }
+            const auto& valid_time_set = model.get_valid_time_set (
+               product, stage, level);
 
-            const string& png_file_path =
-               get_png_file_path (stage, product, dtime);
-            cout << "Rendering " << png_file_path << endl;
-            if (is_bludge) { continue; }
-
-            RefPtr<ImageSurface> surface = denise::get_surface (size_2d);
-            RefPtr<Context> cr = denise::get_cr (surface);
-
-            Display::render (cr, transform, size_2d, model, hrit,
-               station_map, dtime, level, stage, product);
-
-            if (gshhs_ptr != NULL)
+            for (auto l = valid_time_set.begin ();
+                 l != valid_time_set.end (); l++)
             {
-               cr->save ();
+           
+               const Dtime& dtime = *(l);
+               if (!time_set.match (dtime)) { continue; }
 
-               cr->set_line_width (2);
-               Color::black (0.6).cairo (cr);
-               gshhs_ptr->cairo (cr, transform);
-               cr->stroke ();
+               const string& png_file_path =
+                  get_png_file_path (stage, product, level, dtime);
+               cout << "Rendering " << png_file_path << endl;
+               if (is_bludge) { continue; }
 
-               const Domain_1D domain_latitude (-50, -15);
-               const Domain_1D domain_longitude (130, 170);
-               const Domain_2D domain_2d (domain_latitude, domain_longitude);
+               RefPtr<ImageSurface> surface = denise::get_surface (size_2d);
+               RefPtr<Context> cr = denise::get_cr (surface);
 
-               //const Simple_Mesh_2D sm0_2 (Color::black (0.05), 0.2, 0.2);
-               const Geodetic_Mesh mesh_small (Color::black (0.10), 1.0, 1.0,
-                  Color::black (0.40), 10., 10., size_2d, domain_2d);
-               const Geodetic_Mesh mesh_large (Color::black (0.10), 5.0, 5.0,
-                  Color::black (0.40), 30., 30., size_2d, domain_2d);
+               Display::render (cr, transform, size_2d, model, hrit,
+                  station_map, dtime, level, stage, product);
 
-               const Real latitude_span = domain_2d.domain_x.get_span ();
-               const Real longitude_span = domain_2d.domain_y.get_span ();
-               const Real span = std::min (latitude_span, longitude_span);
-               const Geodetic_Mesh& mesh = (span > 90 ? mesh_large : mesh_small);
+               if (gshhs_ptr != NULL)
+               {
+                  cr->save ();
 
-               cr->save ();
-               mesh.cairo (cr, transform);
+                  cr->set_line_width (2);
+                  Color::black (0.6).cairo (cr);
+                  gshhs_ptr->cairo (cr, transform);
+                  cr->stroke ();
 
-               cr->restore ();
+                  const Domain_1D domain_latitude (-50, -15);
+                  const Domain_1D domain_longitude (130, 170);
+                  const Domain_2D domain_2d (domain_latitude, domain_longitude);
+
+                  //const Simple_Mesh_2D sm0_2 (Color::black (0.05), 0.2, 0.2);
+                  const Geodetic_Mesh mesh_small (Color::black (0.10), 1.0, 1.0,
+                     Color::black (0.40), 10., 10., size_2d, domain_2d);
+                  const Geodetic_Mesh mesh_large (Color::black (0.10), 5.0, 5.0,
+                     Color::black (0.40), 30., 30., size_2d, domain_2d);
+
+                  const Real latitude_span = domain_2d.domain_x.get_span ();
+                  const Real longitude_span = domain_2d.domain_y.get_span ();
+                  const Real span = std::min (latitude_span, longitude_span);
+                  const Geodetic_Mesh& mesh = (span > 90 ? mesh_large : mesh_small);
+
+                  cr->save ();
+                  mesh.cairo (cr, transform);
+
+                  cr->restore ();
+               }
+
+               Display::set_title (title, basetime, stage, product, dtime, level);
+               title.cairo (cr);
+
+               Display::render_scale_bar (cr, transform, size_2d);
+               Display::render_annotation (cr, transform, annotation_tokens);
+
+               surface->write_to_png (png_file_path);
+
             }
-
-            Display::set_title (title, basetime, stage, product, dtime, level);
-            title.cairo (cr);
-
-            surface->write_to_png (png_file_path);
 
          }
 
       }
 
    }
+
+   if (gt_ptr != NULL) { delete gt_ptr; }
 
 }
 
@@ -482,6 +507,7 @@ main (int argc,
 
    static struct option long_options[] =
    {
+      { "annotation", 0, 0, 'a' },
       { "bludge", 0, 0, 'b' },
       { "config", 0, 0, 'c' },
       { "geometry", 1, 0, 'g' },
@@ -494,6 +520,7 @@ main (int argc,
       { "time", 1, 0, 't' },
       { "cross-section", 1, 0, 'x' },
       { "vertical-profile", 1, 0, 'v' },
+      { "zoom", 1, 0, 'z' },
       { NULL, 0, NULL, 0 }
    };
 
@@ -503,6 +530,8 @@ main (int argc,
    string stage_str ("STAGE3");
    string level_str ("Surface");
    string time_str;
+   string zoom_str ("");
+   Tokens annotation_tokens;
 
    bool is_bludge = false;
    bool is_cross_section = false;
@@ -515,12 +544,18 @@ main (int argc,
 
    int c;
    int option_index = 0;
-   while ((c = getopt_long (argc, argv, "bc:g:il:m:o:p:s:t:x:v:",
+   while ((c = getopt_long (argc, argv, "a:bc:g:il:m:o:p:s:t:x:v:z:",
           long_options, &option_index)) != -1)
    {
 
       switch (c)
       {
+
+         case 'a':
+         {
+            annotation_tokens.push_back (string (optarg));
+            break;
+         }
 
          case 'b':
          {
@@ -609,6 +644,12 @@ main (int argc,
             break;
          }
 
+         case 'z':
+         {
+            zoom_str = (string (optarg));
+            break;
+         }
+
          default:
          {
             cerr << "Error options " << c << endl;
@@ -655,8 +696,8 @@ main (int argc,
          }
          else
          {
-            twiin.command_line (stage_str, product_str,
-               level_str, time_str, is_bludge);
+            twiin.command_line (stage_str, product_str, level_str,
+               time_str, zoom_str, annotation_tokens, is_bludge);
          }
       }
 

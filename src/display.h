@@ -117,12 +117,12 @@ namespace twiin
 
          static void
          render_stages (const RefPtr<Context>& cr,
-                        const Transform_2D& transform,
+                        const Geodetic_Transform& transform,
                         const Model& model);
 
          static void
          render_product (const RefPtr<Context>& cr,
-                         const Transform_2D& transform,
+                         const Geodetic_Transform& transform,
                          const Size_2D& size_2d,
                          const Model& model,
                          const Hrit& hrit,
@@ -133,7 +133,7 @@ namespace twiin
 
          static void
          render_wind_barbs (const RefPtr<Context>& cr,
-                            const Transform_2D& transform,
+                            const Geodetic_Transform& transform,
                             const Size_2D& size_2d,
                             const Model& model,
                             const Dtime& dtime,
@@ -141,8 +141,18 @@ namespace twiin
                             const Stage& stage);
 
          static void
+         render_scale_bar (const RefPtr<Context>& cr,
+                           const Geodetic_Transform& transform,
+                           const Size_2D& size_2d);
+
+         static void
+         render_annotation (const RefPtr<Context>& cr,
+                            const Geodetic_Transform& transform,
+                            const Tokens& annotation_tokens);
+
+         static void
          render (const RefPtr<Context>& cr,
-                 const Transform_2D& transform,
+                 const Geodetic_Transform& geodetic_transform,
                  const Size_2D& size_2d,
                  const Model& model,
                  const Hrit& hrit,
