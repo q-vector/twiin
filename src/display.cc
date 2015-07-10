@@ -444,6 +444,176 @@ Display::set_title (Title& title,
    title.set ("", stage, location.get_long_str (), basetime_str, ll_str);
 }
 
+string
+Display::get_unit (const Product& product)
+{
+
+   if (product == "T")
+   {
+      return string ("\u00b0C");
+   }
+   else
+   if (product == "TD")
+   {
+      return string ("\u00b0C");
+   }
+   else
+   if (product == "RH")
+   {
+      return string ("%%");
+   }
+   else
+   if (product == "THETA")
+   {
+      return string ("\u00b0C");
+   }
+   else
+   if (product == "THETA_E")
+   {
+      return string ("\u00b0C");
+   }
+   else
+   if (product == "Q")
+   {
+      return string ("g kg\u207b\u00b9");
+   }
+   else
+   if (product == "RHO")
+   {
+      return string ("kg m\u207b\u00ba");
+   }
+   else
+   if (product == "W")
+   {
+      return string ("m s\u207b\u00b9");
+   }
+   else
+   if (product == "W_TRANSLUCENT")
+   {
+      return string ("m s\u207b\u00b9");
+   }
+   else
+   if (product == "SPEED_HIGHER")
+   {
+      return string ("knots");
+   }
+   else
+   if (product == "SPEED")
+   {
+      return string ("knots");
+   }
+   else
+   if (product == "VORTICITY")
+   {
+      return string ("s\u207b\u00b9");
+   }
+   else
+   if (product == "FFDI")
+   {
+      return string ("");
+   }
+   else
+   if (product == "MSLP")
+   {
+      return string ("Pa");
+   }
+   else
+   if (product == "PRECIP_RATE")
+   {
+      return string ("mm hr\u207b\u00b9");
+   }
+   else
+   {
+      return string ("");
+   }
+
+}
+
+Tuple
+Display::get_tick_tuple (const Product& product)
+{
+
+   if (product == "T")
+   {
+      return Tuple ("10:15:20:25:30:35");
+   }
+   else
+   if (product == "TD")
+   {
+      return Tuple ("-10:-5:0:5:10:15:20");
+   }
+   else
+   if (product == "RH")
+   {
+      return Tuple ("0:20:40:60:80:100");
+   }
+   else
+   if (product == "THETA")
+   {
+      return Tuple ("0:10:20:30:40:50:60");
+   }
+   else
+   if (product == "THETA_E")
+   {
+      return Tuple ("5:15:25:35:45:55:65");
+   }
+   else
+   if (product == "Q")
+   {
+      return Tuple ("0:1:2:3:4:5:6:7:8:9:10");
+   }
+   else
+   if (product == "RHO")
+   {
+      return Tuple ("0.0:1.0:2.0;3.0:4.0:5.0:6.0:7.0:8.0:9.0:10.0");
+   }
+   else
+   if (product == "W")
+   {
+      return Tuple ("-4:-3:-2:-1:0:1:2:3:4");
+   }
+   else
+   if (product == "W_TRANSLUCENT")
+   {
+      return Tuple ("-4:-3:-2:-1:0:1:2:3:4");
+   }
+   else
+   if (product == "SPEED_HIGHER")
+   {
+      return Tuple ("0:5:15:25:35:45:55:65:75:85:95:105:115:125");
+   }
+   else
+   if (product == "SPEED")
+   {
+      return Tuple ("0:5:10:15:20:25:30:35:40:45:50:55:60:65");
+   }
+   else
+   if (product == "VORTICITY")
+   {
+      return Tuple ("1e-5:8e-6:6e-6:4e-6:2e-6:0:2e-6:4e-6:6e-6:8e-6:1e-5");
+   }
+   else
+   if (product == "FFDI")
+   {
+      return Tuple ("0:12:25:50:75:100:150");
+   }
+   else
+   if (product == "MSLP")
+   {
+      return Tuple ("980e2:990e2:1000e2:1010e2:1020e2:1030e2");
+   }
+   else
+   if (product == "PRECIP_RATE")
+   {
+      return Tuple ("1:2:5:10:20:30:50:75:100:150");
+   }
+   else
+   {
+      return Tuple ();
+   }
+
+}
+
 Color
 Display::get_color (const Product& product,
                     const Real datum)
@@ -510,8 +680,8 @@ Display::get_color (const Product& product,
    {
       const Real hue = (datum < 0 ? 0.667 : 0.000);
       const Real absolute = fabs (datum);
-      const Real quantized = floor (absolute * 10) / 10;
-      const Real saturation = Domain_1D (0, 1.5).normalize (quantized) * 0.7;
+      const Real quantized = floor (absolute / 0.1) * 0.1;
+      const Real saturation = Domain_1D (0, 3.5).normalize (quantized) * 0.7;
       return Color::hsb (hue, saturation, 1.0);
    }
    else
@@ -519,8 +689,8 @@ Display::get_color (const Product& product,
    {
       const Real hue = (datum < 0 ? 0.667 : 0.000);
       const Real absolute = fabs (datum);
-      const Real quantized = floor (absolute * 10) / 10;
-      const Real alpha = Domain_1D (0, 1.5).normalize (quantized);
+      const Real quantized = floor (absolute / 0.1) * 0.1;
+      const Real alpha = Domain_1D (0, 3.5).normalize (quantized);
       return Color::hsb (hue, 1.0, 1.0, alpha);
    }
    else
@@ -766,12 +936,18 @@ Display::render_scale_bar (const RefPtr<Context>& cr,
                            const Size_2D& size_2d)
 {
 
-   const Real bar_length = 50e3;
-
    const Real bar_height = 6;
    const Real margin = 10;
    const Real font_size = 10;
    const Real scale = geodetic_transform.data.scale;
+
+   const Real log10_scale = log10 (scale * 1.6);
+   Real exponent = floor (log10_scale);
+   Real residue = log10_scale - floor (log10_scale);
+   if (residue > 0.849) { exponent++; residue = 0; }
+   const Real mantissa = (residue > 0.548 ? 5.0 : (residue > 0.199 ? 2.5 : 1));
+   const Real bar_length = mantissa * exp10 (exponent + 2);
+
    const Real pixels = bar_length / scale;
    const Real box_height = bar_height + font_size*2 + margin*2;
    const Point_2D point (2*margin, size_2d.j - 2*margin - box_height / 2);
@@ -780,7 +956,7 @@ Display::render_scale_bar (const RefPtr<Context>& cr,
    cr->set_line_width (1);
    cr->set_font_size (font_size);
 
-   Color::white (0.5).cairo (cr);
+   Color::white (0.7).cairo (cr);
    Rect (Point_2D (point.x - margin, point.y - bar_height/2 - font_size - margin), 2 * pixels + 2*margin, bar_height + 2 * font_size + 2 * margin).cairo (cr);
    cr->fill ();
 
@@ -807,9 +983,92 @@ Display::render_scale_bar (const RefPtr<Context>& cr,
 
    const Real x = point.x + pixels;
    Label ("0", point + Point_2D (pixels, 0), 'c', 't', bar_height*1.5).cairo (cr);
-   Label ("50", point + Point_2D (2 * pixels, 0), 'c', 't', bar_height*1.5).cairo (cr);
+   Label (string_render ("%.0f", bar_length*1e-3),
+      point + Point_2D (2 * pixels, 0), 'c', 't', bar_height*1.5).cairo (cr);
 
    Label ("kilometres", point + Point_2D (pixels, 0), 'c', 'b', bar_height*1.5).cairo (cr);
+
+   cr->restore ();
+
+}
+
+void
+Display::render_color_bar (const RefPtr<Context>& cr,
+                           const Size_2D& size_2d,
+                           const Product& product)
+{
+
+   const Tuple& tick_tuple = Display::get_tick_tuple (product);
+   if (tick_tuple.size () < 2) { return; }
+
+   const Real title_height = 50;
+   const Real margin = 10;
+   const Real font_size = 12;
+
+   const Real box_width = 80;
+   const Real box_height = size_2d.j - title_height - 4*margin;
+
+   const Real bar_width = box_width - 4 * margin;
+   const Real bar_height = box_height - 3 * margin - font_size;
+
+   const Point_2D box_point (size_2d.i - 2*margin - box_width, title_height + 2*margin);
+   const Real bar_x = box_point.x + 3*margin;
+   const Real bar_y = box_point.y + font_size + 2*margin;
+   const Point_2D bar_point (bar_x, bar_y);
+
+   const Real start_value = tick_tuple.front ();
+   const Real end_value = tick_tuple.back ();
+   const Real span_value = end_value - start_value;
+   const Real scale = bar_height / span_value;
+   const Real offset = bar_y + scale * end_value;
+   Affine_Transform_1D transform (-scale, offset);
+
+   cr->save ();
+   cr->set_line_width (1);
+   cr->set_font_size (font_size);
+
+   Color::white (0.7).cairo (cr);
+   Rect (box_point, box_width, box_height).cairo (cr);
+   cr->fill ();
+
+   Raster* raster_ptr = new Raster (Box_2D (Index_2D (bar_x, bar_y),
+      Size_2D (bar_width, bar_height)));
+   Raster& raster = *raster_ptr;
+
+   for (Integer j = 0; j < bar_height; j++)
+   {
+      const Real fraction = Real (j) / Real (bar_height);
+      const Real value = start_value + fraction * span_value;
+      const Color& color = Display::get_color (product, value);
+      for (Integer i = 0; i < bar_width; i++)
+      {
+         raster.set_pixel (i, bar_height - j - 1, color);
+      }
+   }
+
+   raster_ptr->blit (cr);
+   delete raster_ptr;
+
+   Color::black ().cairo (cr);
+   Rect (bar_point, bar_width, bar_height).cairo (cr);
+   cr->stroke ();
+
+   for (auto iterator = tick_tuple.begin ();
+        iterator != tick_tuple.end (); iterator++)
+   {
+      const Real tick_value = *(iterator);
+      const Real y = transform.transform (tick_value);
+      const Point_2D point (bar_x, y);
+      const string& str = string_render ("%g", tick_value);
+      Label (str, point, 'r', 'c', font_size/2).cairo (cr);
+   }
+
+   const Real label_x = bar_point.x + bar_width/2;
+   const Real label_y = bar_point.y;
+   const Point_2D label_point (label_x, label_y);
+//   Label ("ms\u207b\u00b9", label_point, 'c', 'b', font_size/2).cairo (cr);
+   const string& unit = Display::get_unit (product);
+   Label (unit, label_point, 'c', 'b', font_size/2).cairo (cr);
 
    cr->restore ();
 
@@ -823,7 +1082,7 @@ Display::render_annotation (const RefPtr<Context>& cr,
 
    const Real ring_size = 4;
    const Ring ring (ring_size);
-   const Real font_size = 12;
+   const Real font_size = 14;
 
    cr->save ();
    cr->set_line_width (1);
@@ -848,11 +1107,11 @@ Display::render_annotation (const RefPtr<Context>& cr,
       if (tokens.size () > 1)
       {
          const string& str = tokens[1];
-         const Point_2D anchor (point.x + font_size/2, point.y);
+         const Point_2D anchor (point.x, point.y);
          Color::gray (0.8).cairo (cr);
-         Label (str, anchor + Point_2D (2, 2), 'l', 'c', font_size/2).cairo (cr);
+         Label (str, point + Point_2D (2, 2), 'r', 'c', font_size/2).cairo (cr);
          Color::gray (0.2).cairo (cr);
-         Label (str, anchor, 'l', 'c', font_size/2).cairo (cr);
+         Label (str, point, 'r', 'c', font_size/2).cairo (cr);
       }
 
    }
@@ -885,7 +1144,7 @@ Display::render (const RefPtr<Context>& cr,
    render_wind_barbs (cr, transform, size_2d, model, dtime, level, stage);
 
    // Stage 3/4/5 Frames
-   render_stages (cr, transform, model);
+   //render_stages (cr, transform, model);
 
    // All Stations
    //station_map.cairo (cr, transform);

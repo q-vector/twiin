@@ -50,22 +50,24 @@ Twiin::Transform_Ptr_Map::~Transform_Ptr_Map ()
 }
 
 string
-Twiin::get_png_file_path (const Stage& stage,
-                          const Product& product,
-                          const Level& level,
-                          const Dtime& dtime) const
+Twiin::get_file_path (const string& format,
+                      const Stage& stage,
+                      const Product& product,
+                      const Level& level,
+                      const Dtime& dtime) const
 {
    const string& time_str = dtime.get_string ("%Y%m%d%H%M");
    const string& file_name = stage + "_" + product + "_" +
-      level.get_string () + "_" + time_str + ".png";
+      level.get_string () + "_" + time_str + "." + format;
    return output_dir + "/" + file_name;
 }
 
 string
-Twiin::get_png_file_path (const Stage& stage,
-                          const Product& product,
-                          const Dtime& dtime,
-                          const Multi_Journey& multi_journey) const
+Twiin::get_file_path (const string& format,
+                      const Stage& stage,
+                      const Product& product,
+                      const Dtime& dtime,
+                      const Multi_Journey& multi_journey) const
 {
 
    const Lat_Long origin (multi_journey.front ());
@@ -82,29 +84,31 @@ Twiin::get_png_file_path (const Stage& stage,
 
    const string& time_str = dtime.get_string ("%Y%m%d%H%M");
    const string& file_name = stage + "_" + product + "_" +
-      time_str + "_" + mj_str + ".png";
+      time_str + "_" + mj_str + "." + format;
    return output_dir + "/" + file_name;
 
 }
 
 string
-Twiin::get_png_file_path (const Stage& stage,
-                          const Dtime& dtime,
-                          const Location& location) const
+Twiin::get_file_path (const string& format,
+                      const Stage& stage,
+                      const Dtime& dtime,
+                      const Location& location) const
 {
    const string& location_str = location.get_str ();
    const string& time_str = dtime.get_string ("%Y%m%d%H%M");
    const string& file_name = stage + "_" + time_str + "_"
-      + location_str + ".png";
+      + location_str + "." + format;
    return output_dir + "/" + file_name;
 }
 
 string
-Twiin::get_png_file_path (const Stage& stage,
-                          const Location& location) const
+Twiin::get_file_path (const string& format,
+                      const Stage& stage,
+                      const Location& location) const
 {
    const string& location_str = location.get_str ();
-   const string& file_name = stage + "_" + location_str + ".png";
+   const string& file_name = stage + "_" + location_str + "." + format;
    return output_dir + "/" + file_name;
 }
 
@@ -156,6 +160,7 @@ Twiin::command_line (const string& stage_str,
                      const string& time_str,
                      const string& zoom_str,
                      const Tokens& annotation_tokens,
+                     const string& format,
                      const bool is_bludge) const
 {
 
@@ -227,12 +232,13 @@ Twiin::command_line (const string& stage_str,
                const Dtime& dtime = *(l);
                if (!time_set.match (dtime)) { continue; }
 
-               const string& png_file_path =
-                  get_png_file_path (stage, product, level, dtime);
-               cout << "Rendering " << png_file_path << endl;
+               const string& file_path =
+                  get_file_path (format, stage, product, level, dtime);
+               cout << "Rendering " << file_path << endl;
                if (is_bludge) { continue; }
 
-               RefPtr<ImageSurface> surface = denise::get_surface (size_2d);
+               RefPtr<Surface> surface = denise::get_surface (
+                  size_2d, format, file_path);
                RefPtr<Context> cr = denise::get_cr (surface);
 
                Display::render (cr, transform, size_2d, model, hrit,
@@ -252,6 +258,8 @@ Twiin::command_line (const string& stage_str,
                   const Domain_2D domain_2d (domain_latitude, domain_longitude);
 
                   //const Simple_Mesh_2D sm0_2 (Color::black (0.05), 0.2, 0.2);
+                  const Geodetic_Mesh mesh_tiny (Color::black (0.10), 0.2, 0.2,
+                     Color::black (0.40), 1.0, 1.0, size_2d, domain_2d);
                   const Geodetic_Mesh mesh_small (Color::black (0.10), 1.0, 1.0,
                      Color::black (0.40), 10., 10., size_2d, domain_2d);
                   const Geodetic_Mesh mesh_large (Color::black (0.10), 5.0, 5.0,
@@ -260,21 +268,31 @@ Twiin::command_line (const string& stage_str,
                   const Real latitude_span = domain_2d.domain_x.get_span ();
                   const Real longitude_span = domain_2d.domain_y.get_span ();
                   const Real span = std::min (latitude_span, longitude_span);
-                  const Geodetic_Mesh& mesh = (span > 90 ? mesh_large : mesh_small);
+                  //const Geodetic_Mesh& mesh = (span > 90 ? mesh_large :
+                  //   span > 30 ? mesh_small : mesh_tiny);
+                  const Geodetic_Mesh& mesh = mesh_tiny;
 
                   cr->save ();
                   mesh.cairo (cr, transform);
+                  mesh.render_label_lat_long (cr, transform, 1,
+                    Lat_Long (-34.5, 149.5), "%.0f");
 
                   cr->restore ();
+
                }
 
                Display::set_title (title, basetime, stage, product, dtime, level);
                title.cairo (cr);
 
-               Display::render_scale_bar (cr, transform, size_2d);
                Display::render_annotation (cr, transform, annotation_tokens);
 
-               surface->write_to_png (png_file_path);
+               Display::render_scale_bar (cr, transform, size_2d);
+               Display::render_color_bar (cr, size_2d, product);
+
+               if (format == "png")
+               {
+                  surface->write_to_png (file_path);
+               }
 
             }
 
@@ -348,12 +366,12 @@ Twiin::cross_section (const string& stage_str,
             const Dtime& dtime = *(iterator);
             if (!time_set.match (dtime)) { continue; }
 
-            const string& png_file_path =
-               get_png_file_path (stage, product, dtime, multi_journey);
-            cout << "Rendering " << png_file_path << endl;
+            const string& file_path = get_file_path ("png",
+               stage, product, dtime, multi_journey);
+            cout << "Rendering " << file_path << endl;
             if (is_bludge) { continue; }
 
-            RefPtr<ImageSurface> surface = denise::get_surface (size_2d);
+            RefPtr<Surface> surface = denise::get_surface (size_2d);
             RefPtr<Context> cr = denise::get_cr (surface);
 
             const Index_2D i2d (margin_l, margin_t);
@@ -370,7 +388,7 @@ Twiin::cross_section (const string& stage_str,
                product, dtime, multi_journey);
             title.cairo (cr);
 
-            surface->write_to_png (png_file_path);
+            surface->write_to_png (file_path);
 
          }
 
@@ -412,12 +430,12 @@ Twiin::meteogram (const string& stage_str,
 
          const Location location (*j, station_map);
 
-         const string& png_file_path =
-            get_png_file_path (stage, location);
-         cout << "Rendering " << png_file_path << endl;
+         const string& file_path =
+            get_file_path ("png", stage, location);
+         cout << "Rendering " << file_path << endl;
          if (is_bludge) { continue; }
 
-         RefPtr<ImageSurface> surface = denise::get_surface (size_2d);
+         RefPtr<Surface> surface = denise::get_surface (size_2d);
          RefPtr<Context> cr = denise::get_cr (surface);
 
          Display::render_meteogram (cr, size_2d,
@@ -426,7 +444,7 @@ Twiin::meteogram (const string& stage_str,
          Display::set_title (title, basetime, stage, location);
          title.cairo (cr);
 
-         surface->write_to_png (png_file_path);
+         surface->write_to_png (file_path);
 
       }
 
@@ -476,12 +494,12 @@ Twiin::vertical_profile (const string& stage_str,
             const Dtime& dtime = *(iterator);
             if (!time_set.match (dtime)) { continue; }
 
-            const string& png_file_path =
-               get_png_file_path (stage, dtime, location);
-            cout << "Rendering " << png_file_path << endl;
+            const string& file_path =
+               get_file_path ("png", stage, dtime, location);
+            cout << "Rendering " << file_path << endl;
             if (is_bludge) { continue; }
 
-            RefPtr<ImageSurface> surface = denise::get_surface (size_2d);
+            RefPtr<Surface> surface = denise::get_surface (size_2d);
             RefPtr<Context> cr = denise::get_cr (surface);
 
             Display::render_vertical_profile (cr, tephigram,
@@ -490,7 +508,7 @@ Twiin::vertical_profile (const string& stage_str,
             Display::set_title (title, basetime, stage, dtime, location);
             title.cairo (cr);
 
-            surface->write_to_png (png_file_path);
+            surface->write_to_png (file_path);
 
          }
 
@@ -510,6 +528,7 @@ main (int argc,
       { "annotation", 0, 0, 'a' },
       { "bludge", 0, 0, 'b' },
       { "config", 0, 0, 'c' },
+      { "format", 0, 0, 'g' },
       { "geometry", 1, 0, 'g' },
       { "interactive", 0, 0, 'i' },
       { "level", 1, 0, 'l' },
@@ -531,6 +550,7 @@ main (int argc,
    string level_str ("Surface");
    string time_str;
    string zoom_str ("");
+   string format ("png");
    Tokens annotation_tokens;
 
    bool is_bludge = false;
@@ -544,7 +564,7 @@ main (int argc,
 
    int c;
    int option_index = 0;
-   while ((c = getopt_long (argc, argv, "a:bc:g:il:m:o:p:s:t:x:v:z:",
+   while ((c = getopt_long (argc, argv, "a:bc:f:g:il:m:o:p:s:t:x:v:z:",
           long_options, &option_index)) != -1)
    {
 
@@ -566,6 +586,12 @@ main (int argc,
          case 'c':
          {
             config_file_path = (string (optarg));
+            break;
+         }
+
+         case 'f':
+         {
+            format = (string (optarg));
             break;
          }
 
@@ -697,7 +723,7 @@ main (int argc,
          else
          {
             twiin.command_line (stage_str, product_str, level_str,
-               time_str, zoom_str, annotation_tokens, is_bludge);
+               time_str, zoom_str, annotation_tokens, format, is_bludge);
          }
       }
 

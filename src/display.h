@@ -111,6 +111,12 @@ namespace twiin
                     const Stage& stage,
                     const Location& location);
 
+         static string
+         get_unit (const Product& product);
+
+         static Tuple
+         get_tick_tuple (const Product& product);
+
          static Color
          get_color (const Product& product,
                     const Real datum);
@@ -144,6 +150,11 @@ namespace twiin
          render_scale_bar (const RefPtr<Context>& cr,
                            const Geodetic_Transform& transform,
                            const Size_2D& size_2d);
+
+         static void
+         render_color_bar (const RefPtr<Context>& cr,
+                           const Size_2D& size_2d,
+                           const Product& product);
 
          static void
          render_annotation (const RefPtr<Context>& cr,

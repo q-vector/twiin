@@ -42,25 +42,29 @@ namespace twiin
          output_dir;
 
          string
-         get_png_file_path (const Stage& stage,
-                            const Product& product,
-                            const Level& level,
-                            const Dtime& dtime) const;
+         get_file_path (const string& format,
+                        const Stage& stage,
+                        const Product& product,
+                        const Level& level,
+                        const Dtime& dtime) const;
 
          string
-         get_png_file_path (const Stage& stage,
-                            const Product& product,
-                            const Dtime& dtime,
-                            const Multi_Journey& multi_journey) const;
+         get_file_path (const string& format,
+                        const Stage& stage,
+                        const Product& product,
+                        const Dtime& dtime,
+                        const Multi_Journey& multi_journey) const;
 
          string
-         get_png_file_path (const Stage& stage,
-                            const Dtime& dtime,
-                            const Location& location) const;
+         get_file_path (const string& format,
+                        const Stage& stage,
+                        const Dtime& dtime,
+                        const Location& location) const;
 
          string
-         get_png_file_path (const Stage& stage,
-                            const Location& location) const;
+         get_file_path (const string& format,
+                        const Stage& stage,
+                        const Location& location) const;
 
       public:
 
@@ -84,6 +88,7 @@ namespace twiin
                        const string& time_str,
                        const string& zoom_str,
                        const Tokens& annotation_tokens,
+                       const string& format,
                        const bool is_bludge) const;
 
          void
