@@ -257,7 +257,6 @@ Twiin::command_line (const string& stage_str,
                   const Domain_1D domain_longitude (130, 170);
                   const Domain_2D domain_2d (domain_latitude, domain_longitude);
 
-                  //const Simple_Mesh_2D sm0_2 (Color::black (0.05), 0.2, 0.2);
                   const Geodetic_Mesh mesh_tiny (Color::black (0.10), 0.2, 0.2,
                      Color::black (0.40), 1.0, 1.0, size_2d, domain_2d);
                   const Geodetic_Mesh mesh_small (Color::black (0.10), 1.0, 1.0,
@@ -270,7 +269,8 @@ Twiin::command_line (const string& stage_str,
                   const Real span = std::min (latitude_span, longitude_span);
                   //const Geodetic_Mesh& mesh = (span > 90 ? mesh_large :
                   //   span > 30 ? mesh_small : mesh_tiny);
-                  const Geodetic_Mesh& mesh = mesh_tiny;
+                  //const Geodetic_Mesh& mesh = mesh_tiny;
+                  const Geodetic_Mesh& mesh = mesh_small;
 
                   cr->save ();
                   mesh.cairo (cr, transform);
@@ -281,13 +281,13 @@ Twiin::command_line (const string& stage_str,
 
                }
 
-               Display::set_title (title, basetime, stage, product, dtime, level);
-               title.cairo (cr);
+               //Display::set_title (title, basetime, stage, product, dtime, level);
+               //title.cairo (cr);
 
                Display::render_annotation (cr, transform, annotation_tokens);
 
                Display::render_scale_bar (cr, transform, size_2d);
-               Display::render_color_bar (cr, size_2d, product);
+               //Display::render_color_bar (cr, size_2d, product);
 
                if (format == "png")
                {

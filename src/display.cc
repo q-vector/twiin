@@ -1141,10 +1141,10 @@ Display::render (const RefPtr<Context>& cr,
 
    render_product (cr, transform, size_2d, model, hrit,
       product, dtime, level, stage);
-   render_wind_barbs (cr, transform, size_2d, model, dtime, level, stage);
+   //render_wind_barbs (cr, transform, size_2d, model, dtime, level, stage);
 
    // Stage 3/4/5 Frames
-   //render_stages (cr, transform, model);
+   render_stages (cr, transform, model);
 
    // All Stations
    //station_map.cairo (cr, transform);
