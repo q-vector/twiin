@@ -96,18 +96,21 @@ namespace twiin
                         const string& product_str,
                         const Multi_Journey& multi_journey,
                         const string& time_str,
+                        const string& format,
                         const bool is_bludge) const;
 
          void
          meteogram (const string& stage_str,
                     const string& location_str,
                     const string& time_str,
+                    const string& format,
                     const bool is_bludge) const;
 
          void
          vertical_profile (const string& stage_str,
                            const string& location_str,
                            const string& time_str,
+                           const string& format,
                            const bool is_bludge) const;
 
    };

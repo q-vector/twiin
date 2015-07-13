@@ -118,8 +118,17 @@ namespace twiin
          get_tick_tuple (const Product& product);
 
          static Color
+         get_wind_color (const Real u,
+                         const Real v);
+
+         static Color
          get_color (const Product& product,
                     const Real datum);
+
+         static Color
+         get_color (const Product& product,
+                    const Real datum,
+                    const string& unit);
 
          static void
          render_stages (const RefPtr<Context>& cr,

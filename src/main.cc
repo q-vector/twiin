@@ -257,7 +257,6 @@ Twiin::command_line (const string& stage_str,
                   const Domain_1D domain_longitude (130, 170);
                   const Domain_2D domain_2d (domain_latitude, domain_longitude);
 
-                  //const Simple_Mesh_2D sm0_2 (Color::black (0.05), 0.2, 0.2);
                   const Geodetic_Mesh mesh_tiny (Color::black (0.10), 0.2, 0.2,
                      Color::black (0.40), 1.0, 1.0, size_2d, domain_2d);
                   const Geodetic_Mesh mesh_small (Color::black (0.10), 1.0, 1.0,
@@ -270,7 +269,8 @@ Twiin::command_line (const string& stage_str,
                   const Real span = std::min (latitude_span, longitude_span);
                   //const Geodetic_Mesh& mesh = (span > 90 ? mesh_large :
                   //   span > 30 ? mesh_small : mesh_tiny);
-                  const Geodetic_Mesh& mesh = mesh_tiny;
+                  //const Geodetic_Mesh& mesh = mesh_tiny;
+                  const Geodetic_Mesh& mesh = mesh_small;
 
                   cr->save ();
                   mesh.cairo (cr, transform);
@@ -289,10 +289,7 @@ Twiin::command_line (const string& stage_str,
                Display::render_scale_bar (cr, transform, size_2d);
                Display::render_color_bar (cr, size_2d, product);
 
-               if (format == "png")
-               {
-                  surface->write_to_png (file_path);
-               }
+               if (format == "png") { surface->write_to_png (file_path); }
 
             }
 
@@ -311,6 +308,7 @@ Twiin::cross_section (const string& stage_str,
                       const string& product_str,
                       const Multi_Journey& multi_journey,
                       const string& time_str,
+                      const string& format,
                       const bool is_bludge) const
 {
 
@@ -332,7 +330,7 @@ Twiin::cross_section (const string& stage_str,
    const Dtime& basetime = model.get_basetime ();
 
    const Real margin_l = 60;
-   const Real margin_r = 40;
+   const Real margin_r = 40 + 80;
    const Real margin_t = title.get_height () + 40;
    const Real margin_b = 40;
    const Real w = size_2d.i - margin_l - margin_r;
@@ -366,12 +364,13 @@ Twiin::cross_section (const string& stage_str,
             const Dtime& dtime = *(iterator);
             if (!time_set.match (dtime)) { continue; }
 
-            const string& file_path = get_file_path ("png",
+            const string& file_path = get_file_path (format,
                stage, product, dtime, multi_journey);
             cout << "Rendering " << file_path << endl;
             if (is_bludge) { continue; }
 
-            RefPtr<Surface> surface = denise::get_surface (size_2d);
+            RefPtr<Surface> surface = denise::get_surface (
+               size_2d, format, file_path);
             RefPtr<Context> cr = denise::get_cr (surface);
 
             const Index_2D i2d (margin_l, margin_t);
@@ -384,11 +383,13 @@ Twiin::cross_section (const string& stage_str,
             Display::render_cross_section (cr, transform, box_2d,
                domain_z, model, stage, product, dtime, multi_journey);
 
+            Display::render_color_bar (cr, size_2d, product);
+
             Display::set_title (title, basetime, stage,
                product, dtime, multi_journey);
             title.cairo (cr);
 
-            surface->write_to_png (file_path);
+            if (format == "png") { surface->write_to_png (file_path); }
 
          }
 
@@ -401,6 +402,7 @@ void
 Twiin::meteogram (const string& stage_str,
                   const string& location_str,
                   const string& time_str,
+                  const string& format,
                   const bool is_bludge) const
 {
 
@@ -431,11 +433,12 @@ Twiin::meteogram (const string& stage_str,
          const Location location (*j, station_map);
 
          const string& file_path =
-            get_file_path ("png", stage, location);
+            get_file_path (format, stage, location);
          cout << "Rendering " << file_path << endl;
          if (is_bludge) { continue; }
 
-         RefPtr<Surface> surface = denise::get_surface (size_2d);
+         RefPtr<Surface> surface = denise::get_surface (
+            size_2d, format, file_path);
          RefPtr<Context> cr = denise::get_cr (surface);
 
          Display::render_meteogram (cr, size_2d,
@@ -444,7 +447,7 @@ Twiin::meteogram (const string& stage_str,
          Display::set_title (title, basetime, stage, location);
          title.cairo (cr);
 
-         surface->write_to_png (file_path);
+         if (format == "png") { surface->write_to_png (file_path); }
 
       }
 
@@ -456,6 +459,7 @@ void
 Twiin::vertical_profile (const string& stage_str,
                          const string& location_str,
                          const string& time_str,
+                         const string& format,
                          const bool is_bludge) const
 {
 
@@ -495,11 +499,12 @@ Twiin::vertical_profile (const string& stage_str,
             if (!time_set.match (dtime)) { continue; }
 
             const string& file_path =
-               get_file_path ("png", stage, dtime, location);
+               get_file_path (format, stage, dtime, location);
             cout << "Rendering " << file_path << endl;
             if (is_bludge) { continue; }
 
-            RefPtr<Surface> surface = denise::get_surface (size_2d);
+            RefPtr<Surface> surface = denise::get_surface (
+               size_2d, format, file_path);
             RefPtr<Context> cr = denise::get_cr (surface);
 
             Display::render_vertical_profile (cr, tephigram,
@@ -508,7 +513,7 @@ Twiin::vertical_profile (const string& stage_str,
             Display::set_title (title, basetime, stage, dtime, location);
             title.cairo (cr);
 
-            surface->write_to_png (file_path);
+            if (format == "png") { surface->write_to_png (file_path); }
 
          }
 
@@ -707,18 +712,19 @@ main (int argc,
          if (is_cross_section)
          {
             twiin.cross_section (stage_str, product_str,
-               multi_journey, time_str, is_bludge);
+               multi_journey, time_str, format, is_bludge);
          }
          else
          if (is_meteogram)
          {
-            twiin.meteogram (stage_str, location_str, time_str, is_bludge);
+            twiin.meteogram (stage_str, location_str, time_str,
+               format, is_bludge);
          }
          else
          if (is_vertical_profile)
          {
             twiin.vertical_profile (stage_str, location_str,
-               time_str, is_bludge);
+               time_str, format, is_bludge);
          }
          else
          {
