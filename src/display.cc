@@ -299,6 +299,9 @@ Display::get_cross_section_raster_ptr (const Box_2D& box_2d,
    const auto& uppers_stage = model.uppers.get_stage (stage);
    const size_t l = uppers_stage.get_l (dtime);
 
+   const bool is_speed = (product == "SPEED");
+   const Product& p = (is_speed ? Product ("SPEED_HIGHER") : product);
+
    Real x;
    Level level (HEIGHT_LEVEL, GSL_NAN);
    Real& z = level.value;
@@ -325,22 +328,19 @@ Display::get_cross_section_raster_ptr (const Box_2D& box_2d,
          if (z < topography) { color = Color::black (); }
          else
          {
-            if (product == "WIND")
+            if (p == "WIND")
             {
                const Real u = uppers_stage.evaluate (U, lat_long, z, l);
                const Real v = uppers_stage.evaluate (V, lat_long, z, l);
-               const Real speed = sqrt (u*u + v*v);
-               const Real theta = atan2 (-u, -v);
-               const Real hue = (theta < 0 ? theta + 2*M_PI : theta)/ (2*M_PI);
-               const Real brightness = std::min (speed / 15, 1.0);
-               color = Color::hsb (hue, 0.8, brightness);
+               const Wind wind (u, v);
+               const Real direction = wind.get_direction ();
+               const Real speed = wind.get_speed ();
+               color = Display::get_wind_color (direction, speed);
             }
             else
             {
-               const bool is_speed = (product == "SPEED");
                const Nwp_Element nwp_element = product.get_nwp_element ();
                const Real datum = uppers_stage.evaluate (nwp_element, ll, z, l);
-               const Product& p = (is_speed ? Product ("SPEED_HIGHER") : product);
                color = Display::get_color (p, datum);
             }
          }
@@ -480,7 +480,7 @@ Display::get_unit (const Product& product)
    else
    if (product == "RHO")
    {
-      return string ("kg m\u207b\u00ba");
+      return string ("kg m\u207b\u00b9");
    }
    else
    if (product == "W")
@@ -515,12 +515,17 @@ Display::get_unit (const Product& product)
    else
    if (product == "MSLP")
    {
-      return string ("Pa");
+      return string ("hPa");
    }
    else
    if (product == "PRECIP_RATE")
    {
       return string ("mm hr\u207b\u00b9");
+   }
+   else
+   if (product == "WIND")
+   {
+      return string ("degree");
    }
    else
    {
@@ -600,7 +605,7 @@ Display::get_tick_tuple (const Product& product)
    else
    if (product == "MSLP")
    {
-      return Tuple ("980e2:990e2:1000e2:1010e2:1020e2:1030e2");
+      return Tuple ("980:990:1000:1010:1020:1030");
    }
    else
    if (product == "PRECIP_RATE")
@@ -608,10 +613,24 @@ Display::get_tick_tuple (const Product& product)
       return Tuple ("1:2:5:10:20:30:50:75:100:150");
    }
    else
+   if (product == "WIND")
+   {
+      return Tuple ("0:90:180:270:360");
+   }
+   else
    {
       return Tuple ();
    }
 
+}
+
+Color
+Display::get_wind_color (const Real direction,
+                         const Real speed)
+{
+   const Real hue = direction / 360.;
+   const Real brightness = std::min (speed / 15, 1.0);
+   return Color::hsb (hue, 0.8, brightness);
 }
 
 Color
@@ -777,6 +796,46 @@ Display::get_color (const Product& product,
    {
       return Color::transparent ();
    }
+
+}
+
+Color
+Display::get_color (const Product& product,
+                    const Real datum,
+                    const string& unit)
+{
+
+   if (unit == "\u00b0C")
+   {
+      return get_color (product, datum + K);
+   }
+
+   if (unit == "knots")
+   {
+      return get_color (product, datum * 1.852/3.6);
+   }
+
+   if (unit == "g kg\u207b\u00b9")
+   {
+      return get_color (product, datum * 1e-3);
+   }
+
+   if (unit == "%%")
+   {
+      return get_color (product, datum * 1e-2);
+   }
+
+   if (unit == "hPa")
+   {
+      return get_color (product, datum * 1e2);
+   }
+
+   if (unit == "degree")
+   {
+      return get_wind_color (datum, 15);
+   }
+
+   return get_color (product, datum);
 
 }
 
@@ -998,7 +1057,11 @@ Display::render_color_bar (const RefPtr<Context>& cr,
                            const Product& product)
 {
 
-   const Tuple& tick_tuple = Display::get_tick_tuple (product);
+   const bool is_speed = (product == "SPEED");
+   const Product& p = (is_speed ? Product ("SPEED_HIGHER") : product);
+
+   const string& unit = Display::get_unit (p);
+   const Tuple& tick_tuple = Display::get_tick_tuple (p);
    if (tick_tuple.size () < 2) { return; }
 
    const Real title_height = 50;
@@ -1011,9 +1074,11 @@ Display::render_color_bar (const RefPtr<Context>& cr,
    const Real bar_width = box_width - 4 * margin;
    const Real bar_height = box_height - 3 * margin - font_size;
 
-   const Point_2D box_point (size_2d.i - 2*margin - box_width, title_height + 2*margin);
-   const Real bar_x = box_point.x + 3*margin;
-   const Real bar_y = box_point.y + font_size + 2*margin;
+   const Real box_x = size_2d.i - box_width - 2 * margin;
+   const Real box_y = title_height + 2 * margin;
+   const Point_2D box_point (box_x, box_y);
+   const Real bar_x = box_x + 3 * margin;
+   const Real bar_y = box_y + font_size + 2 * margin;
    const Point_2D bar_point (bar_x, bar_y);
 
    const Real start_value = tick_tuple.front ();
@@ -1039,7 +1104,7 @@ Display::render_color_bar (const RefPtr<Context>& cr,
    {
       const Real fraction = Real (j) / Real (bar_height);
       const Real value = start_value + fraction * span_value;
-      const Color& color = Display::get_color (product, value);
+      const Color& color = Display::get_color (p, value, unit);
       for (Integer i = 0; i < bar_width; i++)
       {
          raster.set_pixel (i, bar_height - j - 1, color);
@@ -1067,7 +1132,6 @@ Display::render_color_bar (const RefPtr<Context>& cr,
    const Real label_y = bar_point.y;
    const Point_2D label_point (label_x, label_y);
 //   Label ("ms\u207b\u00b9", label_point, 'c', 'b', font_size/2).cairo (cr);
-   const string& unit = Display::get_unit (product);
    Label (unit, label_point, 'c', 'b', font_size/2).cairo (cr);
 
    cr->restore ();
@@ -1141,7 +1205,7 @@ Display::render (const RefPtr<Context>& cr,
 
    render_product (cr, transform, size_2d, model, hrit,
       product, dtime, level, stage);
-   //render_wind_barbs (cr, transform, size_2d, model, dtime, level, stage);
+   render_wind_barbs (cr, transform, size_2d, model, dtime, level, stage);
 
    // Stage 3/4/5 Frames
    render_stages (cr, transform, model);
