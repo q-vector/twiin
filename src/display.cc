@@ -595,12 +595,12 @@ Display::get_tick_tuple (const Product& product)
    else
    if (product == "VORTICITY")
    {
-      return Tuple ("1e-5:8e-6:6e-6:4e-6:2e-6:0:2e-6:4e-6:6e-6:8e-6:1e-5");
+      return Tuple ("-10:0:10");
    }
    else
    if (product == "FFDI")
    {
-      return Tuple ("0:12:25:50:75:100:150");
+      return Tuple ("1:12:25:50:75:100:150");
    }
    else
    if (product == "MSLP")
@@ -610,12 +610,12 @@ Display::get_tick_tuple (const Product& product)
    else
    if (product == "PRECIP_RATE")
    {
-      return Tuple ("1:2:5:10:20:30:50:75:100:150");
+      return Tuple ("0.05:0.1:1:2:5:10:20:30:50:75:100:150");
    }
    else
    if (product == "WIND")
    {
-      return Tuple ("0:90:180:270:360");
+      return Tuple ("0:30:60:90:120:150:180:210:240:270:300:330:360");
    }
    else
    {
@@ -833,6 +833,11 @@ Display::get_color (const Product& product,
    if (unit == "degree")
    {
       return get_wind_color (datum, 15);
+   }
+
+   if (unit == "mm hr\u207b\u00b9");
+   {
+      return get_color (product, datum / 3600.);
    }
 
    return get_color (product, datum);
@@ -1081,9 +1086,10 @@ Display::render_color_bar (const RefPtr<Context>& cr,
    const Real bar_y = box_y + font_size + 2 * margin;
    const Point_2D bar_point (bar_x, bar_y);
 
-   const Domain_1D value_domain (tick_tuple.front (), tick_tuple.end ());
+   const Domain_1D value_domain (tick_tuple.front (), tick_tuple.back ());
    const Domain_1D y_domain (bar_y + bar_height, bar_y);
-   Cartesian_Transform_1D transform (value_domain, y_domain);
+   const bool is_log = (product == "PRECIP_RATE");
+   Cartesian_Transform_1D transform (value_domain, y_domain, is_log);
 
    cr->save ();
    cr->set_line_width (1);
@@ -1093,18 +1099,27 @@ Display::render_color_bar (const RefPtr<Context>& cr,
    Rect (box_point, box_width, box_height).cairo (cr);
    cr->fill ();
 
+   cout << value_domain << " " << y_domain << endl;
+
+   const Real start_value = tick_tuple.front ();
+   const Real span_value = value_domain.get_span ();
+
    Raster* raster_ptr = new Raster (Box_2D (Index_2D (bar_x, bar_y),
       Size_2D (bar_width, bar_height)));
    Raster& raster = *raster_ptr;
 
    for (Integer j = 0; j < bar_height; j++)
    {
-      const Real fraction = Real (j) / Real (bar_height);
-      const Real value = start_value + fraction * span_value;
+      const Real y = bar_y + j;
+      const Real value = transform.reverse (y);
       const Color& color = Display::get_color (p, value, unit);
+if (j % 100 == 0)
+{
+   cout << y << " " << value << " " << p << " " << unit << " " << color << endl;
+}
       for (Integer i = 0; i < bar_width; i++)
       {
-         raster.set_pixel (i, bar_height - j - 1, color);
+         raster.set_pixel (i, j, color);
       }
    }
 
@@ -1128,7 +1143,6 @@ Display::render_color_bar (const RefPtr<Context>& cr,
    const Real label_x = bar_point.x + bar_width/2;
    const Real label_y = bar_point.y;
    const Point_2D label_point (label_x, label_y);
-//   Label ("ms\u207b\u00b9", label_point, 'c', 'b', font_size/2).cairo (cr);
    Label (unit, label_point, 'c', 'b', font_size/2).cairo (cr);
 
    cr->restore ();
