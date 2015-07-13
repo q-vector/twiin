@@ -505,7 +505,7 @@ Display::get_unit (const Product& product)
    else
    if (product == "VORTICITY")
    {
-      return string ("s\u207b\u00b9");
+      return string ("10\u207b\u00b3 s\u207b\u00b9");
    }
    else
    if (product == "FFDI")
@@ -595,7 +595,7 @@ Display::get_tick_tuple (const Product& product)
    else
    if (product == "VORTICITY")
    {
-      return Tuple ("-10:0:10");
+      return Tuple ("-5:-4:-3:-2:-1:0:1:2:3:4:5");
    }
    else
    if (product == "FFDI")
@@ -838,6 +838,11 @@ Display::get_color (const Product& product,
    if (unit == "mm hr\u207b\u00b9");
    {
       return get_color (product, datum / 3600.);
+   }
+
+   if (unit == "10\u207b\u00b3 s\u207b\u00b9")
+   {
+      return get_color (product, datum * 1e-3);
    }
 
    return get_color (product, datum);
@@ -1099,8 +1104,6 @@ Display::render_color_bar (const RefPtr<Context>& cr,
    Rect (box_point, box_width, box_height).cairo (cr);
    cr->fill ();
 
-   cout << value_domain << " " << y_domain << endl;
-
    const Real start_value = tick_tuple.front ();
    const Real span_value = value_domain.get_span ();
 
@@ -1113,10 +1116,6 @@ Display::render_color_bar (const RefPtr<Context>& cr,
       const Real y = bar_y + j;
       const Real value = transform.reverse (y);
       const Color& color = Display::get_color (p, value, unit);
-if (j % 100 == 0)
-{
-   cout << y << " " << value << " " << p << " " << unit << " " << color << endl;
-}
       for (Integer i = 0; i < bar_width; i++)
       {
          raster.set_pixel (i, j, color);
