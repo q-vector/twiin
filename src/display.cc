@@ -1016,12 +1016,9 @@ Display::render_color_bar (const RefPtr<Context>& cr,
    const Real bar_y = box_point.y + font_size + 2*margin;
    const Point_2D bar_point (bar_x, bar_y);
 
-   const Real start_value = tick_tuple.front ();
-   const Real end_value = tick_tuple.back ();
-   const Real span_value = end_value - start_value;
-   const Real scale = bar_height / span_value;
-   const Real offset = bar_y + scale * end_value;
-   Affine_Transform_1D transform (-scale, offset);
+   const Domain_1D value_domain (tick_tuple.front (), tick_tuple.end ());
+   const Domain_1D y_domain (bar_y + bar_height, bar_y);
+   Cartesian_Transform_1D transform (value_domain, y_domain);
 
    cr->save ();
    cr->set_line_width (1);
@@ -1144,7 +1141,7 @@ Display::render (const RefPtr<Context>& cr,
    render_wind_barbs (cr, transform, size_2d, model, dtime, level, stage);
 
    // Stage 3/4/5 Frames
-   //render_stages (cr, transform, model);
+   render_stages (cr, transform, model);
 
    // All Stations
    //station_map.cairo (cr, transform);

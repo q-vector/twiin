@@ -289,14 +289,11 @@ Console::Console (Gtk::Window& gtk_window,
    const Station::Map& station_map = data.get_station_map ();
    get_marker_store ().set_attractor (station_map);
 
-/*
-   const Lat_Long lat_long_a (-45.0310, 132.4160);
-   const Lat_Long lat_long_b (-20.2361, 163.6665);
-   const Lat_Long lat_long_c (-33.6185, 150.2741);
+   const Lat_Long lat_long_a (-32.4774, 147.1520);
+   const Lat_Long lat_long_b (-34.3215, 153.2280);
+//   const Lat_Long lat_long_a (-31.7849, 147.1520);
+//   const Lat_Long lat_long_b (-34.3215, 153.2280);
    get_route_store ().insert (lat_long_a, lat_long_b);
-   get_route_store ().insert (lat_long_a, lat_long_c);
-   get_route_store ().insert (lat_long_c, lat_long_b);
-*/
 
 }
 
@@ -390,7 +387,8 @@ Console::render_image_buffer (const RefPtr<Context>& cr)
    const Station::Map& station_map = data.get_station_map ();
 
    const Size_2D& size_2d = get_size_2d ();
-   const Transform_2D& transform = get_transform ();
+   const Geodetic_Transform& transform =
+      dynamic_cast<Geodetic_Transform&>(get_transform ());
    const Dtime& dtime = get_time_chooser ().get_time ();
    const Level& level = get_level_panel ().get_level ();
 
