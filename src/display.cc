@@ -300,6 +300,9 @@ Display::get_cross_section_raster_ptr (const Box_2D& box_2d,
    const size_t l = uppers_stage.get_l (dtime);
 
    const bool is_speed = (product == "SPEED");
+   const bool is_wind = (product == "WIND");
+   const bool is_brunt_vaisala = (product == "BRUNT_VAISALA");
+   const bool is_scorer = (product == "SCORER");
    const Product& p = (is_speed ? Product ("SPEED_HIGHER") : product);
 
    Real x;
@@ -328,7 +331,7 @@ Display::get_cross_section_raster_ptr (const Box_2D& box_2d,
          if (z < topography) { color = Color::black (); }
          else
          {
-            if (p == "WIND")
+            if (is_wind)
             {
                const Real u = uppers_stage.evaluate (U, lat_long, z, l);
                const Real v = uppers_stage.evaluate (V, lat_long, z, l);
@@ -336,6 +339,22 @@ Display::get_cross_section_raster_ptr (const Box_2D& box_2d,
                const Real direction = wind.get_direction ();
                const Real speed = wind.get_speed ();
                color = Display::get_wind_color (direction, speed);
+            }
+            else
+            if (is_brunt_vaisala)
+            {
+               const Real datum =
+                  uppers_stage.evaluate_brunt_vaisala (lat_long, z, l);
+               color = Display::get_color (p, datum);
+            }
+            else
+            if (is_scorer)
+            {
+               const Real azimuth =
+                  multi_journey.get_azimuth_forward (x, geodesy);
+               const Real datum =
+                  uppers_stage.evaluate_scorer (azimuth, lat_long, z, l);
+               color = Display::get_color (p, datum);
             }
             else
             {
@@ -1451,17 +1470,17 @@ Display::render_meteogram_mesh (const RefPtr<Context>& cr,
    cr->stroke ();
 
    Mesh_2D mesh_temperature (Size_2D (2, 2),
-      Domain_2D (domain_t, domain_temperature),
-      Color::black (0.1), 6, 1, Color::black (0.5), 24, 10);
+      Domain_2D (domain_t, domain_temperature), Color::black (0.1), 1, GSL_NAN,
+      Color::black (0.25), 6, 1, Color::black (0.5), 24, 10);
    Mesh_2D mesh_direction (Size_2D (2, 2),
-      Domain_2D (domain_t, domain_direction),
-      Color::black (0.1), 6, 10, Color::black (0.5), 24, 90);
+      Domain_2D (domain_t, domain_direction), Color::black (0.1), 1, GSL_NAN,
+      Color::black (0.25), 6, 10, Color::black (0.5), 24, 90);
    Mesh_2D mesh_speed (Size_2D (2, 2),
-      Domain_2D (domain_t, domain_speed),
-      Color::black (0.1), 6, 1, Color::black (0.5), 24, 5);
+      Domain_2D (domain_t, domain_speed), Color::black (0.1), 1, GSL_NAN,
+      Color::black (0.25), 6, 1, Color::black (0.5), 24, 5);
    Mesh_2D mesh_pressure (Size_2D (2, 2),
-      Domain_2D (domain_t, domain_pressure),
-      Color::black (0.1), 6, 1, Color::black (0.5), 24, 10);
+      Domain_2D (domain_t, domain_pressure), Color::black (0.1), 1, GSL_NAN,
+      Color::black (0.25), 6, 1, Color::black (0.5), 24, 10);
 
    mesh_temperature.set_offset_multiplier_y (-K, 1);
    mesh_pressure.set_offset_multiplier_y (0, 1e-2);
@@ -1472,31 +1491,31 @@ Display::render_meteogram_mesh (const RefPtr<Context>& cr,
    mesh_pressure.render (cr, transform_pressure);
 
    Color::black ().cairo (cr);
-   mesh_temperature.render_label_y (cr, transform_temperature, 1,
+   mesh_temperature.render_label_y (cr, transform_temperature, 2,
       start_t, "%.0f\u00b0C", NUMBER_REAL, 'r', 'c', 5);
-   mesh_direction.render_label_y (cr, transform_direction, 1,
+   mesh_direction.render_label_y (cr, transform_direction, 2,
       start_t, "%03.0f\u00b0", NUMBER_REAL, 'r', 'c', 5);
-   mesh_speed.render_label_y (cr, transform_speed, 1,
+   mesh_speed.render_label_y (cr, transform_speed, 2,
       start_t, "%.0fms\u207b\u00b9", NUMBER_REAL, 'r', 'c', 5);
-   mesh_pressure.render_label_y (cr, transform_pressure, 1,
+   mesh_pressure.render_label_y (cr, transform_pressure, 2,
       start_t, "%.0fPa", NUMBER_REAL, 'r', 'c', 5);
 
-   mesh_temperature.render_label_x (cr, transform_temperature, 1,
+   mesh_temperature.render_label_x (cr, transform_temperature, 2,
       domain_temperature.end, "%b %d", NUMBER_TIME, 'c', 't', 15);
-   mesh_direction.render_label_x (cr, transform_direction, 1,
+   mesh_direction.render_label_x (cr, transform_direction, 2,
       domain_direction.end, "%b %d", NUMBER_TIME, 'c', 't', 15);
-   mesh_speed.render_label_x (cr, transform_speed, 1,
+   mesh_speed.render_label_x (cr, transform_speed, 2,
       domain_speed.end, "%b %d", NUMBER_TIME, 'c', 't', 15);
-   mesh_pressure.render_label_x (cr, transform_pressure, 1,
+   mesh_pressure.render_label_x (cr, transform_pressure, 2,
       domain_pressure.end, "%b %d", NUMBER_TIME, 'c', 't', 15);
 
-   mesh_temperature.render_label_x (cr, transform_temperature, 0,
+   mesh_temperature.render_label_x (cr, transform_temperature, 1,
       domain_temperature.end, "%HZ", NUMBER_TIME, 'c', 't', 5);
-   mesh_direction.render_label_x (cr, transform_direction, 0,
+   mesh_direction.render_label_x (cr, transform_direction, 1,
       domain_direction.end, "%HZ", NUMBER_TIME, 'c', 't', 5);
-   mesh_speed.render_label_x (cr, transform_speed, 0,
+   mesh_speed.render_label_x (cr, transform_speed, 1,
       domain_speed.end, "%HZ", NUMBER_TIME, 'c', 't', 5);
-   mesh_pressure.render_label_x (cr, transform_pressure, 0,
+   mesh_pressure.render_label_x (cr, transform_pressure, 1,
       domain_pressure.end, "%HZ", NUMBER_TIME, 'c', 't', 5);
 
    cr->restore ();

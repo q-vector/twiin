@@ -492,6 +492,17 @@ namespace twiin
                             const twiin::Stage& stage);
 
                      Real
+                     evaluate_scorer (const Real azimuth,
+                                      const Lat_Long& lat_long,
+                                      const Real z,
+                                      const size_t l) const;
+                               
+                     Real
+                     evaluate_brunt_vaisala (const Lat_Long& lat_long,
+                                             const Real z,
+                                             const size_t l) const;
+                               
+                     Real
                      evaluate (const Nwp_Element& nwp_element,
                                const Lat_Long& lat_long,
                                const Real z,
