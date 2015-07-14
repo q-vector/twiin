@@ -1961,7 +1961,9 @@ Model::get_valid_time_set (const Product& product,
        product == "RHO" ||
        product == "WIND" ||
        product == "SPEED" ||
+       product == "SPEED_HIGHER" ||
        product == "W" ||
+       product == "W_TRANSLUCENT" ||
        product == "VORTICITY" ||
        product == "THETA" ||
        product == "THETA_E")

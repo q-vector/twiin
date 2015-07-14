@@ -239,7 +239,9 @@ Console::Console (Gtk::Window& gtk_window,
    product_panel.add_product ("Dynamic", Product ("P_RHO"));
    product_panel.add_product ("Dynamic", Product ("WIND"));
    product_panel.add_product ("Dynamic", Product ("SPEED"));
+   product_panel.add_product ("Dynamic", Product ("SPEED_HIGHER"));
    product_panel.add_product ("Dynamic", Product ("W"));
+   //product_panel.add_product ("Dynamic", Product ("W_TRANSLUCENT"));
    product_panel.add_product ("Dynamic", Product ("VORTICITY"));
    product_panel.add_product ("Fire", Product ("FFDI"));
    product_panel.add_product ("Misc", Product ("PRECIP_RATE"));

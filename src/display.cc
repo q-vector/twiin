@@ -204,11 +204,6 @@ Display::get_uppers_raster_ptr (const Size_2D& size_2d,
    const auto& uppers_stage = model.uppers.get_stage (stage);
    const size_t l = uppers_stage.get_l (dtime);
 
-   const bool is_speed = (product == "SPEED");
-   const bool is_higher = (level.type == HEIGHT_LEVEL) && (level.value > 1500);
-   const Product& p = ((is_speed && is_higher) ?
-      Product ("SPEED_HIGHER") : product);
-
    for (Integer i = 0; i < size_2d.i; i++)
    {
 
@@ -226,7 +221,8 @@ Display::get_uppers_raster_ptr (const Size_2D& size_2d,
             continue;
          }
 
-         const Color& color = uppers_stage.get_color (p, lat_long, level, l);
+         const Color& color = uppers_stage.get_color (
+            product, lat_long, level, l);
          raster.set_pixel (i, j, color);
 
       }
@@ -299,11 +295,9 @@ Display::get_cross_section_raster_ptr (const Box_2D& box_2d,
    const auto& uppers_stage = model.uppers.get_stage (stage);
    const size_t l = uppers_stage.get_l (dtime);
 
-   const bool is_speed = (product == "SPEED");
    const bool is_wind = (product == "WIND");
    const bool is_brunt_vaisala = (product == "BRUNT_VAISALA");
    const bool is_scorer = (product == "SCORER");
-   const Product& p = (is_speed ? Product ("SPEED_HIGHER") : product);
 
    Real x;
    Level level (HEIGHT_LEVEL, GSL_NAN);
@@ -345,7 +339,7 @@ Display::get_cross_section_raster_ptr (const Box_2D& box_2d,
             {
                const Real datum =
                   uppers_stage.evaluate_brunt_vaisala (lat_long, z, l);
-               color = Display::get_color (p, datum);
+               color = Display::get_color (product, datum);
             }
             else
             if (is_scorer)
@@ -354,13 +348,13 @@ Display::get_cross_section_raster_ptr (const Box_2D& box_2d,
                   multi_journey.get_azimuth_forward (x, geodesy);
                const Real datum =
                   uppers_stage.evaluate_scorer (azimuth, lat_long, z, l);
-               color = Display::get_color (p, datum);
+               color = Display::get_color (product, datum);
             }
             else
             {
                const Nwp_Element nwp_element = product.get_nwp_element ();
                const Real datum = uppers_stage.evaluate (nwp_element, ll, z, l);
-               color = Display::get_color (p, datum);
+               color = Display::get_color (product, datum);
             }
          }
          raster_ptr->set_pixel (i - index_2d.i, j - index_2d.j, color);
@@ -922,7 +916,9 @@ Display::render_product (const RefPtr<Context>& cr,
        product == "RHO" ||
        product == "WIND" ||
        product == "SPEED" ||
+       product == "SPEED_HIGHER" ||
        product == "W" ||
+       product == "W_TRANSLUCENT" ||
        product == "VORTICITY" ||
        product == "THETA_E")
    {
@@ -1086,11 +1082,8 @@ Display::render_color_bar (const RefPtr<Context>& cr,
                            const Product& product)
 {
 
-   const bool is_speed = (product == "SPEED");
-   const Product& p = (is_speed ? Product ("SPEED_HIGHER") : product);
-
-   const string& unit = Display::get_unit (p);
-   const Tuple& tick_tuple = Display::get_tick_tuple (p);
+   const string& unit = Display::get_unit (product);
+   const Tuple& tick_tuple = Display::get_tick_tuple (product);
    if (tick_tuple.size () < 2) { return; }
 
    const Real title_height = 50;
@@ -1134,7 +1127,7 @@ Display::render_color_bar (const RefPtr<Context>& cr,
    {
       const Real y = bar_y + j;
       const Real value = transform.reverse (y);
-      const Color& color = Display::get_color (p, value, unit);
+      const Color& color = Display::get_color (product, value, unit);
       for (Integer i = 0; i < bar_width; i++)
       {
          raster.set_pixel (i, j, color);
@@ -1470,17 +1463,17 @@ Display::render_meteogram_mesh (const RefPtr<Context>& cr,
    cr->stroke ();
 
    Mesh_2D mesh_temperature (Size_2D (2, 2),
-      Domain_2D (domain_t, domain_temperature), Color::black (0.1), 1, GSL_NAN,
-      Color::black (0.25), 6, 1, Color::black (0.5), 24, 10);
+      Domain_2D (domain_t, domain_temperature), Color::black (0.1), 1, 1,
+      Color::black (0.25), 6, GSL_NAN, Color::black (0.5), 24, 10);
    Mesh_2D mesh_direction (Size_2D (2, 2),
-      Domain_2D (domain_t, domain_direction), Color::black (0.1), 1, GSL_NAN,
-      Color::black (0.25), 6, 10, Color::black (0.5), 24, 90);
+      Domain_2D (domain_t, domain_direction), Color::black (0.1), 1, 10,
+      Color::black (0.25), 6, GSL_NAN, Color::black (0.5), 24, 90);
    Mesh_2D mesh_speed (Size_2D (2, 2),
-      Domain_2D (domain_t, domain_speed), Color::black (0.1), 1, GSL_NAN,
-      Color::black (0.25), 6, 1, Color::black (0.5), 24, 5);
+      Domain_2D (domain_t, domain_speed), Color::black (0.1), 1, 1,
+      Color::black (0.25), 6, GSL_NAN, Color::black (0.5), 24, 5);
    Mesh_2D mesh_pressure (Size_2D (2, 2),
-      Domain_2D (domain_t, domain_pressure), Color::black (0.1), 1, GSL_NAN,
-      Color::black (0.25), 6, 1, Color::black (0.5), 24, 10);
+      Domain_2D (domain_t, domain_pressure), Color::black (0.1), 1, 1,
+      Color::black (0.25), 6, GSL_NAN, Color::black (0.5), 24, 10);
 
    mesh_temperature.set_offset_multiplier_y (-K, 1);
    mesh_pressure.set_offset_multiplier_y (0, 1e-2);

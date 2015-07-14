@@ -214,13 +214,17 @@ Twiin::command_line (const string& stage_str,
       {
 
          const Product product (*j);
+         const bool is_speed = (product == "SPEED");
 
          for (auto k = level_tokens.begin ();
               k != level_tokens.end (); k++)
          {
 
-
             const Level level (*k);
+            const bool is_higher = (level.type == HEIGHT_LEVEL) &&
+               (level.value > 1500);
+            const Product& p = ((is_speed && is_higher) ?
+               Product ("SPEED_HIGHER") : product);
            
             const auto& valid_time_set = model.get_valid_time_set (
                product, stage, level);
@@ -233,7 +237,7 @@ Twiin::command_line (const string& stage_str,
                if (!time_set.match (dtime)) { continue; }
 
                const string& file_path =
-                  get_file_path (format, stage, product, level, dtime);
+                  get_file_path (format, stage, p, level, dtime);
                cout << "Rendering " << file_path << endl;
                if (is_bludge) { continue; }
 
@@ -242,7 +246,7 @@ Twiin::command_line (const string& stage_str,
                RefPtr<Context> cr = denise::get_cr (surface);
 
                Display::render (cr, transform, size_2d, model, hrit,
-                  station_map, dtime, level, stage, product);
+                  station_map, dtime, level, stage, p);
 
                if (gshhs_ptr != NULL)
                {
@@ -281,7 +285,8 @@ Twiin::command_line (const string& stage_str,
 
                }
 
-               Display::set_title (title, basetime, stage, product, dtime, level);
+               Display::set_title (title, basetime,
+                  stage, product, dtime, level);
                title.cairo (cr);
 
                Display::render_annotation (cr, transform, annotation_tokens);
@@ -356,6 +361,9 @@ Twiin::cross_section (const string& stage_str,
          const Product product (*j);
          const auto& valid_time_set = model.get_valid_time_set (
             product, stage, Level ("100m"));
+
+         const bool is_speed = (product == "SPEED");
+         const Product& p = (is_speed ? Product ("SPEED_HIGHER") : product);
 
          for (auto iterator = valid_time_set.begin ();
               iterator != valid_time_set.end (); iterator++)
