@@ -1131,6 +1131,57 @@ Model::Uppers::Stage::Stage (const Model& model,
 {
 }
 
+
+Real
+Model::Uppers::Stage::evaluate_normal_speed (const Real azimuth,
+                                             const Lat_Long& lat_long,
+                                             const Real z,
+                                             const size_t l) const
+{
+
+   size_t i, j;
+   acquire_ij (i, j, lat_long);
+
+   const Real topography = get_topography (i, j);
+   if (z < topography) { return GSL_NAN; }
+
+   const Tuple& A = model.vertical_coefficients.get_A_rho ();
+   const Tuple& B = model.vertical_coefficients.get_B_rho ();
+   const Integer k = model.get_k (z, topography, A, B);
+
+   const Real u = evaluate (U, i, j, k, l);
+   const Real v = evaluate (V, i, j, k, l);
+
+   const Real theta = azimuth * M_PI/180;
+   return v * sin (theta) - u * cos (theta);
+
+}
+
+Real
+Model::Uppers::Stage::evaluate_streamline_speed (const Real azimuth,
+                                                 const Lat_Long& lat_long,
+                                                 const Real z,
+                                                 const size_t l) const
+{
+
+   size_t i, j;
+   acquire_ij (i, j, lat_long);
+
+   const Real topography = get_topography (i, j);
+   if (z < topography) { return GSL_NAN; }
+
+   const Tuple& A = model.vertical_coefficients.get_A_rho ();
+   const Tuple& B = model.vertical_coefficients.get_B_rho ();
+   const Integer k = model.get_k (z, topography, A, B);
+
+   const Real u = evaluate (U, i, j, k, l);
+   const Real v = evaluate (V, i, j, k, l);
+
+   const Real theta = azimuth * M_PI/180;
+   return u * sin (theta) + v * cos (theta);
+
+}
+
 Real
 Model::Uppers::Stage::evaluate_scorer (const Real azimuth,
                                        const Lat_Long& lat_long,
@@ -1175,9 +1226,9 @@ Model::Uppers::Stage::evaluate_scorer (const Real azimuth,
    const Real v_2 = evaluate (V, i, j, k_rho_2, l);
 
    const Real theta = azimuth * M_PI/180;
-   const Real stream_0 = u_0 * sin (theta) * v_0 * cos (theta);
-   const Real stream_1 = u_1 * sin (theta) * v_1 * cos (theta);
-   const Real stream_2 = u_2 * sin (theta) * v_2 * cos (theta);
+   const Real stream_0 = u_0 * sin (theta) + v_0 * cos (theta);
+   const Real stream_1 = u_1 * sin (theta) + v_1 * cos (theta);
+   const Real stream_2 = u_2 * sin (theta) + v_2 * cos (theta);
 
    const Real z_theta_0 = model.get_z (k_theta_0, topography, A_theta, B_theta);
    const Real z_theta_1 = model.get_z (k_theta_1, topography, A_theta, B_theta);

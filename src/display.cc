@@ -848,7 +848,7 @@ Display::get_color (const Product& product,
       return get_wind_color (datum, 15);
    }
 
-   if (unit == "mm hr\u207b\u00b9");
+   if (unit == "mm hr\u207b\u00b9")
    {
       return get_color (product, datum / 3600.);
    }

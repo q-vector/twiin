@@ -237,7 +237,7 @@ Twiin::command_line (const string& stage_str,
                if (!time_set.match (dtime)) { continue; }
 
                const string& file_path =
-                  get_file_path (format, stage, p, level, dtime);
+                  get_file_path (format, stage, product, level, dtime);
                cout << "Rendering " << file_path << endl;
                if (is_bludge) { continue; }
 
@@ -290,9 +290,8 @@ Twiin::command_line (const string& stage_str,
                title.cairo (cr);
 
                Display::render_annotation (cr, transform, annotation_tokens);
-
                Display::render_scale_bar (cr, transform, size_2d);
-               Display::render_color_bar (cr, size_2d, product);
+               Display::render_color_bar (cr, size_2d, p);
 
                if (format == "png") { surface->write_to_png (file_path); }
 
@@ -391,7 +390,7 @@ Twiin::cross_section (const string& stage_str,
             Display::render_cross_section (cr, transform, box_2d,
                domain_z, model, stage, product, dtime, multi_journey);
 
-            Display::render_color_bar (cr, size_2d, product);
+            Display::render_color_bar (cr, size_2d, p);
 
             Display::set_title (title, basetime, stage,
                product, dtime, multi_journey);
