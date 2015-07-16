@@ -170,9 +170,20 @@ namespace twiin
                            const Product& product);
 
          static void
+         render_annotation_point (const RefPtr<Context>& cr,
+                                  const Geodetic_Transform& transform,
+                                  const Lat_Long& lat_long,
+                                  const string& str);
+
+         static void
          render_annotation (const RefPtr<Context>& cr,
                             const Geodetic_Transform& transform,
-                            const Tokens& annotation_tokens);
+                            const string& annotation_str);
+
+         static void
+         render_annotations (const RefPtr<Context>& cr,
+                             const Geodetic_Transform& transform,
+                             const Tokens& annotation_tokens);
 
          static void
          render (const RefPtr<Context>& cr,

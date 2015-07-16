@@ -1161,45 +1161,83 @@ Display::render_color_bar (const RefPtr<Context>& cr,
 }
 
 void
-Display::render_annotation (const RefPtr<Context>& cr,
-                            const Geodetic_Transform& transform,
-                            const Tokens& annotation_tokens)
+Display::render_annotation_point (const RefPtr<Context>& cr,
+                                  const Geodetic_Transform& transform,
+                                  const Lat_Long& lat_long,
+                                  const string& str)
 {
 
    const Real ring_size = 4;
    const Ring ring (ring_size);
    const Real font_size = 14;
+   cr->set_font_size (font_size);
+
+   const Point_2D& point = transform.transform (lat_long);
+   ring.cairo (cr, point);
+
+   Color::green (0.8).cairo (cr);
+   cr->fill_preserve ();
+   Color::black ().cairo (cr);
+   cr->stroke ();
+
+   const Point_2D anchor (point.x, point.y);
+   Color::gray (0.8).cairo (cr);
+   Label (str, point + Point_2D (2, 2), 'r', 'c', font_size/2).cairo (cr);
+   Color::gray (0.2).cairo (cr);
+   Label (str, point, 'r', 'c', font_size/2).cairo (cr);
+
+}
+
+void
+Display::render_annotation (const RefPtr<Context>& cr,
+                            const Geodetic_Transform& transform,
+                            const string& annotation_str)
+{
+
+   const Tokens tokens (annotation_str, ":");
+   const string& genre = tokens[0];
+
+   if (genre == "location" ||
+       genre == "lat_long" ||
+       genre == "l")
+   {
+      const Location location (tokens[1]);
+      const string& str = (tokens.size () > 2 ? tokens[2] : string (""));
+      render_annotation_point (cr, transform, location, str);
+   }
+   else
+   if (genre == "multi_journey" ||
+       genre == "route" ||
+       genre == "mj" ||
+       genre == "r")
+   {
+      Multi_Journey multi_journey;
+      for (auto iterator = tokens.begin ();
+           iterator != tokens.end (); iterator++)
+      {
+         if (iterator == tokens.begin ()) { continue; }
+         const Location location (*(iterator));
+         multi_journey.push_back (location);
+      }
+      multi_journey.cairo (cr, transform);
+   }
+
+}
+
+void
+Display::render_annotations (const RefPtr<Context>& cr,
+                             const Geodetic_Transform& transform,
+                             const Tokens& annotation_tokens)
+{
 
    cr->save ();
    cr->set_line_width (1);
-   cr->set_font_size (font_size);
 
    for (auto iterator = annotation_tokens.begin ();
         iterator != annotation_tokens.end (); iterator++)
    {
-
       const string& annotation_str = *(iterator);
-      const Tokens tokens (annotation_str, ":");
-
-      const Location location (tokens[0]);
-      const Point_2D& point = transform.transform (location);
-      ring.cairo (cr, point);
-
-      Color::green (0.8).cairo (cr);
-      cr->fill_preserve ();
-      Color::black ().cairo (cr);
-      cr->stroke ();
-
-      if (tokens.size () > 1)
-      {
-         const string& str = tokens[1];
-         const Point_2D anchor (point.x, point.y);
-         Color::gray (0.8).cairo (cr);
-         Label (str, point + Point_2D (2, 2), 'r', 'c', font_size/2).cairo (cr);
-         Color::gray (0.2).cairo (cr);
-         Label (str, point, 'r', 'c', font_size/2).cairo (cr);
-      }
-
+      render_annotation (cr, transform, annotation_str);
    }
 
    cr->restore ();

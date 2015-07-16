@@ -299,7 +299,7 @@ Twiin::command_line (const string& stage_str,
                }
                title.cairo (cr);
 
-               Display::render_annotation (cr, transform, annotation_tokens);
+               Display::render_annotations (cr, transform, annotation_tokens);
                Display::render_scale_bar (cr, transform, size_2d);
                Display::render_color_bar (cr, size_2d, p);
 
