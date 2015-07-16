@@ -89,6 +89,8 @@ namespace twiin
                        const string& zoom_str,
                        const Tokens& annotation_tokens,
                        const string& format,
+                       const Tokens& title_tokens,
+                       const string& filename,
                        const bool is_bludge) const;
 
          void
@@ -97,6 +99,8 @@ namespace twiin
                         const Multi_Journey& multi_journey,
                         const string& time_str,
                         const string& format,
+                        const Tokens& title_tokens,
+                        const string& filename,
                         const bool is_bludge) const;
 
          void
@@ -104,6 +108,8 @@ namespace twiin
                     const string& location_str,
                     const string& time_str,
                     const string& format,
+                    const Tokens& title_tokens,
+                    const string& filename,
                     const bool is_bludge) const;
 
          void
@@ -111,6 +117,8 @@ namespace twiin
                            const string& location_str,
                            const string& time_str,
                            const string& format,
+                           const Tokens& title_tokens,
+                           const string& filename,
                            const bool is_bludge) const;
 
    };

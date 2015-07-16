@@ -161,6 +161,8 @@ Twiin::command_line (const string& stage_str,
                      const string& zoom_str,
                      const Tokens& annotation_tokens,
                      const string& format,
+                     const Tokens& title_tokens,
+                     const string& filename,
                      const bool is_bludge) const
 {
 
@@ -236,8 +238,9 @@ Twiin::command_line (const string& stage_str,
                const Dtime& dtime = *(l);
                if (!time_set.match (dtime)) { continue; }
 
-               const string& file_path =
-                  get_file_path (format, stage, product, level, dtime);
+               const string& file_path = (filename == "") ?
+                  get_file_path (format, stage, product, level, dtime) :
+                  output_dir + "/" + filename;
                cout << "Rendering " << file_path << endl;
                if (is_bludge) { continue; }
 
@@ -285,8 +288,15 @@ Twiin::command_line (const string& stage_str,
 
                }
 
-               Display::set_title (title, basetime,
-                  stage, product, dtime, level);
+               if (title_tokens.size () == 0)
+               {
+                  Display::set_title (title, basetime,
+                     stage, product, dtime, level);
+               }
+               else
+               {
+                  title.set (title_tokens);
+               }
                title.cairo (cr);
 
                Display::render_annotation (cr, transform, annotation_tokens);
@@ -313,6 +323,8 @@ Twiin::cross_section (const string& stage_str,
                       const Multi_Journey& multi_journey,
                       const string& time_str,
                       const string& format,
+                      const Tokens& title_tokens,
+                      const string& filename,
                       const bool is_bludge) const
 {
 
@@ -371,8 +383,9 @@ Twiin::cross_section (const string& stage_str,
             const Dtime& dtime = *(iterator);
             if (!time_set.match (dtime)) { continue; }
 
-            const string& file_path = get_file_path (format,
-               stage, product, dtime, multi_journey);
+            const string& file_path = (filename == "") ?
+               get_file_path (format, stage, product, dtime, multi_journey) :
+               output_dir + "/" + filename;
             cout << "Rendering " << file_path << endl;
             if (is_bludge) { continue; }
 
@@ -392,8 +405,15 @@ Twiin::cross_section (const string& stage_str,
 
             Display::render_color_bar (cr, size_2d, p);
 
-            Display::set_title (title, basetime, stage,
-               product, dtime, multi_journey);
+            if (title_tokens.size () == 0)
+            {
+               Display::set_title (title, basetime, stage,
+                  product, dtime, multi_journey);
+            }
+            else
+            {
+               title.set (title_tokens);
+            }
             title.cairo (cr);
 
             if (format == "png") { surface->write_to_png (file_path); }
@@ -410,6 +430,8 @@ Twiin::meteogram (const string& stage_str,
                   const string& location_str,
                   const string& time_str,
                   const string& format,
+                  const Tokens& title_tokens,
+                  const string& filename,
                   const bool is_bludge) const
 {
 
@@ -439,8 +461,9 @@ Twiin::meteogram (const string& stage_str,
 
          const Location location (*j, station_map);
 
-         const string& file_path =
-            get_file_path (format, stage, location);
+         const string& file_path = (filename == "") ?
+            get_file_path (format, stage, location) :
+            output_dir + "/" + filename;
          cout << "Rendering " << file_path << endl;
          if (is_bludge) { continue; }
 
@@ -451,7 +474,14 @@ Twiin::meteogram (const string& stage_str,
          Display::render_meteogram (cr, size_2d,
             model, aws_repository, stage, location);
 
-         Display::set_title (title, basetime, stage, location);
+         if (title_tokens.size () == 0)
+         {
+            Display::set_title (title, basetime, stage, location);
+         }
+         else
+         {
+            title.set (title_tokens);
+         }
          title.cairo (cr);
 
          if (format == "png") { surface->write_to_png (file_path); }
@@ -467,6 +497,8 @@ Twiin::vertical_profile (const string& stage_str,
                          const string& location_str,
                          const string& time_str,
                          const string& format,
+                         const Tokens& title_tokens,
+                         const string& filename,
                          const bool is_bludge) const
 {
 
@@ -505,8 +537,9 @@ Twiin::vertical_profile (const string& stage_str,
             const Dtime& dtime = *(iterator);
             if (!time_set.match (dtime)) { continue; }
 
-            const string& file_path =
-               get_file_path (format, stage, dtime, location);
+            const string& file_path = (filename == "") ?
+               get_file_path (format, stage, dtime, location) :
+               output_dir + "/" + filename;
             cout << "Rendering " << file_path << endl;
             if (is_bludge) { continue; }
 
@@ -517,7 +550,14 @@ Twiin::vertical_profile (const string& stage_str,
             Display::render_vertical_profile (cr, tephigram,
                model, stage, dtime, location);
 
-            Display::set_title (title, basetime, stage, dtime, location);
+            if (title_tokens.size () == 0)
+            {
+               Display::set_title (title, basetime, stage, dtime, location);
+            }
+            else
+            {
+               title.set (title_tokens);
+            }
             title.cairo (cr);
 
             if (format == "png") { surface->write_to_png (file_path); }
@@ -537,21 +577,23 @@ main (int argc,
 
    static struct option long_options[] =
    {
-      { "annotation", 0, 0, 'a' },
-      { "bludge", 0, 0, 'b' },
-      { "config", 0, 0, 'c' },
-      { "format", 0, 0, 'g' },
-      { "geometry", 1, 0, 'g' },
-      { "interactive", 0, 0, 'i' },
-      { "level", 1, 0, 'l' },
-      { "meteogram", 1, 0, 'm' },
-      { "output-dir", 1, 0, 'o' },
-      { "product", 1, 0, 'p' },
-      { "stage", 1, 0, 's' },
-      { "time", 1, 0, 't' },
-      { "cross-section", 1, 0, 'x' },
+      { "annotation",       0, 0, 'a' },
+      { "bludge",           0, 0, 'b' },
+      { "config",           0, 0, 'c' },
+      { "filename",         1, 0, 'F' },
+      { "format",           0, 0, 'f' },
+      { "geometry",         1, 0, 'g' },
+      { "interactive",      0, 0, 'i' },
+      { "level",            1, 0, 'l' },
+      { "meteogram",        1, 0, 'm' },
+      { "output-dir",       1, 0, 'o' },
+      { "product",          1, 0, 'p' },
+      { "stage",            1, 0, 's' },
+      { "title",            1, 0, 'T' },
+      { "time",             1, 0, 't' },
+      { "cross-section",    1, 0, 'x' },
       { "vertical-profile", 1, 0, 'v' },
-      { "zoom", 1, 0, 'z' },
+      { "zoom",             1, 0, 'z' },
       { NULL, 0, NULL, 0 }
    };
 
@@ -565,6 +607,8 @@ main (int argc,
    string format ("png");
    Tokens annotation_tokens;
 
+   string filename ("");
+   Tokens title_tokens;
    bool is_bludge = false;
    bool is_cross_section = false;
    bool is_interactive = false;
@@ -576,7 +620,7 @@ main (int argc,
 
    int c;
    int option_index = 0;
-   while ((c = getopt_long (argc, argv, "a:bc:f:g:il:m:o:p:s:t:x:v:z:",
+   while ((c = getopt_long (argc, argv, "a:bc:F:f:g:il:m:o:p:s:T:t:x:v:z:",
           long_options, &option_index)) != -1)
    {
 
@@ -598,6 +642,12 @@ main (int argc,
          case 'c':
          {
             config_file_path = (string (optarg));
+            break;
+         }
+
+         case 'F':
+         {
+            filename = (string (optarg));
             break;
          }
 
@@ -650,6 +700,12 @@ main (int argc,
          case 's':
          {
             stage_str = (string (optarg));
+            break;
+         }
+
+         case 'T':
+         {
+            title_tokens = Tokens (string (optarg), ":");
             break;
          }
 
@@ -718,25 +774,26 @@ main (int argc,
 
          if (is_cross_section)
          {
-            twiin.cross_section (stage_str, product_str,
-               multi_journey, time_str, format, is_bludge);
+            twiin.cross_section (stage_str, product_str, multi_journey,
+               time_str, format, title_tokens, filename, is_bludge);
          }
          else
          if (is_meteogram)
          {
             twiin.meteogram (stage_str, location_str, time_str,
-               format, is_bludge);
+               format, title_tokens, filename, is_bludge);
          }
          else
          if (is_vertical_profile)
          {
             twiin.vertical_profile (stage_str, location_str,
-               time_str, format, is_bludge);
+               time_str, format, title_tokens, filename, is_bludge);
          }
          else
          {
             twiin.command_line (stage_str, product_str, level_str,
-               time_str, zoom_str, annotation_tokens, format, is_bludge);
+               time_str, zoom_str, annotation_tokens, format,
+               title_tokens, filename, is_bludge);
          }
       }
 

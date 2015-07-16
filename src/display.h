@@ -83,6 +83,10 @@ namespace twiin
       public:
 
          static void
+         set_title_tokens (Title& title,
+                           const Tokens& title_tokens);
+
+         static void
          set_title (Title& title,
                     const Dtime& basetime,
                     const Stage& stage,
