@@ -113,6 +113,13 @@ namespace twiin
          set_title (Title& title,
                     const Dtime& basetime,
                     const Stage& stage,
+                    const Dtime& dtime,
+                    const string& location_str);
+
+         static void
+         set_title (Title& title,
+                    const Dtime& basetime,
+                    const Stage& stage,
                     const Location& location);
 
          static string
@@ -195,7 +202,9 @@ namespace twiin
                  const Dtime& dtime,
                  const Level& level,
                  const twiin::Stage& stage,
-                 const Product product);
+                 const Product product,
+                 const bool no_stage,
+                 const bool no_wind_barb);
 
          static void
          render_cross_section_w (const RefPtr<Context>& cr,
@@ -243,7 +252,8 @@ namespace twiin
                                 const Transform_2D& transform_temperature,
                                 const Transform_2D& transform_direction,
                                 const Transform_2D& transform_speed,
-                                const Transform_2D& transform_pressure);
+                                const Transform_2D& transform_pressure,
+                                const bool ignore_pressure);
 
          static void
          render_meteogram (const RefPtr<Context>& cr,
@@ -252,7 +262,8 @@ namespace twiin
                            const Transform_2D& transform_speed,
                            const Transform_2D& transform_pressure,
                            const Aws::Repository& aws_repository,
-                           const bool faint);
+                           const bool faint,
+                           const bool ignore_pressure);
 
          static void
          render_meteogram (const RefPtr<Context>& cr,
@@ -260,7 +271,8 @@ namespace twiin
                            const Model& model,
                            const Aws::Repository& aws_repository,
                            const Stage& stage,
-                           const Location& location);
+                           const Location& location,
+                           const bool ignore_pressure);
 
          static void
          render_vertical_profile (const RefPtr<Context>& cr,
@@ -269,6 +281,14 @@ namespace twiin
                                   const Stage& stage,
                                   const Dtime& dtime,
                                   const Lat_Long& lat_long);
+
+         static void
+         render_vertical_profile (const RefPtr<Context>& cr,
+                                  const Thermo_Diagram& thermo_diagram,
+                                  const Model& model,
+                                  const Stage& stage,
+                                  const Dtime& dtime,
+                                  const Lat_Long::List& lat_long_list);
 
    };
 

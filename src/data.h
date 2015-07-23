@@ -498,10 +498,10 @@ namespace twiin
                                             const size_t l) const;
                                
                      Real
-                     evaluate_streamline_speed (const Real azimuth,
-                                                const Lat_Long& lat_long,
-                                                const Real z,
-                                                const size_t l) const;
+                     evaluate_along_speed (const Real azimuth,
+                                           const Lat_Long& lat_long,
+                                           const Real z,
+                                           const size_t l) const;
                                
                      Real
                      evaluate_scorer (const Real azimuth,

@@ -1158,10 +1158,10 @@ Model::Uppers::Stage::evaluate_normal_speed (const Real azimuth,
 }
 
 Real
-Model::Uppers::Stage::evaluate_streamline_speed (const Real azimuth,
-                                                 const Lat_Long& lat_long,
-                                                 const Real z,
-                                                 const size_t l) const
+Model::Uppers::Stage::evaluate_along_speed (const Real azimuth,
+                                            const Lat_Long& lat_long,
+                                            const Real z,
+                                            const size_t l) const
 {
 
    size_t i, j;
@@ -1226,9 +1226,9 @@ Model::Uppers::Stage::evaluate_scorer (const Real azimuth,
    const Real v_2 = evaluate (V, i, j, k_rho_2, l);
 
    const Real theta = azimuth * M_PI/180;
-   const Real stream_0 = u_0 * sin (theta) + v_0 * cos (theta);
-   const Real stream_1 = u_1 * sin (theta) + v_1 * cos (theta);
-   const Real stream_2 = u_2 * sin (theta) + v_2 * cos (theta);
+   const Real along_0 = u_0 * sin (theta) + v_0 * cos (theta);
+   const Real along_1 = u_1 * sin (theta) + v_1 * cos (theta);
+   const Real along_2 = u_2 * sin (theta) + v_2 * cos (theta);
 
    const Real z_theta_0 = model.get_z (k_theta_0, topography, A_theta, B_theta);
    const Real z_theta_1 = model.get_z (k_theta_1, topography, A_theta, B_theta);
@@ -1242,9 +1242,9 @@ Model::Uppers::Stage::evaluate_scorer (const Real azimuth,
    const Real dtheta_dz = D::d_1 (theta_0, theta_1,
       theta_2, z_theta_0, z_theta_1, z_theta_2);
 
-   const Real A = (g / theta_1 * dtheta_dz ) / (stream_1 * stream_1);
-   const Real B = -D::d2 (stream_0, stream_1, stream_2,
-      z_rho_0, z_rho_1, z_rho_2) / stream_1;
+   const Real A = (g / theta_1 * dtheta_dz ) / (along_1 * along_1);
+   const Real B = -D::d2 (along_0, along_1, along_2,
+      z_rho_0, z_rho_1, z_rho_2) / along_1;
 
    return A + B;
 
@@ -1281,7 +1281,9 @@ Model::Uppers::Stage::evaluate_brunt_vaisala (const Lat_Long& lat_long,
 
    typedef Differentiation D;
    const Real dtheta_dz = D::d_1 (theta_0, theta_1, theta_2, z_0, z_1, z_2);
-   return sqrt (g / theta_1 * dtheta_dz);
+
+   if (dtheta_dz <= 0) { return GSL_NAN; }
+   else { return sqrt (g / theta_1 * dtheta_dz); }
 
 }
 
@@ -2013,6 +2015,9 @@ Model::get_valid_time_set (const Product& product,
        product == "WIND" ||
        product == "SPEED" ||
        product == "SPEED_HIGHER" ||
+       product == "ALONG_SPEED" ||
+       product == "NORMAL_SPEED" ||
+       product == "BRUNT_VAISALA" ||
        product == "W" ||
        product == "W_TRANSLUCENT" ||
        product == "VORTICITY" ||

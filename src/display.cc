@@ -120,13 +120,8 @@ Display::get_terrain_raster_ptr (const Size_2D& size_2d,
 
          const Real orog = terrain_stage.get_topography (lat_long);
          const Real lsm = terrain_stage.evaluate (string ("lsm"), lat_long);
-         const Real h = std::min (std::max (orog / 2000.0, 0.0), 1.0);
-
-         const bool land = (lsm > 0.5);
-         const Real hue = (land ? 0.4 - h * 0.4 : 0.67);
-         const Real brightness = h * 0.7 + 0.28;
-
-         const Color& color = Color::hsb (hue, 0.34, brightness);
+         const Product product (lsm > 0.5 ? "TERRAIN" : "TERRAIN_WATER");
+         const Color& color = Display::get_color (product, orog);
          raster.set_pixel (i, j, color);
 
       }
@@ -295,9 +290,14 @@ Display::get_cross_section_raster_ptr (const Box_2D& box_2d,
    const auto& uppers_stage = model.uppers.get_stage (stage);
    const size_t l = uppers_stage.get_l (dtime);
 
+   const bool is_speed = (product == "SPEED");
+   const bool is_along_speed = (product == "ALONG_SPEED");
+   const bool is_normal_speed = (product == "NORMAL_SPEED");
    const bool is_wind = (product == "WIND");
    const bool is_brunt_vaisala = (product == "BRUNT_VAISALA");
    const bool is_scorer = (product == "SCORER");
+
+   const Product& p = (is_speed ? Product ("SPEED_HIGHER") : product);
 
    Real x;
    Level level (HEIGHT_LEVEL, GSL_NAN);
@@ -339,7 +339,7 @@ Display::get_cross_section_raster_ptr (const Box_2D& box_2d,
             {
                const Real datum =
                   uppers_stage.evaluate_brunt_vaisala (lat_long, z, l);
-               color = Display::get_color (product, datum);
+               color = Display::get_color (p, datum);
             }
             else
             if (is_scorer)
@@ -348,13 +348,31 @@ Display::get_cross_section_raster_ptr (const Box_2D& box_2d,
                   multi_journey.get_azimuth_forward (x, geodesy);
                const Real datum =
                   uppers_stage.evaluate_scorer (azimuth, lat_long, z, l);
-               color = Display::get_color (product, datum);
+               color = Display::get_color (p, datum);
+            }
+            else
+            if (is_along_speed)
+            {
+               const Real azimuth =
+                  multi_journey.get_azimuth_forward (x, geodesy);
+               const Real datum =
+                  uppers_stage.evaluate_along_speed (azimuth, lat_long, z, l);
+               color = Display::get_color (p, datum);
+            }
+            else
+            if (is_normal_speed)
+            {
+               const Real azimuth =
+                  multi_journey.get_azimuth_forward (x, geodesy);
+               const Real datum =
+                  uppers_stage.evaluate_normal_speed (azimuth, lat_long, z, l);
+               color = Display::get_color (p, datum);
             }
             else
             {
                const Nwp_Element nwp_element = product.get_nwp_element ();
                const Real datum = uppers_stage.evaluate (nwp_element, ll, z, l);
-               color = Display::get_color (product, datum);
+               color = Display::get_color (p, datum);
             }
          }
          raster_ptr->set_pixel (i - index_2d.i, j - index_2d.j, color);
@@ -375,7 +393,8 @@ Display::set_title (Title& title,
                     const Level& level)
 {
 
-   const Integer forecast_minutes = (dtime.t - basetime.t) * 60;
+   const Real forecast_hour = dtime.t - basetime.t;
+   const Integer forecast_minutes = Integer (round (forecast_hour) * 60);
    const Integer fh = forecast_minutes / 60;
    const Integer fm = forecast_minutes % 60;
 
@@ -398,7 +417,8 @@ Display::set_title (Title& title,
                     const Multi_Journey& multi_journey)
 {
 
-   const Integer forecast_minutes = (dtime.t - basetime.t) * 60;
+   const Real forecast_hour = dtime.t - basetime.t;
+   const Integer forecast_minutes = Integer (round (forecast_hour) * 60);
    const Integer fh = forecast_minutes / 60;
    const Integer fm = forecast_minutes % 60;
 
@@ -429,7 +449,8 @@ Display::set_title (Title& title,
                     const Location& location)
 {
 
-   const Integer forecast_minutes = (dtime.t - basetime.t) * 60;
+   const Real forecast_hour = dtime.t - basetime.t;
+   const Integer forecast_minutes = Integer (round (forecast_hour) * 60);
    const Integer fh = forecast_minutes / 60;
    const Integer fm = forecast_minutes % 60;
 
@@ -442,6 +463,28 @@ Display::set_title (Title& title,
       string_render (" +%d:%02d", fh, fm);
 
    title.set (time_str, stage, location.get_long_str (), basetime_str, ll_str);
+
+}
+
+void
+Display::set_title (Title& title,
+                    const Dtime& basetime,
+                    const Stage& stage,
+                    const Dtime& dtime,
+                    const string& location_name)
+{
+
+   const Real forecast_hour = dtime.t - basetime.t;
+   const Integer forecast_minutes = Integer (round (forecast_hour) * 60);
+   const Integer fh = forecast_minutes / 60;
+   const Integer fm = forecast_minutes % 60;
+
+   const string fmt ("%Y.%m.%d %H:%M UTC");
+   const string& time_str = dtime.get_string (fmt);
+   const string& basetime_str = basetime.get_string () +
+      string_render (" +%d:%02d", fh, fm);
+
+   title.set (time_str, stage, location_name, basetime_str, "");
 
 }
 
@@ -511,7 +554,9 @@ Display::get_unit (const Product& product)
       return string ("knots");
    }
    else
-   if (product == "SPEED")
+   if (product == "SPEED" ||
+       product == "ALONG_SPEED" ||
+       product == "NORMAL_SPEED")
    {
       return string ("knots");
    }
@@ -539,6 +584,16 @@ Display::get_unit (const Product& product)
    if (product == "WIND")
    {
       return string ("degree");
+   }
+   else
+   if (product == "TERRAIN")
+   {
+      return string ("m");
+   }
+   else
+   if (product == "BRUNT_VAISALA")
+   {
+      return string ("s\u207b\u00b9");
    }
    else
    {
@@ -606,6 +661,12 @@ Display::get_tick_tuple (const Product& product)
       return Tuple ("0:5:10:15:20:25:30:35:40:45:50:55:60:65");
    }
    else
+   if (product == "ALONG_SPEED" ||
+       product == "NORMAL_SPEED")
+   {
+      return Tuple (26, -125.0, 125.0);
+   }
+   else
    if (product == "VORTICITY")
    {
       return Tuple ("-5:-4:-3:-2:-1:0:1:2:3:4:5");
@@ -631,6 +692,15 @@ Display::get_tick_tuple (const Product& product)
       return Tuple ("0:30:60:90:120:150:180:210:240:270:300:330:360");
    }
    else
+   if (product == "TERRAIN")
+   {
+      return Tuple ("0:200:400:600:800:1000:1200:1400:1600:1800:2000");
+   }
+   else
+   if (product == "BRUNT_VAISALA")
+   {
+      return Tuple ("1e-3:3.2e-3:1e-2:3.2e-2:1e-1");
+   }
    {
       return Tuple ();
    }
@@ -767,6 +837,49 @@ Display::get_color (const Product& product,
       else                 { return Color (1.000, 1.000, 1.000); }
    }
    else
+   if (product == "ALONG_SPEED" ||
+       product == "NORMAL_SPEED")
+   {
+      const bool negative = (datum < 0);
+      const Real knots = fabs (datum * 3.6/1.852);
+      const Real m0 = modulo (knots, 5.0) / 5.0 * 0.15 + 0.85;
+      const Real m = modulo (knots - 5, 10.0) / 10.0 * 0.15 + 0.85;
+      if (!negative)
+      {
+              if (knots <  5) { return Color::hsb (0.000, 0.00 *m0, 1.00 *m0); }
+         else if (knots < 15) { return Color::hsb (0.167, 0.30 * m, 1.00 * m); }
+         else if (knots < 25) { return Color::hsb (0.150, 0.35 * m, 0.95 * m); }
+         else if (knots < 35) { return Color::hsb (0.133, 0.40 * m, 0.90 * m); }
+         else if (knots < 45) { return Color::hsb (0.333, 0.40 * m, 0.95 * m); }
+         else if (knots < 55) { return Color::hsb (0.333, 0.40 * m, 0.75 * m); }
+         else if (knots < 65) { return Color::hsb (0.333, 0.40 * m, 0.65 * m); }
+         else if (knots < 75) { return Color::hsb (0.600, 0.40 * m, 1.00 * m); }
+         else if (knots < 85) { return Color::hsb (0.633, 0.40 * m, 0.90 * m); }
+         else if (knots < 95) { return Color::hsb (0.667, 0.40 * m, 0.80 * m); }
+         else if (knots < 105){ return Color::hsb (0.033, 0.40 * m, 0.65 * m); }
+         else if (knots < 115){ return Color::hsb (0.016, 0.45 * m, 0.80 * m); }
+         else if (knots < 125){ return Color::hsb (0.000, 0.50 * m, 0.95 * m); }
+         else                 { return Color (1.000, 1.000, 1.000); }
+      }
+      else
+      {
+              if (knots <  5) { return Color::hsb (0.000, 0.00 *m0, 0.80 *m0); }
+         else if (knots < 15) { return Color::hsb (0.167, 0.20 * m, 0.80 * m); }
+         else if (knots < 25) { return Color::hsb (0.150, 0.25 * m, 0.75 * m); }
+         else if (knots < 35) { return Color::hsb (0.133, 0.30 * m, 0.70 * m); }
+         else if (knots < 45) { return Color::hsb (0.333, 0.30 * m, 0.75 * m); }
+         else if (knots < 55) { return Color::hsb (0.333, 0.30 * m, 0.55 * m); }
+         else if (knots < 65) { return Color::hsb (0.333, 0.30 * m, 0.45 * m); }
+         else if (knots < 75) { return Color::hsb (0.600, 0.30 * m, 0.80 * m); }
+         else if (knots < 85) { return Color::hsb (0.633, 0.30 * m, 0.70 * m); }
+         else if (knots < 95) { return Color::hsb (0.667, 0.30 * m, 0.60 * m); }
+         else if (knots < 105){ return Color::hsb (0.033, 0.30 * m, 0.45 * m); }
+         else if (knots < 115){ return Color::hsb (0.016, 0.35 * m, 0.60 * m); }
+         else if (knots < 125){ return Color::hsb (0.000, 0.40 * m, 0.75 * m); }
+         else                 { return Color (1.000, 1.000, 1.000); }
+      }
+   }
+   else
    if (product == "VORTICITY")
    {
       const Real hue = (datum < 0 ? 0.667 : 0.000);
@@ -804,6 +917,31 @@ Display::get_color (const Product& product,
       else if (mmhr < 100) { return Color::hsb (0.083, 0.60, 1.0); }
       else if (mmhr < 150) { return Color::hsb (0.042, 0.60, 1.0); }
       else                 { return Color::hsb (0.000, 0.60, 1.0); }
+   }
+   else
+   if (product == "TERRAIN")
+   {
+      const Real h = std::min (std::max (datum / 2000.0, 0.0), 1.0);
+      const Real hue = 0.45 - h * 0.4;
+      const Real brightness = h * 0.7 + 0.28;
+      return Color::hsb (hue, 0.34, brightness);
+   }
+   else
+   if (product == "TERRAIN_WATER")
+   {
+      const Real h = std::min (std::max (datum / 2000.0, 0.0), 1.0);
+      const Real hue = 0.67;
+      const Real brightness = h * 0.7 + 0.28;
+      return Color::hsb (hue, 0.34, brightness);
+   }
+   else
+   if (product == "BRUNT_VAISALA")
+   {
+      if (!gsl_finite (datum)) { return Color::white (); }
+      const Real e = log10 (datum) - (-2.0);
+      const Real x = std::max (e / 3.0, 0.0);
+      const Real hue = 0.15 + (floor (e / 0.5)) * 0.09;
+      return Color::hsb (hue, x, 1.0 - x * 0.5);
    }
    else
    {
@@ -1086,26 +1224,26 @@ Display::render_color_bar (const RefPtr<Context>& cr,
    const Tuple& tick_tuple = Display::get_tick_tuple (product);
    if (tick_tuple.size () < 2) { return; }
 
-   const Real title_height = 50;
+   const Real title_height = 40;
    const Real margin = 10;
    const Real font_size = 12;
 
    const Real box_width = 80;
-   const Real box_height = size_2d.j - title_height - 4*margin;
-
-   const Real bar_width = box_width - 4 * margin;
-   const Real bar_height = box_height - 3 * margin - font_size;
-
-   const Real box_x = size_2d.i - box_width - 2 * margin;
-   const Real box_y = title_height + 2 * margin;
+   const Real box_height = size_2d.j - title_height - 2*margin;
+   const Real box_x = size_2d.i - box_width - margin;
+   const Real box_y = title_height + margin;
    const Point_2D box_point (box_x, box_y);
-   const Real bar_x = box_x + 3 * margin;
-   const Real bar_y = box_y + font_size + 2 * margin;
+
+   const Real bar_width = box_width - 5 * margin;
+   const Real bar_height = box_height - 2 * margin - font_size;
+   const Real bar_x = box_x + 4 * margin;
+   const Real bar_y = box_y + margin + font_size;
    const Point_2D bar_point (bar_x, bar_y);
 
    const Domain_1D value_domain (tick_tuple.front (), tick_tuple.back ());
    const Domain_1D y_domain (bar_y + bar_height, bar_y);
-   const bool is_log = (product == "PRECIP_RATE");
+   const bool is_log = (product == "PRECIP_RATE" ||
+                        product == "BRUNT_VAISALA");
    Cartesian_Transform_1D transform (value_domain, y_domain, is_log);
 
    cr->save ();
@@ -1254,7 +1392,9 @@ Display::render (const RefPtr<Context>& cr,
                  const Dtime& dtime,
                  const Level& level,
                  const Stage& stage,
-                 const Product product)
+                 const Product product,
+                 const bool no_stage,
+                 const bool no_wind_barb)
 {
 
    cr->save ();
@@ -1265,10 +1405,17 @@ Display::render (const RefPtr<Context>& cr,
 
    render_product (cr, transform, size_2d, model, hrit,
       product, dtime, level, stage);
-   render_wind_barbs (cr, transform, size_2d, model, dtime, level, stage);
+
+   if (!no_wind_barb)
+   {
+      render_wind_barbs (cr, transform, size_2d, model, dtime, level, stage);
+   }
 
    // Stage 3/4/5 Frames
-   render_stages (cr, transform, model);
+   if (!no_stage)
+   {
+      render_stages (cr, transform, model);
+   }    
 
    // All Stations
    //station_map.cairo (cr, transform);
@@ -1313,7 +1460,7 @@ Display::render_cross_section_mesh (const RefPtr<Context>& cr,
    const Domain_1D domain_x (0, distance);
    const Domain_2D domain_2d (domain_x, domain_z);
    const Mesh_2D mesh_2d (Size_2D (2, 2),
-      domain_2d, Color::black (0.4), 1e8, 1000);
+      domain_2d, 1e8, 1000, Color::black (0.4));
 
    cr->set_line_width (2);
    mesh_2d.render (cr, transform);
@@ -1459,7 +1606,8 @@ Display::render_meteogram_mesh (const RefPtr<Context>& cr,
                                 const Transform_2D& transform_temperature,
                                 const Transform_2D& transform_direction,
                                 const Transform_2D& transform_speed,
-                                const Transform_2D& transform_pressure)
+                                const Transform_2D& transform_pressure,
+                                const bool ignore_pressure)
 {
 
    cr->save ();
@@ -1494,60 +1642,78 @@ Display::render_meteogram_mesh (const RefPtr<Context>& cr,
       transform_pressure.transform (end_t, end_pressure);
 
    Color::black (0.3).cairo (cr);
-   Rect (bl_temperature, ur_temperature).cairo (cr);
-   Rect (bl_direction,   ur_direction  ).cairo (cr);
-   Rect (bl_speed,       ur_speed      ).cairo (cr);
-   Rect (bl_pressure,    ur_pressure   ).cairo (cr);
-   cr->stroke ();
+
+   const Color& minor_color = Color::black (0.10);
+   const Color& middle_color = Color::black (0.25);
+   const Color& major_color = Color::black (0.50);
 
    Mesh_2D mesh_temperature (Size_2D (2, 2),
-      Domain_2D (domain_t, domain_temperature), Color::black (0.1), 1, 1,
-      Color::black (0.25), 6, GSL_NAN, Color::black (0.5), 24, 10);
+      Domain_2D (domain_t, domain_temperature), 1, 1, minor_color,
+      6, GSL_NAN, middle_color, 24, 10, major_color);
    Mesh_2D mesh_direction (Size_2D (2, 2),
-      Domain_2D (domain_t, domain_direction), Color::black (0.1), 1, 10,
-      Color::black (0.25), 6, GSL_NAN, Color::black (0.5), 24, 90);
+      Domain_2D (domain_t, domain_direction), 1, 10, minor_color,
+      6, GSL_NAN, middle_color, 24, 90, major_color);
    Mesh_2D mesh_speed (Size_2D (2, 2),
-      Domain_2D (domain_t, domain_speed), Color::black (0.1), 1, 1,
-      Color::black (0.25), 6, GSL_NAN, Color::black (0.5), 24, 5);
+      Domain_2D (domain_t, domain_speed), 1, 1, minor_color,
+      6, GSL_NAN, middle_color, 24, 5, major_color);
    Mesh_2D mesh_pressure (Size_2D (2, 2),
-      Domain_2D (domain_t, domain_pressure), Color::black (0.1), 1, 1,
-      Color::black (0.25), 6, GSL_NAN, Color::black (0.5), 24, 10);
+      Domain_2D (domain_t, domain_pressure), 1, 1, minor_color,
+      6, GSL_NAN, middle_color, 24, 10, major_color);
 
    mesh_temperature.set_offset_multiplier_y (-K, 1);
    mesh_pressure.set_offset_multiplier_y (0, 1e-2);
 
+   Rect (bl_temperature, ur_temperature).cairo (cr);
+   cr->stroke ();
    mesh_temperature.render (cr, transform_temperature);
+
+   Rect (bl_direction,   ur_direction  ).cairo (cr);
+   cr->stroke ();
    mesh_direction.render (cr, transform_direction);
+
+   Rect (bl_speed,       ur_speed      ).cairo (cr);
+   cr->stroke ();
    mesh_speed.render (cr, transform_speed);
-   mesh_pressure.render (cr, transform_pressure);
+
+   if (!ignore_pressure)
+   {
+      Rect (bl_pressure,    ur_pressure   ).cairo (cr);
+      cr->stroke ();
+      mesh_pressure.render (cr, transform_pressure);
+   }
 
    Color::black ().cairo (cr);
+
    mesh_temperature.render_label_y (cr, transform_temperature, 2,
       start_t, "%.0f\u00b0C", NUMBER_REAL, 'r', 'c', 5);
-   mesh_direction.render_label_y (cr, transform_direction, 2,
-      start_t, "%03.0f\u00b0", NUMBER_REAL, 'r', 'c', 5);
-   mesh_speed.render_label_y (cr, transform_speed, 2,
-      start_t, "%.0fms\u207b\u00b9", NUMBER_REAL, 'r', 'c', 5);
-   mesh_pressure.render_label_y (cr, transform_pressure, 2,
-      start_t, "%.0fPa", NUMBER_REAL, 'r', 'c', 5);
-
    mesh_temperature.render_label_x (cr, transform_temperature, 2,
       domain_temperature.end, "%b %d", NUMBER_TIME, 'c', 't', 15);
-   mesh_direction.render_label_x (cr, transform_direction, 2,
-      domain_direction.end, "%b %d", NUMBER_TIME, 'c', 't', 15);
-   mesh_speed.render_label_x (cr, transform_speed, 2,
-      domain_speed.end, "%b %d", NUMBER_TIME, 'c', 't', 15);
-   mesh_pressure.render_label_x (cr, transform_pressure, 2,
-      domain_pressure.end, "%b %d", NUMBER_TIME, 'c', 't', 15);
-
    mesh_temperature.render_label_x (cr, transform_temperature, 1,
       domain_temperature.end, "%HZ", NUMBER_TIME, 'c', 't', 5);
+
+   mesh_direction.render_label_y (cr, transform_direction, 2,
+      start_t, "%03.0f\u00b0", NUMBER_REAL, 'r', 'c', 5);
+   mesh_direction.render_label_x (cr, transform_direction, 2,
+      domain_direction.end, "%b %d", NUMBER_TIME, 'c', 't', 15);
    mesh_direction.render_label_x (cr, transform_direction, 1,
       domain_direction.end, "%HZ", NUMBER_TIME, 'c', 't', 5);
+
+   mesh_speed.render_label_y (cr, transform_speed, 2,
+      start_t, "%.0f ms\u207b\u00b9", NUMBER_REAL, 'r', 'c', 5);
+   mesh_speed.render_label_x (cr, transform_speed, 2,
+      domain_speed.end, "%b %d", NUMBER_TIME, 'c', 't', 15);
    mesh_speed.render_label_x (cr, transform_speed, 1,
       domain_speed.end, "%HZ", NUMBER_TIME, 'c', 't', 5);
-   mesh_pressure.render_label_x (cr, transform_pressure, 1,
-      domain_pressure.end, "%HZ", NUMBER_TIME, 'c', 't', 5);
+
+   if (!ignore_pressure)
+   {
+      mesh_pressure.render_label_y (cr, transform_pressure, 2,
+         start_t, "%.0fPa", NUMBER_REAL, 'r', 'c', 5);
+      mesh_pressure.render_label_x (cr, transform_pressure, 2,
+         domain_pressure.end, "%b %d", NUMBER_TIME, 'c', 't', 15);
+      mesh_pressure.render_label_x (cr, transform_pressure, 1,
+         domain_pressure.end, "%HZ", NUMBER_TIME, 'c', 't', 5);
+   }
 
    cr->restore ();
 
@@ -1560,7 +1726,8 @@ Display::render_meteogram (const RefPtr<Context>& cr,
                            const Transform_2D& transform_speed,
                            const Transform_2D& transform_pressure,
                            const Aws::Repository& aws_repository,
-                           const bool faint)
+                           const bool faint,
+                           const bool ignore_pressure)
 {
 
    cr->save ();
@@ -1577,16 +1744,9 @@ Display::render_meteogram (const RefPtr<Context>& cr,
       const Aws::Key& key = iterator->first;
       const Aws::Obs& obs = iterator->second;
       const Dtime& dtime = key.dtime;
-
-      const Real temperature = obs.temperature;
-      const Real dew_point = obs.dew_point;
-      const Real direction = obs.wind_direction;
-      const Real speed = obs.wind_speed;
-      const Real gust = obs.wind_gust;
-      const Real mslp = obs.mslp;
-
       const string& time_str = dtime.get_string ("%Y%m%d%H%M");
 
+      const Real temperature = obs.temperature;
       const Point_2D p_temperature (dtime.t, temperature);
       const Point_2D& tp_temperature = transform_temperature.transform (p_temperature);
       ring.cairo (cr, tp_temperature);
@@ -1594,6 +1754,7 @@ Display::render_meteogram (const RefPtr<Context>& cr,
       if (faint) { cr->fill (); }
       else { cr->fill_preserve (); Color::black ().cairo (cr); cr->stroke (); }
 
+      const Real dew_point = obs.dew_point;
       const Point_2D p_dew_point (dtime.t, dew_point);
       const Point_2D& tp_dew_point = transform_temperature.transform (p_dew_point);
       ring.cairo (cr, tp_dew_point);
@@ -1601,6 +1762,7 @@ Display::render_meteogram (const RefPtr<Context>& cr,
       if (faint) { cr->fill (); }
       else { cr->fill_preserve (); Color::black ().cairo (cr); cr->stroke (); }
 
+      const Real direction = obs.wind_direction;
       const Point_2D p_direction (dtime.t, direction);
       const Point_2D& tp_direction = transform_direction.transform (p_direction);
       ring.cairo (cr, tp_direction);
@@ -1608,6 +1770,8 @@ Display::render_meteogram (const RefPtr<Context>& cr,
       if (faint) { cr->fill (); }
       else { cr->fill_preserve (); Color::black ().cairo (cr); cr->stroke (); }
 
+      const Real speed = obs.wind_speed;
+      const Real gust = obs.wind_gust;
       const Point_2D p_speed (dtime.t, speed);
       const Point_2D& tp_speed = transform_speed.transform (p_speed);
       ring.cairo (cr, tp_speed);
@@ -1622,6 +1786,9 @@ Display::render_meteogram (const RefPtr<Context>& cr,
       if (faint) { cr->fill (); }
       else { cr->fill_preserve (); Color::black ().cairo (cr); cr->stroke (); }
 
+      if (ignore_pressure) { continue; }
+
+      const Real mslp = obs.mslp;
       const Point_2D p_mslp (dtime.t, mslp);
       const Point_2D& tp_mslp = transform_pressure.transform (p_mslp);
       ring.cairo (cr, tp_mslp);
@@ -1641,11 +1808,11 @@ Display::render_meteogram (const RefPtr<Context>& cr,
                            const Model& model, 
                            const Aws::Repository& aws_repository,
                            const Stage& stage, 
-                           const Location& location)
+                           const Location& location,
+                           const bool ignore_pressure)
 {
 
    cr->save ();
-
    Color::white ().cairo (cr);
    cr->paint ();
 
@@ -1694,13 +1861,16 @@ Display::render_meteogram (const RefPtr<Context>& cr,
    const Domain_1D domain_speed (end_speed, 0);
    const Domain_1D domain_pressure (end_pressure, start_pressure);
 
-   const Real margin = 35;
-   const Real margin_l = 70;
-   const Real margin_r = 35;
-   const Real title_height = 50;
+   const Real title_height = 40;
+   const Real margin = 30;
+   const Real margin_t = title_height + 10;
+   const Real margin_b = 30;
+   const Real margin_l = 55;
+   const Real margin_r = 20;
 
+   const Real n = (ignore_pressure ? 3 : 4);
    const Real width = size_2d.i - margin_l - margin_r;
-   const Real height = (size_2d.j - title_height - 5 * margin) / 4;
+   const Real height = (size_2d.j - margin_t - margin_b - (n - 1) * margin) / n;
 
    const Real span_t = domain_t.get_span ();
    const Real span_temperature = domain_temperature.get_span ();
@@ -1714,10 +1884,10 @@ Display::render_meteogram (const RefPtr<Context>& cr,
    const Real scale_direction = height / span_direction;
    const Real scale_pressure = height / span_pressure;
 
-   const Real position_temperature = title_height + 0 * height + 1 * margin;
-   const Real position_direction   = title_height + 1 * height + 2 * margin;
-   const Real position_speed       = title_height + 2 * height + 3 * margin;
-   const Real position_pressure    = title_height + 3 * height + 4 * margin;
+   const Real position_temperature = margin_t + 0 * height + 0 * margin;
+   const Real position_direction   = margin_t + 1 * height + 1 * margin;
+   const Real position_speed       = margin_t + 2 * height + 2 * margin;
+   const Real position_pressure    = margin_t + 3 * height + 3 * margin;
 
    const Point_2D origin_temperature (margin_l, position_temperature);
    const Point_2D origin_direction (margin_l, position_direction);
@@ -1736,17 +1906,18 @@ Display::render_meteogram (const RefPtr<Context>& cr,
    render_meteogram_mesh (cr, domain_t, domain_temperature,
       domain_direction, domain_speed, domain_pressure,
       transform_temperature, transform_direction,
-      transform_speed, transform_pressure);
+      transform_speed, transform_pressure, ignore_pressure);
 
    if (aws_repository_ptr != NULL)
    {
       render_meteogram (cr, transform_temperature, transform_direction,
-         transform_speed, transform_pressure, *aws_repository_ptr, true);
+         transform_speed, transform_pressure, *aws_repository_ptr, true,
+         ignore_pressure);
    }
 
    render_meteogram (cr, transform_temperature, transform_direction,
-      transform_speed, transform_pressure, *model_aws_repository_ptr, false);
-
+      transform_speed, transform_pressure, *model_aws_repository_ptr, false,
+      ignore_pressure);
 
    delete aws_repository_ptr;
    delete model_aws_repository_ptr;
@@ -1779,6 +1950,55 @@ Display::render_vertical_profile (const RefPtr<Context>& cr,
    sounding.render (cr, thermo_diagram);
 
    delete sounding_ptr;
+
+   cr->restore ();
+
+}
+
+void
+Display::render_vertical_profile (const RefPtr<Context>& cr,
+                                  const Thermo_Diagram& thermo_diagram,
+                                  const Model& model,
+                                  const Stage& stage,
+                                  const Dtime& dtime,
+                                  const Lat_Long::List& lat_long_list)
+{
+
+   cr->save ();
+
+   Color::white ().cairo (cr);
+   cr->paint ();
+
+   const bool singular = (lat_long_list.size () == 1);
+
+   list<const Sounding*> sounding_ptr_list;
+
+   for (auto iterator = lat_long_list.begin ();
+        iterator != lat_long_list.end (); iterator++)
+   {
+      const Lat_Long& lat_long = *(iterator);
+      const Sounding* sounding_ptr =
+         model.get_sounding_ptr (lat_long, dtime, stage);
+      sounding_ptr_list.push_back (sounding_ptr);
+   }
+
+   const Sounding* sounding_ptr =
+      Sounding::get_mean_sounding_ptr (sounding_ptr_list, thermo_diagram);
+   const Sounding& sounding = *sounding_ptr;
+
+   cr->set_line_width (1);
+   thermo_diagram.render (cr, 900);
+   cr->set_line_width (2);
+   sounding.render (cr, thermo_diagram);
+
+   delete sounding_ptr;
+
+   for (auto iterator = sounding_ptr_list.begin ();
+        iterator != sounding_ptr_list.end (); iterator++)
+   {
+      const Sounding* sounding_ptr = *(iterator);
+      delete sounding_ptr;
+   }
 
    cr->restore ();
 

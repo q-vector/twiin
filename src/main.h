@@ -64,6 +64,12 @@ namespace twiin
          string
          get_file_path (const string& format,
                         const Stage& stage,
+                        const Dtime& dtime,
+                        const string& location_name) const;
+
+         string
+         get_file_path (const string& format,
+                        const Stage& stage,
                         const Location& location) const;
 
       public:
@@ -91,6 +97,8 @@ namespace twiin
                        const string& format,
                        const Tokens& title_tokens,
                        const string& filename,
+                       const bool no_stage,
+                       const bool no_wind_barb,
                        const bool is_bludge) const;
 
          void
@@ -110,6 +118,7 @@ namespace twiin
                     const string& format,
                     const Tokens& title_tokens,
                     const string& filename,
+                    const bool ignore_pressure,
                     const bool is_bludge) const;
 
          void
