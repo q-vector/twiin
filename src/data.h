@@ -235,6 +235,15 @@ namespace twiin
                void
                ingest (const string& file_path);
 
+               void
+               ingest_binary (const string& file_path);
+
+               void
+               write (const string& file_path) const;
+
+               void
+               write_binary (const string& file_path) const;
+
                const set<Integer>&
                get_station_id_set () const;
 
