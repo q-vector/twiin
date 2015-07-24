@@ -291,9 +291,10 @@ Console::Console (Gtk::Window& gtk_window,
 
    const Lat_Long lat_long_a (-32.4774, 147.1520);
    const Lat_Long lat_long_b (-34.3215, 153.2280);
-//   const Lat_Long lat_long_a (-31.7849, 147.1520);
-//   const Lat_Long lat_long_b (-34.3215, 153.2280);
+   const Lat_Long lat_long_c (-31.7849, 147.9219);
+   const Lat_Long lat_long_d (-35.4056, 152.7273);
    get_route_store ().insert (lat_long_a, lat_long_b);
+   get_route_store ().insert (lat_long_c, lat_long_d);
 
 }
 
