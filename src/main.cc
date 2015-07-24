@@ -105,6 +105,18 @@ Twiin::get_file_path (const string& format,
 string
 Twiin::get_file_path (const string& format,
                       const Stage& stage,
+                      const Dtime& dtime,
+                      const string& location_name) const
+{
+   const string& time_str = dtime.get_string ("%Y%m%d%H%M");
+   const string& file_name = stage + "_" + time_str + "_"
+      + location_name + "." + format;
+   return output_dir + "/" + file_name;
+}
+
+string
+Twiin::get_file_path (const string& format,
+                      const Stage& stage,
                       const Location& location) const
 {
    const string& location_str = location.get_str ();
@@ -161,6 +173,10 @@ Twiin::command_line (const string& stage_str,
                      const string& zoom_str,
                      const Tokens& annotation_tokens,
                      const string& format,
+                     const Tokens& title_tokens,
+                     const string& filename,
+                     const bool no_stage,
+                     const bool no_wind_barb,
                      const bool is_bludge) const
 {
 
@@ -209,18 +225,24 @@ Twiin::command_line (const string& stage_str,
       const Geodetic_Transform& transform = gt_ptr == NULL ?
          *(transform_ptr_map[stage]) : *gt_ptr;
 
+      const Geodetic_Mesh& mesh = transform.get_mesh (size_2d);
+
       for (Tokens::const_iterator j = product_tokens.begin ();
            j != product_tokens.end (); j++)
       {
 
          const Product product (*j);
+         const bool is_speed = (product == "SPEED");
 
          for (auto k = level_tokens.begin ();
               k != level_tokens.end (); k++)
          {
 
-
             const Level level (*k);
+            const bool is_higher = (level.type == HEIGHT_LEVEL) &&
+               (level.value > 1500);
+            const Product& p = ((is_speed && is_higher) ?
+               Product ("SPEED_HIGHER") : product);
            
             const auto& valid_time_set = model.get_valid_time_set (
                product, stage, level);
@@ -232,8 +254,9 @@ Twiin::command_line (const string& stage_str,
                const Dtime& dtime = *(l);
                if (!time_set.match (dtime)) { continue; }
 
-               const string& file_path =
-                  get_file_path (format, stage, product, level, dtime);
+               const string& file_path = (filename == "") ?
+                  get_file_path (format, stage, product, level, dtime) :
+                  output_dir + "/" + filename;
                cout << "Rendering " << file_path << endl;
                if (is_bludge) { continue; }
 
@@ -242,7 +265,8 @@ Twiin::command_line (const string& stage_str,
                RefPtr<Context> cr = denise::get_cr (surface);
 
                Display::render (cr, transform, size_2d, model, hrit,
-                  station_map, dtime, level, stage, product);
+                  station_map, dtime, level, stage, p, no_stage,
+                  no_wind_barb);
 
                if (gshhs_ptr != NULL)
                {
@@ -253,41 +277,27 @@ Twiin::command_line (const string& stage_str,
                   gshhs_ptr->cairo (cr, transform);
                   cr->stroke ();
 
-                  const Domain_1D domain_latitude (-50, -15);
-                  const Domain_1D domain_longitude (130, 170);
-                  const Domain_2D domain_2d (domain_latitude, domain_longitude);
-
-                  const Geodetic_Mesh mesh_tiny (Color::black (0.10), 0.2, 0.2,
-                     Color::black (0.40), 1.0, 1.0, size_2d, domain_2d);
-                  const Geodetic_Mesh mesh_small (Color::black (0.10), 1.0, 1.0,
-                     Color::black (0.40), 10., 10., size_2d, domain_2d);
-                  const Geodetic_Mesh mesh_large (Color::black (0.10), 5.0, 5.0,
-                     Color::black (0.40), 30., 30., size_2d, domain_2d);
-
-                  const Real latitude_span = domain_2d.domain_x.get_span ();
-                  const Real longitude_span = domain_2d.domain_y.get_span ();
-                  const Real span = std::min (latitude_span, longitude_span);
-                  //const Geodetic_Mesh& mesh = (span > 90 ? mesh_large :
-                  //   span > 30 ? mesh_small : mesh_tiny);
-                  //const Geodetic_Mesh& mesh = mesh_tiny;
-                  const Geodetic_Mesh& mesh = mesh_small;
-
                   cr->save ();
                   mesh.cairo (cr, transform);
-                  mesh.render_label_lat_long (cr, transform, 1,
-                    Lat_Long (-34.5, 149.5), "%.0f");
 
                   cr->restore ();
 
                }
 
-               Display::set_title (title, basetime, stage, product, dtime, level);
+               if (title_tokens.size () == 0)
+               {
+                  Display::set_title (title, basetime,
+                     stage, product, dtime, level);
+               }
+               else
+               {
+                  title.set (title_tokens);
+               }
                title.cairo (cr);
 
-               Display::render_annotation (cr, transform, annotation_tokens);
-
+               Display::render_annotations (cr, transform, annotation_tokens);
                Display::render_scale_bar (cr, transform, size_2d);
-               Display::render_color_bar (cr, size_2d, product);
+               Display::render_color_bar (cr, size_2d, p);
 
                if (format == "png") { surface->write_to_png (file_path); }
 
@@ -309,6 +319,8 @@ Twiin::cross_section (const string& stage_str,
                       const Multi_Journey& multi_journey,
                       const string& time_str,
                       const string& format,
+                      const Tokens& title_tokens,
+                      const string& filename,
                       const bool is_bludge) const
 {
 
@@ -329,10 +341,10 @@ Twiin::cross_section (const string& stage_str,
    const Model& model = data.get_model ();
    const Dtime& basetime = model.get_basetime ();
 
-   const Real margin_l = 60;
-   const Real margin_r = 40 + 80;
-   const Real margin_t = title.get_height () + 40;
-   const Real margin_b = 40;
+   const Real margin_l = 50;
+   const Real margin_r = 20 + 80;
+   const Real margin_t = title.get_height () + 10;
+   const Real margin_b = 20;
    const Real w = size_2d.i - margin_l - margin_r;
    const Real h = size_2d.j - margin_t - margin_b;
 
@@ -357,6 +369,9 @@ Twiin::cross_section (const string& stage_str,
          const auto& valid_time_set = model.get_valid_time_set (
             product, stage, Level ("100m"));
 
+         const bool is_speed = (product == "SPEED");
+         const Product& p = (is_speed ? Product ("SPEED_HIGHER") : product);
+
          for (auto iterator = valid_time_set.begin ();
               iterator != valid_time_set.end (); iterator++)
          {
@@ -364,8 +379,9 @@ Twiin::cross_section (const string& stage_str,
             const Dtime& dtime = *(iterator);
             if (!time_set.match (dtime)) { continue; }
 
-            const string& file_path = get_file_path (format,
-               stage, product, dtime, multi_journey);
+            const string& file_path = (filename == "") ?
+               get_file_path (format, stage, product, dtime, multi_journey) :
+               output_dir + "/" + filename;
             cout << "Rendering " << file_path << endl;
             if (is_bludge) { continue; }
 
@@ -383,10 +399,17 @@ Twiin::cross_section (const string& stage_str,
             Display::render_cross_section (cr, transform, box_2d,
                domain_z, model, stage, product, dtime, multi_journey);
 
-            Display::render_color_bar (cr, size_2d, product);
+            Display::render_color_bar (cr, size_2d, p);
 
-            Display::set_title (title, basetime, stage,
-               product, dtime, multi_journey);
+            if (title_tokens.size () == 0)
+            {
+               Display::set_title (title, basetime, stage,
+                  product, dtime, multi_journey);
+            }
+            else
+            {
+               title.set (title_tokens);
+            }
             title.cairo (cr);
 
             if (format == "png") { surface->write_to_png (file_path); }
@@ -403,6 +426,9 @@ Twiin::meteogram (const string& stage_str,
                   const string& location_str,
                   const string& time_str,
                   const string& format,
+                  const Tokens& title_tokens,
+                  const string& filename,
+                  const bool ignore_pressure,
                   const bool is_bludge) const
 {
 
@@ -432,8 +458,9 @@ Twiin::meteogram (const string& stage_str,
 
          const Location location (*j, station_map);
 
-         const string& file_path =
-            get_file_path (format, stage, location);
+         const string& file_path = (filename == "") ?
+            get_file_path (format, stage, location) :
+            output_dir + "/" + filename;
          cout << "Rendering " << file_path << endl;
          if (is_bludge) { continue; }
 
@@ -441,10 +468,17 @@ Twiin::meteogram (const string& stage_str,
             size_2d, format, file_path);
          RefPtr<Context> cr = denise::get_cr (surface);
 
-         Display::render_meteogram (cr, size_2d,
-            model, aws_repository, stage, location);
+         Display::render_meteogram (cr, size_2d, model,
+            aws_repository, stage, location, ignore_pressure);
 
-         Display::set_title (title, basetime, stage, location);
+         if (title_tokens.size () == 0)
+         {
+            Display::set_title (title, basetime, stage, location);
+         }
+         else
+         {
+            title.set (title_tokens);
+         }
          title.cairo (cr);
 
          if (format == "png") { surface->write_to_png (file_path); }
@@ -460,6 +494,8 @@ Twiin::vertical_profile (const string& stage_str,
                          const string& location_str,
                          const string& time_str,
                          const string& format,
+                         const Tokens& title_tokens,
+                         const string& filename,
                          const bool is_bludge) const
 {
 
@@ -472,7 +508,6 @@ Twiin::vertical_profile (const string& stage_str,
    const Model& model = data.get_model ();
    const Dtime& basetime = model.get_basetime ();
    const Station::Map& station_map = data.get_station_map ();
-   const Location location (location_str, station_map);
 
    const Tephigram tephigram (size_2d);
 
@@ -485,21 +520,42 @@ Twiin::vertical_profile (const string& stage_str,
       const auto& valid_time_set = model.get_valid_time_set (
          Product ("T"), stage, Level ("100m"));
 
-      for (Tokens::const_iterator j = location_tokens.begin ();
-           j != location_tokens.end (); j++)
+      for (auto iterator = valid_time_set.begin ();
+           iterator != valid_time_set.end (); iterator++)
       {
 
-         const Location location (*j, station_map);
+         const Dtime& dtime = *(iterator);
+         if (!time_set.match (dtime)) { continue; }
 
-         for (auto iterator = valid_time_set.begin ();
-              iterator != valid_time_set.end (); iterator++)
+         for (Tokens::const_iterator j = location_tokens.begin ();
+              j != location_tokens.end (); j++)
          {
 
-            const Dtime& dtime = *(iterator);
-            if (!time_set.match (dtime)) { continue; }
+            string location_name ("");
+            Lat_Long::List lat_long_list;
+
+            const string& location_token = *j;
+            const Location sole_location (location_token, station_map);
+            const bool is_mj = Reg_Exp::match (location_token, "=");
+
+            if (is_mj)
+            {
+               const Geodesy geodesy;
+               const Tokens tokens (location_token, "/");
+               lat_long_list.add (Multi_Journey (tokens[0]), geodesy);
+               location_name = tokens.size () > 1 ? tokens[1] : "mean";
+            }
+            else
+            {
+               lat_long_list.push_back (Location (location_token, station_map));
+            }
 
             const string& file_path =
-               get_file_path (format, stage, dtime, location);
+               (filename == "") ?
+                  ((location_name == "") ?
+                     get_file_path (format, stage, dtime, sole_location) :
+                     get_file_path (format, stage, dtime, location_name)) :
+                  output_dir + "/" + filename;
             cout << "Rendering " << file_path << endl;
             if (is_bludge) { continue; }
 
@@ -507,10 +563,34 @@ Twiin::vertical_profile (const string& stage_str,
                size_2d, format, file_path);
             RefPtr<Context> cr = denise::get_cr (surface);
 
-            Display::render_vertical_profile (cr, tephigram,
-               model, stage, dtime, location);
+            if (location_name == "")
+            {
+               Display::render_vertical_profile (cr, tephigram,
+                  model, stage, dtime, sole_location);
+            }
+            else
+            {
+               Display::render_vertical_profile (cr, tephigram,
+                  model, stage, dtime, lat_long_list);
+            }
 
-            Display::set_title (title, basetime, stage, dtime, location);
+            if (title_tokens.size () == 0)
+            {
+               if (location_name == "")
+               {
+                  Display::set_title (title, basetime,
+                     stage, dtime, sole_location);
+               }
+               else
+               {
+                  Display::set_title (title, basetime,
+                     stage, dtime, location_name);
+               }
+            }
+            else
+            {
+               title.set (title_tokens);
+            }
             title.cairo (cr);
 
             if (format == "png") { surface->write_to_png (file_path); }
@@ -530,21 +610,26 @@ main (int argc,
 
    static struct option long_options[] =
    {
-      { "annotation", 0, 0, 'a' },
-      { "bludge", 0, 0, 'b' },
-      { "config", 0, 0, 'c' },
-      { "format", 0, 0, 'g' },
-      { "geometry", 1, 0, 'g' },
-      { "interactive", 0, 0, 'i' },
-      { "level", 1, 0, 'l' },
-      { "meteogram", 1, 0, 'm' },
-      { "output-dir", 1, 0, 'o' },
-      { "product", 1, 0, 'p' },
-      { "stage", 1, 0, 's' },
-      { "time", 1, 0, 't' },
-      { "cross-section", 1, 0, 'x' },
+      { "annotation",       1, 0, 'a' },
+      { "bludge",           0, 0, 'b' },
+      { "config",           1, 0, 'c' },
+      { "filename",         1, 0, 'F' },
+      { "format",           1, 0, 'f' },
+      { "geometry",         1, 0, 'g' },
+      { "interactive",      0, 0, 'i' },
+      { "level",            1, 0, 'l' },
+      { "meteogram",        1, 0, 'm' },
+      { "output-dir",       1, 0, 'o' },
+      { "ignore-pressure",  0, 0, 'P' },
+      { "product",          1, 0, 'p' },
+      { "no-stage",         0, 0, 'S' },
+      { "stage",            1, 0, 's' },
+      { "title",            1, 0, 'T' },
+      { "time",             1, 0, 't' },
+      { "cross-section",    1, 0, 'x' },
       { "vertical-profile", 1, 0, 'v' },
-      { "zoom", 1, 0, 'z' },
+      { "no-wind-barb",     0, 0, 'W' },
+      { "zoom",             1, 0, 'z' },
       { NULL, 0, NULL, 0 }
    };
 
@@ -558,10 +643,15 @@ main (int argc,
    string format ("png");
    Tokens annotation_tokens;
 
+   string filename ("");
+   Tokens title_tokens;
    bool is_bludge = false;
    bool is_cross_section = false;
    bool is_interactive = false;
    bool is_meteogram = false;
+   bool ignore_pressure = false;
+   bool no_stage = false;
+   bool no_wind_barb = false;
    bool is_vertical_profile = false;
    string location_str ("");
    Multi_Journey multi_journey;
@@ -569,7 +659,7 @@ main (int argc,
 
    int c;
    int option_index = 0;
-   while ((c = getopt_long (argc, argv, "a:bc:f:g:il:m:o:p:s:t:x:v:z:",
+   while ((c = getopt_long (argc, argv, "a:bc:F:f:g:il:m:o:Pp:Ss:T:t:x:v:Wz:",
           long_options, &option_index)) != -1)
    {
 
@@ -591,6 +681,12 @@ main (int argc,
          case 'c':
          {
             config_file_path = (string (optarg));
+            break;
+         }
+
+         case 'F':
+         {
+            filename = (string (optarg));
             break;
          }
 
@@ -634,15 +730,33 @@ main (int argc,
             break;
          }
 
+         case 'P':
+         {
+            ignore_pressure = true;
+            break;
+         }
+
          case 'p':
          {
             product_str = (string (optarg));
             break;
          }
 
+         case 'S':
+         {
+            no_stage = true;
+            break;
+         }
+
          case 's':
          {
             stage_str = (string (optarg));
+            break;
+         }
+
+         case 'T':
+         {
+            title_tokens = Tokens (string (optarg), ":");
             break;
          }
 
@@ -660,18 +774,17 @@ main (int argc,
             break;
          }
 
+         case 'W':
+         {
+            no_wind_barb = true;
+            break;
+         }
+
          case 'x':
          {
             is_interactive = false;
             is_cross_section = true;
- 
-            Tokens tokens (string (optarg), ":");
-            while (tokens.size () >= 2)
-            {
-               const Lat_Long lat_long (stof (tokens[0]), stof (tokens[1]));
-               tokens.erase (tokens.begin (), tokens.begin () + 2);
-               multi_journey.push_back (lat_long);
-            }
+            multi_journey = Multi_Journey (string (optarg));
             break;
          }
 
@@ -711,25 +824,26 @@ main (int argc,
 
          if (is_cross_section)
          {
-            twiin.cross_section (stage_str, product_str,
-               multi_journey, time_str, format, is_bludge);
+            twiin.cross_section (stage_str, product_str, multi_journey,
+               time_str, format, title_tokens, filename, is_bludge);
          }
          else
          if (is_meteogram)
          {
             twiin.meteogram (stage_str, location_str, time_str,
-               format, is_bludge);
+               format, title_tokens, filename, ignore_pressure, is_bludge);
          }
          else
          if (is_vertical_profile)
          {
             twiin.vertical_profile (stage_str, location_str,
-               time_str, format, is_bludge);
+               time_str, format, title_tokens, filename, is_bludge);
          }
          else
          {
             twiin.command_line (stage_str, product_str, level_str,
-               time_str, zoom_str, annotation_tokens, format, is_bludge);
+               time_str, zoom_str, annotation_tokens, format,
+               title_tokens, filename, no_stage, no_wind_barb, is_bludge);
          }
       }
 

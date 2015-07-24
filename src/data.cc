@@ -1131,6 +1131,162 @@ Model::Uppers::Stage::Stage (const Model& model,
 {
 }
 
+
+Real
+Model::Uppers::Stage::evaluate_normal_speed (const Real azimuth,
+                                             const Lat_Long& lat_long,
+                                             const Real z,
+                                             const size_t l) const
+{
+
+   size_t i, j;
+   acquire_ij (i, j, lat_long);
+
+   const Real topography = get_topography (i, j);
+   if (z < topography) { return GSL_NAN; }
+
+   const Tuple& A = model.vertical_coefficients.get_A_rho ();
+   const Tuple& B = model.vertical_coefficients.get_B_rho ();
+   const Integer k = model.get_k (z, topography, A, B);
+
+   const Real u = evaluate (U, i, j, k, l);
+   const Real v = evaluate (V, i, j, k, l);
+
+   const Real theta = azimuth * M_PI/180;
+   return v * sin (theta) - u * cos (theta);
+
+}
+
+Real
+Model::Uppers::Stage::evaluate_along_speed (const Real azimuth,
+                                            const Lat_Long& lat_long,
+                                            const Real z,
+                                            const size_t l) const
+{
+
+   size_t i, j;
+   acquire_ij (i, j, lat_long);
+
+   const Real topography = get_topography (i, j);
+   if (z < topography) { return GSL_NAN; }
+
+   const Tuple& A = model.vertical_coefficients.get_A_rho ();
+   const Tuple& B = model.vertical_coefficients.get_B_rho ();
+   const Integer k = model.get_k (z, topography, A, B);
+
+   const Real u = evaluate (U, i, j, k, l);
+   const Real v = evaluate (V, i, j, k, l);
+
+   const Real theta = azimuth * M_PI/180;
+   return u * sin (theta) + v * cos (theta);
+
+}
+
+Real
+Model::Uppers::Stage::evaluate_scorer (const Real azimuth,
+                                       const Lat_Long& lat_long,
+                                       const Real z,
+                                       const size_t l) const
+{
+
+   size_t i, j;
+   acquire_ij (i, j, lat_long);
+
+   const Real topography = get_topography (i, j);
+   if (z < topography) { return GSL_NAN; }
+
+   const Tuple& A_rho = model.vertical_coefficients.get_A_rho ();
+   const Tuple& B_rho = model.vertical_coefficients.get_B_rho ();
+   const Integer k_rho = model.get_k (z, topography, A_rho, B_rho);
+   if (k_rho == 0 && k_rho == 69) { return GSL_NAN; }
+
+   const Tuple& A_theta = model.vertical_coefficients.get_A_theta ();
+   const Tuple& B_theta = model.vertical_coefficients.get_B_theta ();
+   const Integer k_theta = model.get_k (z, topography, A_theta, B_theta);
+   if (k_theta == 0 && k_theta == 69) { return GSL_NAN; }
+
+   const Integer k_rho_0 = k_rho - 1;
+   const Integer k_rho_1 = k_rho;
+   const Integer k_rho_2 = k_rho + 1;
+
+   const Integer k_theta_0 = k_theta - 1;
+   const Integer k_theta_1 = k_theta;
+   const Integer k_theta_2 = k_theta + 1;
+
+   const Real theta_0 = evaluate (THETA, i, j, k_theta_0, l);
+   const Real theta_1 = evaluate (THETA, i, j, k_theta_1, l);
+   const Real theta_2 = evaluate (THETA, i, j, k_theta_2, l);
+
+   const Real u_0 = evaluate (U, i, j, k_rho_0, l);
+   const Real u_1 = evaluate (U, i, j, k_rho_1, l);
+   const Real u_2 = evaluate (U, i, j, k_rho_2, l);
+
+   const Real v_0 = evaluate (V, i, j, k_rho_0, l);
+   const Real v_1 = evaluate (V, i, j, k_rho_1, l);
+   const Real v_2 = evaluate (V, i, j, k_rho_2, l);
+
+   const Real theta = azimuth * M_PI/180;
+   const Real along_0 = u_0 * sin (theta) + v_0 * cos (theta);
+   const Real along_1 = u_1 * sin (theta) + v_1 * cos (theta);
+   const Real along_2 = u_2 * sin (theta) + v_2 * cos (theta);
+
+   const Real z_theta_0 = model.get_z (k_theta_0, topography, A_theta, B_theta);
+   const Real z_theta_1 = model.get_z (k_theta_1, topography, A_theta, B_theta);
+   const Real z_theta_2 = model.get_z (k_theta_2, topography, A_theta, B_theta);
+
+   const Real z_rho_0 = model.get_z (k_rho_0, topography, A_rho, B_rho);
+   const Real z_rho_1 = model.get_z (k_rho_1, topography, A_rho, B_rho);
+   const Real z_rho_2 = model.get_z (k_rho_2, topography, A_rho, B_rho);
+
+   typedef Differentiation D;
+   const Real dtheta_dz = D::d_1 (theta_0, theta_1,
+      theta_2, z_theta_0, z_theta_1, z_theta_2);
+
+   const Real A = (g / theta_1 * dtheta_dz ) / (along_1 * along_1);
+   const Real B = -D::d2 (along_0, along_1, along_2,
+      z_rho_0, z_rho_1, z_rho_2) / along_1;
+
+   return A + B;
+
+}
+
+Real
+Model::Uppers::Stage::evaluate_brunt_vaisala (const Lat_Long& lat_long,
+                                              const Real z,
+                                              const size_t l) const
+{
+
+   size_t i, j;
+   acquire_ij (i, j, lat_long);
+
+   const Real topography = get_topography (i, j);
+   if (z < topography) { return GSL_NAN; }
+
+   const Tuple& A_theta = model.vertical_coefficients.get_A_theta ();
+   const Tuple& B_theta = model.vertical_coefficients.get_B_theta ();
+   const Integer k = model.get_k (z, topography, A_theta, B_theta);
+   if (k == 0 && k == 69) { return GSL_NAN; }
+
+   const Integer k_0 = k - 1;
+   const Integer k_1 = k;
+   const Integer k_2 = k + 1;
+
+   const Real theta_0 = evaluate (THETA, i, j, k_0, l);
+   const Real theta_1 = evaluate (THETA, i, j, k_1, l);
+   const Real theta_2 = evaluate (THETA, i, j, k_2, l);
+
+   const Real z_0 = model.get_z (k_0, topography, A_theta, B_theta);
+   const Real z_1 = model.get_z (k_1, topography, A_theta, B_theta);
+   const Real z_2 = model.get_z (k_2, topography, A_theta, B_theta);
+
+   typedef Differentiation D;
+   const Real dtheta_dz = D::d_1 (theta_0, theta_1, theta_2, z_0, z_1, z_2);
+
+   if (dtheta_dz <= 0) { return GSL_NAN; }
+   else { return sqrt (g / theta_1 * dtheta_dz); }
+
+}
+
 Real
 Model::Uppers::Stage::evaluate (const Nwp_Element& nwp_element,
                                 const Lat_Long& lat_long,
@@ -1858,7 +2014,12 @@ Model::get_valid_time_set (const Product& product,
        product == "RHO" ||
        product == "WIND" ||
        product == "SPEED" ||
+       product == "SPEED_HIGHER" ||
+       product == "ALONG_SPEED" ||
+       product == "NORMAL_SPEED" ||
+       product == "BRUNT_VAISALA" ||
        product == "W" ||
+       product == "W_TRANSLUCENT" ||
        product == "VORTICITY" ||
        product == "THETA" ||
        product == "THETA_E")
