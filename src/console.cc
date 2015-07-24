@@ -396,7 +396,7 @@ Console::render_image_buffer (const RefPtr<Context>& cr)
    const Level& level = get_level_panel ().get_level ();
 
    Display::render (cr, transform, size_2d, model, hrit,
-      station_map, dtime, level, stage, product);
+      station_map, dtime, level, stage, product, false, false);
    render_mesh (cr);
    render_overlays (cr);
 

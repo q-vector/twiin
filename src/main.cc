@@ -536,7 +536,7 @@ Twiin::vertical_profile (const string& stage_str,
 
             const string& location_token = *j;
             const Location sole_location (location_token, station_map);
-            const bool is_mj = Reg_Exp::match (location_token, "=");
+            const bool is_mj = Reg_Exp ("=").match (location_token);
 
             if (is_mj)
             {
