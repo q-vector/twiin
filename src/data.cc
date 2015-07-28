@@ -372,6 +372,160 @@ Aws::Repository::ingest (const string& file_path)
    }
 
    file.close ();
+cout << "after ingest size = " << size () << endl;
+
+}
+
+void
+Aws::Repository::ingest_binary (const string& file_path)
+{
+
+   igzstream file (file_path, ios_base::in | ios_base::binary);
+
+   const Integer buffer_size = 22;
+   char* buffer = new char[buffer_size];
+
+Integer i = 0;
+   for (; file.read ((char*)buffer, buffer_size); )
+   {
+
+      uint32_t station_id = *((uint32_t*)(buffer + 0));
+      int32_t minutes     = *((int32_t*)(buffer + 4));
+      int16_t t_bin          = *((int16_t*)(buffer +  8));
+      int16_t t_d_bin        = *((int16_t*)(buffer + 10));
+      int16_t wind_dir_bin   = *((int16_t*)(buffer + 12));
+      int16_t wind_speed_bin = *((int16_t*)(buffer + 14));
+      int16_t wind_gust_bin  = *((int16_t*)(buffer + 16));
+      int16_t station_p_bin  = *((int16_t*)(buffer + 18));
+      int16_t mslp_bin       = *((int16_t*)(buffer + 20));
+
+#ifndef WORDS_BIGENDIAN
+      swap_endian (&station_id, 4);
+      swap_endian (&minutes, 4);
+      swap_endian (&t_bin, 2);
+      swap_endian (&t_d_bin, 2);
+      swap_endian (&wind_dir_bin, 2);
+      swap_endian (&wind_speed_bin, 2);
+      swap_endian (&wind_gust_bin, 2);
+      swap_endian (&station_p_bin, 2);
+      swap_endian (&mslp_bin, 2);
+#endif
+
+if (i < 20)
+{
+   cout << station_id << " " << minutes << " " << Dtime (minutes / 60.0).get_string ("%Y%m%d%H%M") << " " << t_bin << " " << t_d_bin << " " << wind_dir_bin << " " << wind_speed_bin << " " << wind_gust_bin<< " " << station_p_bin << " " << mslp_bin << endl;
+}
+
+      const Dtime dtime (minutes / 60.0);
+      const Real t          = t_bin * 1e-1 + K;
+      const Real t_d        = t_d_bin* 1e-1 + K;
+      const Real wind_dir   = wind_dir_bin;
+      const Real wind_speed = wind_speed_bin * 1e-1;
+      const Real wind_gust  = wind_gust_bin * 1e-1;
+      const Real station_p  = station_p_bin * 10.0;
+      const Real mslp       = mslp_bin * 10.0;
+
+      Aws::Key key (station_id, dtime);
+      Aws::Obs obs (t, t_d, wind_dir, wind_speed, station_p, mslp, wind_gust);
+      insert (key, obs);
+
+i++;
+   }
+
+   file.close ();
+   delete[] buffer;
+
+}
+
+void
+Aws::Repository::write (const string& file_path) const
+{
+
+   ogzstream file (file_path, ios_base::out);
+
+   for (auto iterator = begin (); iterator != end (); iterator++)
+   {
+
+      const Aws::Key& key = iterator->first;
+      const Aws::Obs& obs = iterator->second;
+
+      const Integer station_id = key.station_id;
+      const Dtime& dtime       = key.dtime;
+      const Real temperature = obs.temperature - K;
+      const Real dew_point   = obs.dew_point - K;
+      const Real wind_dir    = obs.wind_direction;
+      const Real wind_speed  = obs.wind_speed;
+      const Real wind_gust   = obs.wind_gust;
+      const Real station_p   = obs.station_p * 1e-2;
+      const Real mslp        = obs.mslp * 1e-2;
+
+      file << station_id << ":";
+      file << dtime.get_string ("%Y%m%d%H%M") << ":";
+      file << temperature << ":";
+      file << dew_point << ":";
+      file << wind_dir << ":";
+      file << wind_speed << ":";
+      file << station_p << ":";
+      file << mslp << endl;
+
+   }
+
+   file.close ();
+
+}
+
+void
+Aws::Repository::write_binary (const string& file_path) const
+{
+
+   ogzstream file (file_path, ios_base::out | ios::binary);
+
+   const Integer buffer_size = 22;
+   char* buffer = new char[buffer_size];
+
+   for (auto iterator = begin (); iterator != end (); iterator++)
+   {
+
+      const Aws::Key& key = iterator->first;
+      const Aws::Obs& obs = iterator->second;
+
+      uint32_t station_id = key.station_id;
+      int32_t minutes     = int32_t (round (key.dtime.t * 60));
+      int16_t temperature = int16_t (round ((obs.temperature - K) * 10));
+      int16_t dew_point   = int16_t (round ((obs.dew_point - K) * 10));
+      int16_t wind_dir    = int16_t (round (obs.wind_direction));
+      int16_t wind_speed  = int16_t (round (obs.wind_speed * 10));
+      int16_t wind_gust   = int16_t (round (obs.wind_gust * 10));
+      int16_t station_p   = int16_t (round (obs.station_p / 10));
+      int16_t mslp        = int16_t (round (obs.mslp / 10));
+
+#ifndef WORDS_BIGENDIAN
+      swap_endian (&station_id, 4);
+      swap_endian (&minutes, 4);
+      swap_endian (&temperature, 2);
+      swap_endian (&dew_point, 2);
+      swap_endian (&wind_dir, 2);
+      swap_endian (&wind_speed, 2);
+      swap_endian (&wind_gust, 2);
+      swap_endian (&station_p, 2);
+      swap_endian (&mslp, 2);
+#endif
+
+      memcpy (buffer +  0, &station_id,  4);
+      memcpy (buffer +  4, &minutes,     4);
+      memcpy (buffer +  8, &temperature, 2);
+      memcpy (buffer + 10, &dew_point,   2);
+      memcpy (buffer + 12, &wind_dir,    2);
+      memcpy (buffer + 14, &wind_speed,  2);
+      memcpy (buffer + 16, &wind_gust,   2);
+      memcpy (buffer + 18, &station_p,   2);
+      memcpy (buffer + 20, &mslp,        2);
+
+      file.write (buffer, buffer_size);
+
+   }
+
+   file.close ();
 
 }
 
@@ -2253,6 +2407,12 @@ Data::Data (const Config_File& config_file)
       {
          const string& aws_file_path = tokens[1];
          aws_repository.ingest (aws_file_path);
+      }
+
+      if (tokens.size () == 2 && tokens[0] == "aws_bin")
+      {
+         const string& aws_file_path = tokens[1];
+         aws_repository.ingest_binary (aws_file_path);
       }
 
       if (tokens.size () == 2 && tokens[0] == "stations")
