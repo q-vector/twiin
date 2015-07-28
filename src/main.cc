@@ -57,8 +57,8 @@ Twiin::get_file_path (const string& format,
                       const Dtime& dtime) const
 {
    const string& time_str = dtime.get_string ("%Y%m%d%H%M");
-   const string& file_name = stage + "_" + product + "_" +
-      level.get_string () + "_" + time_str + "." + format;
+   const string& file_name = stage + "-" + product + "-" +
+      level.get_string () + "-" + time_str + "." + format;
    return output_dir + "/" + file_name;
 }
 
@@ -78,13 +78,13 @@ Twiin::get_file_path (const string& format,
         iterator != multi_journey.end (); iterator++)
    {
       const Lat_Long lat_long (*(iterator));
-      const string& ll_str = lat_long.get_string (true, string ("%.4f"));
+      const string& ll_str = lat_long.get_string (false, string ("%.4f"));
       mj_str += ll_str;
    }
 
    const string& time_str = dtime.get_string ("%Y%m%d%H%M");
-   const string& file_name = stage + "_" + product + "_" +
-      time_str + "_" + mj_str + "." + format;
+   const string& file_name = stage + "-" + product + "-" +
+      time_str + "-" + mj_str + "." + format;
    return output_dir + "/" + file_name;
 
 }
@@ -97,7 +97,7 @@ Twiin::get_file_path (const string& format,
 {
    const string& location_str = location.get_str ();
    const string& time_str = dtime.get_string ("%Y%m%d%H%M");
-   const string& file_name = stage + "_" + time_str + "_"
+   const string& file_name = stage + "-" + time_str + "-"
       + location_str + "." + format;
    return output_dir + "/" + file_name;
 }
@@ -109,7 +109,7 @@ Twiin::get_file_path (const string& format,
                       const string& location_name) const
 {
    const string& time_str = dtime.get_string ("%Y%m%d%H%M");
-   const string& file_name = stage + "_" + time_str + "_"
+   const string& file_name = stage + "-" + time_str + "-"
       + location_name + "." + format;
    return output_dir + "/" + file_name;
 }
@@ -536,7 +536,7 @@ Twiin::vertical_profile (const string& stage_str,
 
             const string& location_token = *j;
             const Location sole_location (location_token, station_map);
-            const bool is_mj = Reg_Exp ("=").match (location_token);
+            const bool is_mj = Reg_Exp ("@").match (location_token);
 
             if (is_mj)
             {
@@ -559,41 +559,54 @@ Twiin::vertical_profile (const string& stage_str,
             cout << "Rendering " << file_path << endl;
             if (is_bludge) { continue; }
 
-            RefPtr<Surface> surface = denise::get_surface (
-               size_2d, format, file_path);
-            RefPtr<Context> cr = denise::get_cr (surface);
-
-            if (location_name == "")
+            if (format == "snd")
             {
-               Display::render_vertical_profile (cr, tephigram,
-                  model, stage, dtime, sole_location);
+
+               Sounding* sounding_ptr = model.get_sounding_ptr (
+                  lat_long_list, dtime, stage, tephigram);
+               sounding_ptr->save (file_path);
+               delete sounding_ptr;
             }
             else
             {
-               Display::render_vertical_profile (cr, tephigram,
-                  model, stage, dtime, lat_long_list);
-            }
 
-            if (title_tokens.size () == 0)
-            {
+               RefPtr<Surface> surface = denise::get_surface (
+                  size_2d, format, file_path);
+               RefPtr<Context> cr = denise::get_cr (surface);
+
                if (location_name == "")
                {
-                  Display::set_title (title, basetime,
-                     stage, dtime, sole_location);
+                  Display::render_vertical_profile (cr, tephigram,
+                     model, stage, dtime, sole_location);
                }
                else
                {
-                  Display::set_title (title, basetime,
-                     stage, dtime, location_name);
+                  Display::render_vertical_profile (cr, tephigram,
+                     model, stage, dtime, lat_long_list);
                }
-            }
-            else
-            {
-               title.set (title_tokens);
-            }
-            title.cairo (cr);
 
-            if (format == "png") { surface->write_to_png (file_path); }
+               if (title_tokens.size () == 0)
+               {
+                  if (location_name == "")
+                  {
+                     Display::set_title (title, basetime,
+                        stage, dtime, sole_location);
+                  }
+                  else
+                  {
+                     Display::set_title (title, basetime,
+                        stage, dtime, location_name);
+                  }
+               }
+               else
+               {
+                  title.set (title_tokens);
+               }
+               title.cairo (cr);
+
+               if (format == "png") { surface->write_to_png (file_path); }
+
+            }
 
          }
 

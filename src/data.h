@@ -698,6 +698,12 @@ namespace twiin
                            const Dtime& dtime,
                            const twiin::Stage& stage) const;
 
+         Sounding*
+         get_sounding_ptr (const Lat_Long::List& lat_long_list,
+                           const Dtime& dtime,
+                           const twiin::Stage& stage,
+                           const Thermo_Diagram& thermo_diagram = Tephigram (Size_2D (1000, 1000))) const;
+
          const set<Dtime>&
          get_valid_time_set (const Product& product,
                              const twiin::Stage& stage,

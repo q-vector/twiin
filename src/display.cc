@@ -394,7 +394,7 @@ Display::set_title (Title& title,
 {
 
    const Real forecast_hour = dtime.t - basetime.t;
-   const Integer forecast_minutes = Integer (round (forecast_hour) * 60);
+   const Integer forecast_minutes = Integer (round (forecast_hour * 60));
    const Integer fh = forecast_minutes / 60;
    const Integer fm = forecast_minutes % 60;
 
@@ -418,18 +418,18 @@ Display::set_title (Title& title,
 {
 
    const Real forecast_hour = dtime.t - basetime.t;
-   const Integer forecast_minutes = Integer (round (forecast_hour) * 60);
-   const Integer fh = forecast_minutes / 60;
-   const Integer fm = forecast_minutes % 60;
+   const Integer forecast_minutes = Integer (round (forecast_hour * 60));
+   const Integer fh = Integer (round (forecast_hour * 60)) / 60;
+   const Integer fm = Integer (round (forecast_hour * 60)) % 60;
 
-   const Lat_Long origin (multi_journey.front ());
-   const Lat_Long destination (multi_journey.back ());
+   const Lat_Long orig (multi_journey.front ());
+   const Lat_Long dest (multi_journey.back ());
    const bool complex_mj = (multi_journey.size () > 2);
 
    const string o_suffix (complex_mj ? " ..." : "");
    const string d_preffix (complex_mj ? "... " : "");
-   const string& o_str = origin.get_string (4) + o_suffix;
-   const string& d_str = d_preffix + destination.get_string (4);
+   const string& o_str = orig.get_string (4, true, true, true) + o_suffix;
+   const string& d_str = d_preffix + dest.get_string (4, true, true, true);
 
    const string fmt ("%Y.%m.%d %H:%M UTC");
    const string& time_str = dtime.get_string (fmt);
@@ -450,12 +450,12 @@ Display::set_title (Title& title,
 {
 
    const Real forecast_hour = dtime.t - basetime.t;
-   const Integer forecast_minutes = Integer (round (forecast_hour) * 60);
+   const Integer forecast_minutes = Integer (round (forecast_hour * 60));
    const Integer fh = forecast_minutes / 60;
    const Integer fm = forecast_minutes % 60;
 
    const Lat_Long& lat_long (location);
-   const string& ll_str = lat_long.get_string (4);
+   const string& ll_str = lat_long.get_string (4, true, true, true);
 
    const string fmt ("%Y.%m.%d %H:%M UTC");
    const string& time_str = dtime.get_string (fmt);
@@ -475,7 +475,7 @@ Display::set_title (Title& title,
 {
 
    const Real forecast_hour = dtime.t - basetime.t;
-   const Integer forecast_minutes = Integer (round (forecast_hour) * 60);
+   const Integer forecast_minutes = Integer (round (forecast_hour * 60));
    const Integer fh = forecast_minutes / 60;
    const Integer fm = forecast_minutes % 60;
 
@@ -496,7 +496,7 @@ Display::set_title (Title& title,
 {
    const string& basetime_str = basetime.get_string ();
    const Lat_Long& lat_long (location);
-   const string& ll_str = lat_long.get_string (4);
+   const string& ll_str = lat_long.get_string (4, true, true, true);
    title.set ("", stage, location.get_long_str (), basetime_str, ll_str);
 }
 
@@ -938,9 +938,9 @@ Display::get_color (const Product& product,
    if (product == "BRUNT_VAISALA")
    {
       if (!gsl_finite (datum)) { return Color::white (); }
-      const Real e = log10 (datum) - (-2.0);
-      const Real x = std::max (e / 3.0, 0.0);
-      const Real hue = 0.15 + (floor (e / 0.5)) * 0.09;
+      const Real e = log10 (datum) - (-3.0);
+      const Real x = std::max (std::min (e / 2.0, 1.0), 0.0);
+      const Real hue = 0.2 + (floor (e / 0.5)) * 0.10;
       return Color::hsb (hue, x, 1.0 - x * 0.5);
    }
    else
@@ -1969,21 +1969,8 @@ Display::render_vertical_profile (const RefPtr<Context>& cr,
    Color::white ().cairo (cr);
    cr->paint ();
 
-   const bool singular = (lat_long_list.size () == 1);
-
-   list<const Sounding*> sounding_ptr_list;
-
-   for (auto iterator = lat_long_list.begin ();
-        iterator != lat_long_list.end (); iterator++)
-   {
-      const Lat_Long& lat_long = *(iterator);
-      const Sounding* sounding_ptr =
-         model.get_sounding_ptr (lat_long, dtime, stage);
-      sounding_ptr_list.push_back (sounding_ptr);
-   }
-
-   const Sounding* sounding_ptr =
-      Sounding::get_mean_sounding_ptr (sounding_ptr_list, thermo_diagram);
+   const Sounding* sounding_ptr = model.get_sounding_ptr (
+      lat_long_list, dtime, stage, thermo_diagram);
    const Sounding& sounding = *sounding_ptr;
 
    cr->set_line_width (1);
@@ -1992,13 +1979,6 @@ Display::render_vertical_profile (const RefPtr<Context>& cr,
    sounding.render (cr, thermo_diagram);
 
    delete sounding_ptr;
-
-   for (auto iterator = sounding_ptr_list.begin ();
-        iterator != sounding_ptr_list.end (); iterator++)
-   {
-      const Sounding* sounding_ptr = *(iterator);
-      delete sounding_ptr;
-   }
 
    cr->restore ();
 

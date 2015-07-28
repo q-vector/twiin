@@ -205,33 +205,25 @@ Location::Location (const string& str,
      long_str ("")
 {
 
-   const char c = str[0];
+   const bool is_ll = Reg_Exp (",").match (str);
 
-   switch (c)
+   if (is_ll)
    {
-
-      case 'a':
-      {
-         const string& station_id_str = str.substr (1);
-         const Integer station_id = stof (station_id_str);
-         const Station& station = station_map.at (station_id);
-         this->latitude = station.latitude;
-         this->longitude = station.longitude;
-         this->station_id = station_id;
-         this->str = station_id_str;
-         this->long_str = station.name + " (" + station_id_str + ")";
-         break;
-      }
-
-      case 'l':
-      {
-         const Tokens tokens (str.substr (1), ",");
-         this->latitude = stof (tokens[0]);
-         this->longitude = stof (tokens[1]);
-         this->str = Lat_Long::get_string (true, string ("%.4f"));
-         break;
-      }
-
+      const Tokens tokens (str, ",");
+      this->latitude = stof (tokens[0]);
+      this->longitude = stof (tokens[1]);
+      this->str = Lat_Long::get_string (false, string ("%.4f"));
+   }
+   else
+   {
+      const string& station_id_str = str;
+      const Integer station_id = stof (station_id_str);
+      const Station& station = station_map.at (station_id);
+      this->latitude = station.latitude;
+      this->longitude = station.longitude;
+      this->station_id = station_id;
+      this->str = station_id_str;
+      this->long_str = station.name + " (" + station_id_str + ")";
    }
 
 }
@@ -1986,10 +1978,62 @@ Model::get_sounding_ptr (const Lat_Long& lat_long,
    const Model::Surface::Stage& surface_stage = surface.get_stage (stage);
    const Model::Uppers::Stage& uppers_stage = uppers.get_stage (stage);
 
+   sounding_ptr->set_time (dtime);
+   sounding_ptr->set_basetime (basetime);
+   sounding_ptr->set_location_str (lat_long.get_string (4));
    surface_stage.fill_sounding (*sounding_ptr, lat_long, dtime);
    uppers_stage.fill_sounding (*sounding_ptr, lat_long, dtime);
 
    return sounding_ptr;
+
+}
+
+Sounding*
+Model::get_sounding_ptr (const Lat_Long::List& lat_long_list,
+                         const Dtime& dtime,
+                         const twiin::Stage& stage,
+                         const Thermo_Diagram& thermo_diagram) const
+{
+
+   const bool is_singular = (lat_long_list.size () == 1);
+   if (is_singular)
+   {
+      const Lat_Long& lat_long = lat_long_list.front ();
+      return get_sounding_ptr (lat_long, dtime, stage);
+   }
+   else
+   {
+
+      string location_str ("");
+      list<const Sounding*> sounding_ptr_list;
+
+      for (auto iterator = lat_long_list.begin ();
+           iterator != lat_long_list.end (); iterator++)
+      {
+         const Lat_Long& ll = *(iterator);
+         const string prefix (iterator == lat_long_list.begin () ? "" : ":");
+         location_str += prefix + ll.get_string (4);
+         const Sounding* sounding_ptr = get_sounding_ptr (ll, dtime, stage);
+         sounding_ptr_list.push_back (sounding_ptr);
+      }
+
+      Sounding* mean_sounding_ptr =
+         Sounding::get_mean_sounding_ptr (sounding_ptr_list, thermo_diagram);
+
+      for (auto iterator = sounding_ptr_list.begin ();
+           iterator != sounding_ptr_list.end (); iterator++)
+      {
+         const Sounding* sounding_ptr = *(iterator);
+         delete sounding_ptr;
+      }
+
+      mean_sounding_ptr->set_time (dtime);
+      mean_sounding_ptr->set_basetime (basetime);
+      mean_sounding_ptr->set_location_str (location_str);
+
+      return mean_sounding_ptr;
+
+   }
 
 }
 
