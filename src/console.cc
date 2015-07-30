@@ -291,12 +291,15 @@ Console::Console (Gtk::Window& gtk_window,
    const Station::Map& station_map = data.get_station_map ();
    get_marker_store ().set_attractor (station_map);
 
-   const Lat_Long lat_long_a (-32.4774, 147.1520);
-   const Lat_Long lat_long_b (-34.3215, 153.2280);
-   const Lat_Long lat_long_c (-31.7849, 147.9219);
-   const Lat_Long lat_long_d (-35.4056, 152.7273);
-   get_route_store ().insert (lat_long_a, lat_long_b);
-   get_route_store ().insert (lat_long_c, lat_long_d);
+   const Lat_Long mountain_wave_rjf_a (-32.4774, 147.1520);
+   const Lat_Long mountain_wave_rjf_b (-34.3215, 153.2280);
+   const Lat_Long mountain_wave_a (-31.7849, 147.9219);
+   const Lat_Long mountain_wave_b (-35.4056, 152.7273);
+   const Lat_Long dry_slow_nw_a (-32.8879, 144.7283);
+   const Lat_Long dry_slow_nw_b (-29.0739, 149.1825);
+   get_route_store ().insert (mountain_wave_a, mountain_wave_b);
+   get_route_store ().insert (mountain_wave_rjf_a, mountain_wave_rjf_b);
+   get_route_store ().insert (dry_slow_nw_a, dry_slow_nw_b);
 
 }
 
