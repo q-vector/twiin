@@ -25,41 +25,117 @@ Stage::get_string () const
    return *this;
 }
 
-Product::Product (const string& str)
-   : string (str)
+Product::Product (const Product::Enumeration& enumeration)
+   : enumeration (enumeration)
 {
 }
 
 Product::Product (const Product& product)
-   : string (product)
+   : enumeration (product.enumeration)
 {
+}
+
+Product::Product (const string& str)
+{
+        if (str == "TERRAIN")       { enumeration = Product::TERRAIN; }
+   else if (str == "TERRAIN_WATER") { enumeration = Product::TERRAIN_WATER; }
+   else if (str == "P_THETA")       { enumeration = Product::P_THETA; }
+   else if (str == "P_RHO")         { enumeration = Product::P_RHO; }
+   else if (str == "ALONG_SPEED")   { enumeration = Product::ALONG_SPEED; }
+   else if (str == "NORMAL_SPEED")  { enumeration = Product::NORMAL_SPEED; }
+   else if (str == "BRUNT_VAISALA") { enumeration = Product::BRUNT_VAISALA; }
+   else if (str == "SCORER")        { enumeration = Product::SCORER; }
+   else if (str == "T")             { enumeration = Product::T; }
+   else if (str == "TD")            { enumeration = Product::TD; }
+   else if (str == "RH")            { enumeration = Product::RH; }
+   else if (str == "THETA")         { enumeration = Product::THETA; }
+   else if (str == "Q")             { enumeration = Product::Q; }
+   else if (str == "THETA_E")       { enumeration = Product::THETA_E; }
+   else if (str == "RHO")           { enumeration = Product::RHO; }
+   else if (str == "WIND")          { enumeration = Product::WIND; }
+   else if (str == "SPEED")         { enumeration = Product::SPEED; }
+   else if (str == "SPEED_HIGHER")  { enumeration = Product::SPEED_HIGHER; }
+   else if (str == "VORTICITY")     { enumeration = Product::VORTICITY; }
+   else if (str == "W")             { enumeration = Product::W; }
+   else if (str == "W_TRANSLUCENT") { enumeration = Product::W_TRANSLUCENT; }
+   else if (str == "FFDI")          { enumeration = Product::FFDI; }
+   else if (str == "MSLP")          { enumeration = Product::MSLP; }
+   else if (str == "PRECIP_RATE")   { enumeration = Product::PRECIP_RATE; }
+   else if (str == "IR1")           { enumeration = Product::IR1; }
+   else if (str == "IR2")           { enumeration = Product::IR2; }
+   else if (str == "IR3")           { enumeration = Product::IR3; }
+   else if (str == "IR4")           { enumeration = Product::IR4; }
+   else if (str == "VIS")           { enumeration = Product::VIS; }
+   else if (str == "Pseudo")        { enumeration = Product::Pseudo; }
 }
 
 string
 Product::get_string () const
 {
-   return *this;
+   switch (enumeration)
+   {
+      case Product::TERRAIN:       return "TERRAIN";
+      case Product::TERRAIN_WATER: return "TERRAIN_WATER";
+      case Product::P_THETA:       return "P_THETA";
+      case Product::P_RHO:         return "P_RHO";
+      case Product::ALONG_SPEED:   return "ALONG_SPEED";
+      case Product::NORMAL_SPEED:  return "NORMAL_SPEED";
+      case Product::BRUNT_VAISALA: return "BRUNT_VAISALA";
+      case Product::SCORER:        return "SCORER";
+      case Product::T:             return "T";
+      case Product::TD:            return "TD";
+      case Product::RH:            return "RH";
+      case Product::THETA:         return "THETA";
+      case Product::Q:             return "Q";
+      case Product::THETA_E:       return "THETA_E";
+      case Product::RHO:           return "RHO";
+      case Product::WIND:          return "WIND";
+      case Product::SPEED:         return "SPEED";
+      case Product::SPEED_HIGHER:  return "SPEED_HIGHER";
+      case Product::VORTICITY:     return "VORTICITY";
+      case Product::W:             return "W";
+      case Product::W_TRANSLUCENT: return "W_TRANSLUCENT";
+      case Product::FFDI:          return "FFDI";
+      case Product::MSLP:          return "MSLP";
+      case Product::PRECIP_RATE:   return "PRECIP_RATE";
+      case Product::IR1:           return "IR1";
+      case Product::IR2:           return "IR2";
+      case Product::IR3:           return "IR3";
+      case Product::IR4:           return "IR4";
+      case Product::VIS:           return "VIS";
+      case Product::Pseudo:        return "Pseudo";
+   }
 }
 
 Nwp_Element
 Product::get_nwp_element () const
 {
-   if (*this == "T") { return T; }
-   if (*this == "TD") { return TD; }
-   if (*this == "RH") { return RH; }
-   if (*this == "THETA") { return THETA; }
-   if (*this == "Q") { return Q; }
-   if (*this == "THETA_E") { return THETA_E; }
-   if (*this == "RHO") { return RHO; }
-   if (*this == "WIND") { return WIND_DIRECTION; }
-   if (*this == "SPEED") { return WIND_SPEED; }
-   if (*this == "SPEED_HIGHER") { return WIND_SPEED; }
-   if (*this == "VORTICITY") { return RELATIVE_VORTICITY; }
-   if (*this == "W") { return W; }
-   if (*this == "W_TRANSLUCENT") { return W; }
-   if (*this == "FFDI") { return FFDI; }
-   if (*this == "MSLP") { return MSLP; }
-   if (*this == "PRECIP_RATE") { return PRECIP_RATE; }
+   switch (enumeration)
+   {
+      case Product::T:             return denise::T;
+      case Product::TD:            return denise::TD;
+      case Product::RH:            return denise::RH;
+      case Product::THETA:         return denise::THETA;
+      case Product::Q:             return denise::Q;
+      case Product::THETA_E:       return denise::THETA_E;
+      case Product::RHO:           return denise::RHO;
+      case Product::WIND:          return denise::WIND_DIRECTION;
+      case Product::SPEED:         return denise::WIND_SPEED;
+      case Product::SPEED_HIGHER:  return denise::WIND_SPEED;
+      case Product::VORTICITY:     return denise::RELATIVE_VORTICITY;
+      case Product::W:             return denise::W;
+      case Product::W_TRANSLUCENT: return denise::W;
+      case Product::FFDI:          return denise::FFDI;
+      case Product::MSLP:          return denise::MSLP;
+      case Product::PRECIP_RATE:   return denise::PRECIP_RATE;
+   }
+}
+
+ostream&
+Product::operator<< (ostream& out_file) const
+{
+   out_file << get_string ();
+   return out_file;
 }
 
 Station::Station (const Integer id,
@@ -1211,7 +1287,7 @@ Model::Surface::Stage::get_color (const Product& product,
                                   const size_t l) const
 {
 
-   if (product == "WIND")
+   if (product.enumeration == Product::WIND)
    {
       const Real u = evaluate (U, lat_long, l);
       const Real v = evaluate (V, lat_long, l);
@@ -1681,7 +1757,7 @@ Model::Uppers::Stage::get_color (const Product& product,
    const Real topography = get_topography (lat_long);
    if (z < topography) { return transparent; }
 
-   if (product == "WIND")
+   if (product.enumeration == Product::WIND)
    {
       const Real u = evaluate (U, lat_long, z, l);
       const Real v = evaluate (V, lat_long, z, l);
@@ -2197,57 +2273,57 @@ Model::get_valid_time_set (const Product& product,
                            const Level& level) const
 {
 
-   if (product == "TERRAIN")
+   switch (product.enumeration)
    {
-      const Model::Surface::Stage& surface_stage = surface.get_stage (stage);
-      return surface_stage.get_valid_time_set ();
-   }
-   else
-   if (product == "T" ||
-       product == "P_THETA" ||
-       product == "P_RHO" ||
-       product == "Q" ||
-       product == "TD" ||
-       product == "RH" ||
-       product == "RHO" ||
-       product == "WIND" ||
-       product == "SPEED" ||
-       product == "SPEED_HIGHER" ||
-       product == "ALONG_SPEED" ||
-       product == "NORMAL_SPEED" ||
-       product == "BRUNT_VAISALA" ||
-       product == "W" ||
-       product == "W_TRANSLUCENT" ||
-       product == "VORTICITY" ||
-       product == "THETA" ||
-       product == "THETA_E")
-   {
-      if (level.type == SURFACE_LEVEL)
+
+      case Product::TERRAIN:
+      case Product::TERRAIN_WATER:
       {
          const Model::Surface::Stage& surface_stage = surface.get_stage (stage);
          return surface_stage.get_valid_time_set ();
       }
-      else
-      if (level.type == HEIGHT_LEVEL)
+
+      case Product::T:
+      case Product::P_THETA:
+      case Product::P_RHO:
+      case Product::Q:
+      case Product::TD:
+      case Product::RH:
+      case Product::RHO:
+      case Product::WIND:
+      case Product::SPEED:
+      case Product::SPEED_HIGHER:
+      case Product::ALONG_SPEED:
+      case Product::NORMAL_SPEED:
+      case Product::BRUNT_VAISALA:
+      case Product::W:
+      case Product::W_TRANSLUCENT:
+      case Product::VORTICITY:
+      case Product::THETA:
+      case Product::THETA_E:
       {
-         const Model::Uppers::Stage& uppers_stage = uppers.get_stage (stage);
-         return uppers_stage.get_valid_time_set ();
+         if (level.type == SURFACE_LEVEL)
+         {
+            auto& surface_stage = surface.get_stage (stage);
+            return surface_stage.get_valid_time_set ();
+         }
+         else
+         if (level.type == HEIGHT_LEVEL)
+         {
+            auto& uppers_stage = uppers.get_stage (stage);
+            return uppers_stage.get_valid_time_set ();
+         }
       }
-   }
-   else
-   if (product == "FFDI" ||
-       product == "MSLP" ||
-       product == "PRECIP_RATE")
-   {
-      const Model::Surface::Stage& surface_stage = surface.get_stage (stage);
-      surface_stage.get_valid_time_set ();
-      return surface_stage.get_valid_time_set ();
-   }
-   else
-   if (product == "W")
-   {
-      const Model::Uppers::Stage& uppers_stage = uppers.get_stage (stage);
-      return uppers_stage.get_valid_time_set ();
+
+      case Product::FFDI:
+      case Product::MSLP:
+      case Product::PRECIP_RATE:
+      {
+         auto& surface_stage = surface.get_stage (stage);
+         surface_stage.get_valid_time_set ();
+         return surface_stage.get_valid_time_set ();
+      }
+
    }
 
 }
@@ -2262,130 +2338,152 @@ Model::get_marker_tokens (const Lat_Long& lat_long,
 
    Tokens tokens;
 
-   if (product == "P_THETA")
+   switch (product.enumeration)
    {
-      const Real datum = evaluate (P_THETA, lat_long, level, dtime, stage);
-      if (gsl_isnan (datum)) { return tokens; }
-      tokens.push_back (string_render ("%.0fhPa", datum * 1e-2));
-   }
-   else
-   if (product == "P_RHO")
-   {
-      const Real datum = evaluate (P_RHO, lat_long, level, dtime, stage);
-      if (gsl_isnan (datum)) { return tokens; }
-      tokens.push_back (string_render ("%.1fhPa", datum * 1e-2));
-   }
-   else
-   if (product == "THETA")
-   {
-      const Real datum = evaluate (THETA, lat_long, level, dtime, stage);
-      if (gsl_isnan (datum)) { return tokens; }
-      tokens.push_back (string_render ("%.1f\u00b0C", datum - K));
-   }
-   else
-   if (product == "Q")
-   {
-      const Real datum = evaluate (Q, lat_long, level, dtime, stage);
-      if (gsl_isnan (datum)) { return tokens; }
-      tokens.push_back (string_render ("%.3fg/kg", datum * 1e3));
-   }
-   else
-   if (product == "T")
-   {
-      const Real datum = evaluate (T, lat_long, level, dtime, stage);
-      if (gsl_isnan (datum)) { return tokens; }
-      tokens.push_back (string_render ("%.1f\u00b0C", datum - K));
-   }
-   else
-   if (product == "TD")
-   {
-      const Real t_d = evaluate (TD, lat_long, level, dtime, stage);
-      if (gsl_isnan (t_d)) { return tokens; }
-      tokens.push_back (string_render ("%.1f\u00b0C", t_d - K));
-   }
-   else
-   if (product == "RH")
-   {
-      const Real rh = evaluate (RH, lat_long, level, dtime, stage);
-      if (gsl_isnan (rh)) { return tokens; }
-      tokens.push_back (string_render ("%.0f%%", rh * 100));
-   }
-   else
-   if (product == "THETA_E")
-   {
-      const Real theta_e = evaluate (THETA_E, lat_long, level, dtime, stage);
-      if (gsl_isnan (theta_e)) { return tokens; }
-      tokens.push_back (string_render ("%.1f\u00b0C", theta_e - K));
-   }
-   else
-   if (product == "RHO")
-   {
-      const Real rho = evaluate (RHO, lat_long, level, dtime, stage);
-      if (gsl_isnan (rho)) { return tokens; }
-      tokens.push_back (string_render ("%.2fkg/m3", rho));
-   }
-   else
-   if (product == "WIND" ||
-       product == "SPEED")
-   {
-      const Real u = evaluate (U, lat_long, level, dtime, stage);
-      if (gsl_isnan (u)) { return tokens; }
-      const Real v = evaluate (V, lat_long, level, dtime, stage);
-      if (gsl_isnan (v)) { return tokens; }
-      const Wind wind (u, v);
-      const Real msknot = 3.6/1.852;
-      const string fmt ("%03.0f\u00b0 / %02.1fkt");
-      tokens.push_back (wind.get_string (msknot, fmt));
-   }
-   else
-   if (product == "FFDI")
-   {
-      const Real ffdi = evaluate (FFDI, lat_long, level, dtime, stage);
-      if (gsl_isnan (ffdi)) { return tokens; }
-      string ffdr = "Low-Moderate";
-      if (ffdi > 12) { ffdr = "High"; }
-      if (ffdi > 25) { ffdr = "Very High"; }
-      if (ffdi > 50) { ffdr = "Severe"; }
-      if (ffdi > 75) { ffdr = "Extreme"; }
-      if (ffdi > 100) { ffdr = "Catastrophic"; }
-      tokens.push_back (string_render ("%02.2f", ffdi));
-      tokens.push_back (ffdr);
-   }
-   else
-   if (product == "TERRAIN")
-   {
-      const Model::Terrain::Stage& terrain_stage = terrain.get_stage (stage);
-      const Real orog = terrain_stage.evaluate (string ("orog"), lat_long);
-      if (gsl_isnan (orog)) { return tokens; }
-      tokens.push_back (string_render ("%.2fm", orog));
-   }
-   else
-   if (product == "W")
-   {
-      const Real w = evaluate (W, lat_long, level, dtime, stage);
-      if (gsl_isnan (w)) { return tokens; }
-      tokens.push_back (string_render ("%.2fm/s", w));
-   }
-   else
-   if (product == "VORTICITY")
-   {
-      const Real zeta = evaluate (ZETA, lat_long, level, dtime, stage);
-      if (gsl_isnan (zeta)) { return tokens; }
-      tokens.push_back (string_render ("%.4e/s", zeta));
-   }
-   else
-   if (product == "MSLP")
-   {
-      const Real mslp = evaluate (MSLP, lat_long, level, dtime, stage);
-      if (gsl_isnan (mslp)) { return tokens; }
-      tokens.push_back (string_render ("%0.1fhPa", mslp * 1e-2));
-   }
-   else
-   if (product == "PRECIP_RATE")
-   {
-      const Real mmhr = evaluate (PRECIP_RATE, lat_long, level, dtime, stage);
-      if (gsl_isnan (mmhr)) { return tokens; }
-      tokens.push_back (string_render ("%0.1fmm/hr", mmhr * 3600));
+
+      case Product::P_THETA:
+      {
+         const Real datum = evaluate (P_THETA, lat_long, level, dtime, stage);
+         if (gsl_isnan (datum)) { return tokens; }
+         tokens.push_back (string_render ("%.0fhPa", datum * 1e-2));
+         break;
+      }
+
+      case Product::P_RHO:
+      {
+         const Real datum = evaluate (P_RHO, lat_long, level, dtime, stage);
+         if (gsl_isnan (datum)) { return tokens; }
+         tokens.push_back (string_render ("%.1fhPa", datum * 1e-2));
+         break;
+      }
+
+      case Product::THETA:
+      {
+         const Real datum = evaluate (THETA, lat_long, level, dtime, stage);
+         if (gsl_isnan (datum)) { return tokens; }
+         tokens.push_back (string_render ("%.1f\u00b0C", datum - K));
+         break;
+      }
+
+      case Product::Q:
+      {
+         const Real datum = evaluate (Q, lat_long, level, dtime, stage);
+         if (gsl_isnan (datum)) { return tokens; }
+         tokens.push_back (string_render ("%.3fg/kg", datum * 1e3));
+         break;
+      }
+
+      case Product::T:
+      {
+         const Real datum = evaluate (T, lat_long, level, dtime, stage);
+         if (gsl_isnan (datum)) { return tokens; }
+         tokens.push_back (string_render ("%.1f\u00b0C", datum - K));
+         break;
+      }
+
+      case Product::TD:
+      {
+         const Real t_d = evaluate (TD, lat_long, level, dtime, stage);
+         if (gsl_isnan (t_d)) { return tokens; }
+         tokens.push_back (string_render ("%.1f\u00b0C", t_d - K));
+         break;
+      }
+
+      case Product::RH:
+      {
+         const Real rh = evaluate (RH, lat_long, level, dtime, stage);
+         if (gsl_isnan (rh)) { return tokens; }
+         tokens.push_back (string_render ("%.0f%%", rh * 100));
+         break;
+      }
+
+      case Product::THETA_E:
+      {
+         const Real theta_e = evaluate (THETA_E, lat_long, level, dtime, stage);
+         if (gsl_isnan (theta_e)) { return tokens; }
+         tokens.push_back (string_render ("%.1f\u00b0C", theta_e - K));
+         break;
+      }
+
+      case Product::RHO:
+      {
+         const Real rho = evaluate (RHO, lat_long, level, dtime, stage);
+         if (gsl_isnan (rho)) { return tokens; }
+         tokens.push_back (string_render ("%.2fkg/m3", rho));
+         break;
+      }
+
+      case Product::WIND:
+      case Product::SPEED:
+      {
+         const Real u = evaluate (U, lat_long, level, dtime, stage);
+         if (gsl_isnan (u)) { return tokens; }
+         const Real v = evaluate (V, lat_long, level, dtime, stage);
+         if (gsl_isnan (v)) { return tokens; }
+         const Wind wind (u, v);
+         const Real msknot = 3.6/1.852;
+         const string fmt ("%03.0f\u00b0 / %02.1fkt");
+         tokens.push_back (wind.get_string (msknot, fmt));
+         break;
+      }
+
+      case Product::FFDI:
+      {
+         const Real ffdi = evaluate (FFDI, lat_long, level, dtime, stage);
+         if (gsl_isnan (ffdi)) { return tokens; }
+         string ffdr = "Low-Moderate";
+         if (ffdi > 12) { ffdr = "High"; }
+         if (ffdi > 25) { ffdr = "Very High"; }
+         if (ffdi > 50) { ffdr = "Severe"; }
+         if (ffdi > 75) { ffdr = "Extreme"; }
+         if (ffdi > 100) { ffdr = "Catastrophic"; }
+         tokens.push_back (string_render ("%02.2f", ffdi));
+         tokens.push_back (ffdr);
+         break;
+      }
+
+      case Product::TERRAIN:
+      case Product::TERRAIN_WATER:
+      {
+         const Model::Terrain::Stage& terrain_stage = terrain.get_stage (stage);
+         const Real orog = terrain_stage.evaluate (string ("orog"), lat_long);
+         if (gsl_isnan (orog)) { return tokens; }
+         tokens.push_back (string_render ("%.2fm", orog));
+         break;
+      }
+
+      case Product::W:
+      {
+         const Real w = evaluate (W, lat_long, level, dtime, stage);
+         if (gsl_isnan (w)) { return tokens; }
+         tokens.push_back (string_render ("%.2fm/s", w));
+         break;
+      }
+
+      case Product::VORTICITY:
+      {
+         const Real zeta = evaluate (ZETA, lat_long, level, dtime, stage);
+         if (gsl_isnan (zeta)) { return tokens; }
+         tokens.push_back (string_render ("%.4e/s", zeta));
+         break;
+      }
+
+      case Product::MSLP:
+      {
+         const Real mslp = evaluate (MSLP, lat_long, level, dtime, stage);
+         if (gsl_isnan (mslp)) { return tokens; }
+         tokens.push_back (string_render ("%0.1fhPa", mslp * 1e-2));
+         break;
+      }
+
+      case Product::PRECIP_RATE:
+      {
+         const Real mmhr = evaluate (PRECIP_RATE, lat_long, level, dtime, stage);
+         if (gsl_isnan (mmhr)) { return tokens; }
+         tokens.push_back (string_render ("%0.1fmm/hr", mmhr * 3600));
+         break;
+      }
+
    }
 
    return tokens;

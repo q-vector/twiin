@@ -120,7 +120,8 @@ Display::get_terrain_raster_ptr (const Size_2D& size_2d,
 
          const Real orog = terrain_stage.get_topography (lat_long);
          const Real lsm = terrain_stage.evaluate (string ("lsm"), lat_long);
-         const Product product (lsm > 0.5 ? "TERRAIN" : "TERRAIN_WATER");
+         const Product product (lsm > 0.5 ?
+            Product::TERRAIN : Product::TERRAIN_WATER);
          const Color& color = Display::get_color (product, orog);
          raster.set_pixel (i, j, color);
 
@@ -236,7 +237,7 @@ Display::get_hrit_raster_ptr (const Size_2D& size_2d,
                               const Dtime& dtime)
 {
 
-   const string channel (product);
+   const string channel (product.get_string ());
    const Integer max_index = (channel == "VIS" ? 1024 : 1024);
 
    auto* raster_ptr = new Raster (size_2d);
@@ -260,7 +261,7 @@ Display::get_hrit_raster_ptr (const Size_2D& size_2d,
          const Real y = Real (j);
          transform.reverse (latitude, longitude, x, y);
 
-         const Color& color = Hrit::get_color (string (product),
+         const Color& color = Hrit::get_color (channel,
             disk_ptr_map, navigation_map, lat_long);
          //const Color& color = enhancement.get_color (raw_datum);
          raster.set_pixel (i, j, color);
@@ -290,14 +291,14 @@ Display::get_cross_section_raster_ptr (const Box_2D& box_2d,
    const auto& uppers_stage = model.uppers.get_stage (stage);
    const size_t l = uppers_stage.get_l (dtime);
 
-   const bool is_speed = (product == "SPEED");
-   const bool is_along_speed = (product == "ALONG_SPEED");
-   const bool is_normal_speed = (product == "NORMAL_SPEED");
-   const bool is_wind = (product == "WIND");
-   const bool is_brunt_vaisala = (product == "BRUNT_VAISALA");
-   const bool is_scorer = (product == "SCORER");
+   const bool is_speed = (product.enumeration == Product::SPEED);
+   const bool is_along_speed = (product.enumeration == Product::ALONG_SPEED);
+   const bool is_normal_speed = (product.enumeration == Product::NORMAL_SPEED);
+   const bool is_wind = (product.enumeration == Product::WIND);
+   const bool is_scorer = (product.enumeration == Product::SCORER);
+   const bool is_brunt_vaisala = (product.enumeration == Product::BRUNT_VAISALA);
 
-   const Product& p = (is_speed ? Product ("SPEED_HIGHER") : product);
+   const Product& p = (is_speed ? Product (Product::SPEED_HIGHER) : product);
 
    Real x;
    Level level (HEIGHT_LEVEL, GSL_NAN);
@@ -402,7 +403,7 @@ Display::set_title (Title& title,
    const string& time_str = dtime.get_string (fmt);
    const string& basetime_str = basetime.get_string () +
       string_render (" +%d:%02d", fh, fm);
-   const string stage_product = stage + " / " + product;
+   const string stage_product = stage + " / " + product.get_string ();
 
    title.set (time_str, "", stage_product, basetime_str, level.get_string ());
 
@@ -435,7 +436,7 @@ Display::set_title (Title& title,
    const string& time_str = dtime.get_string (fmt);
    const string& basetime_str = basetime.get_string () +
       string_render (" +%d:%02d", fh, fm);
-   const string stage_product = stage + " / " + product;
+   const string stage_product = stage + " / " + product.get_string ();
 
    title.set (time_str, o_str, stage_product, basetime_str, d_str);
 
@@ -504,100 +505,106 @@ string
 Display::get_unit (const Product& product)
 {
 
-   if (product == "T")
+   switch (product.enumeration)
    {
-      return string ("\u00b0C");
-   }
-   else
-   if (product == "TD")
-   {
-      return string ("\u00b0C");
-   }
-   else
-   if (product == "RH")
-   {
-      return string ("%%");
-   }
-   else
-   if (product == "THETA")
-   {
-      return string ("\u00b0C");
-   }
-   else
-   if (product == "THETA_E")
-   {
-      return string ("\u00b0C");
-   }
-   else
-   if (product == "Q")
-   {
-      return string ("g kg\u207b\u00b9");
-   }
-   else
-   if (product == "RHO")
-   {
-      return string ("kg m\u207b\u00b9");
-   }
-   else
-   if (product == "W")
-   {
-      return string ("m s\u207b\u00b9");
-   }
-   else
-   if (product == "W_TRANSLUCENT")
-   {
-      return string ("m s\u207b\u00b9");
-   }
-   else
-   if (product == "SPEED_HIGHER")
-   {
-      return string ("knots");
-   }
-   else
-   if (product == "SPEED" ||
-       product == "ALONG_SPEED" ||
-       product == "NORMAL_SPEED")
-   {
-      return string ("knots");
-   }
-   else
-   if (product == "VORTICITY")
-   {
-      return string ("10\u207b\u00b3 s\u207b\u00b9");
-   }
-   else
-   if (product == "FFDI")
-   {
-      return string ("");
-   }
-   else
-   if (product == "MSLP")
-   {
-      return string ("hPa");
-   }
-   else
-   if (product == "PRECIP_RATE")
-   {
-      return string ("mm hr\u207b\u00b9");
-   }
-   else
-   if (product == "WIND")
-   {
-      return string ("degree");
-   }
-   else
-   if (product == "TERRAIN")
-   {
-      return string ("m");
-   }
-   else
-   if (product == "BRUNT_VAISALA")
-   {
-      return string ("s\u207b\u00b9");
-   }
-   else
-   {
-      return string ("");
+
+      case Product::T:
+      {
+         return string ("\u00b0C");
+      }
+
+      case Product::TD:
+      {
+         return string ("\u00b0C");
+      }
+
+      case Product::RH:
+      {
+         return string ("%%");
+      }
+
+      case Product::THETA:
+      {
+         return string ("\u00b0C");
+      }
+
+      case Product::THETA_E:
+      {
+         return string ("\u00b0C");
+      }
+
+      case Product::Q:
+      {
+         return string ("g kg\u207b\u00b9");
+      }
+
+      case Product::RHO:
+      {
+         return string ("kg m\u207b\u00b9");
+      }
+
+      case Product::W:
+      {
+         return string ("m s\u207b\u00b9");
+      }
+
+      case Product::W_TRANSLUCENT:
+      {
+         return string ("m s\u207b\u00b9");
+      }
+
+      case Product::SPEED_HIGHER:
+      {
+         return string ("knots");
+      }
+
+      case Product::SPEED:
+      case Product::ALONG_SPEED:
+      case Product::NORMAL_SPEED:
+      {
+         return string ("knots");
+      }
+
+      case Product::VORTICITY:
+      {
+         return string ("10\u207b\u00b3 s\u207b\u00b9");
+      }
+
+      case Product::FFDI:
+      {
+         return string ("");
+      }
+
+      case Product::MSLP:
+      {
+         return string ("hPa");
+      }
+
+      case Product::PRECIP_RATE:
+      {
+         return string ("mm hr\u207b\u00b9");
+      }
+
+      case Product::WIND:
+      {
+         return string ("degree");
+      }
+
+      case Product::TERRAIN:
+      {
+         return string ("m");
+      }
+
+      case Product::BRUNT_VAISALA:
+      {
+         return string ("s\u207b\u00b9");
+      }
+
+      default:
+      {
+         return string ("");
+      }
+
    }
 
 }
@@ -606,103 +613,110 @@ Tuple
 Display::get_tick_tuple (const Product& product)
 {
 
-   if (product == "T")
+   switch (product.enumeration)
    {
-      return Tuple ("10:15:20:25:30:35");
-   }
-   else
-   if (product == "TD")
-   {
-      return Tuple ("-10:-5:0:5:10:15:20");
-   }
-   else
-   if (product == "RH")
-   {
-      return Tuple ("0:20:40:60:80:100");
-   }
-   else
-   if (product == "THETA")
-   {
-      return Tuple ("0:10:20:30:40:50:60");
-   }
-   else
-   if (product == "THETA_E")
-   {
-      return Tuple ("5:15:25:35:45:55:65");
-   }
-   else
-   if (product == "Q")
-   {
-      return Tuple ("0:1:2:3:4:5:6:7:8:9:10");
-   }
-   else
-   if (product == "RHO")
-   {
-      return Tuple ("0.0:1.0:2.0;3.0:4.0:5.0:6.0:7.0:8.0:9.0:10.0");
-   }
-   else
-   if (product == "W")
-   {
-      return Tuple ("-4:-3:-2:-1:0:1:2:3:4");
-   }
-   else
-   if (product == "W_TRANSLUCENT")
-   {
-      return Tuple ("-4:-3:-2:-1:0:1:2:3:4");
-   }
-   else
-   if (product == "SPEED_HIGHER")
-   {
-      return Tuple ("0:5:15:25:35:45:55:65:75:85:95:105:115:125");
-   }
-   else
-   if (product == "SPEED")
-   {
-      return Tuple ("0:5:10:15:20:25:30:35:40:45:50:55:60:65");
-   }
-   else
-   if (product == "ALONG_SPEED" ||
-       product == "NORMAL_SPEED")
-   {
-      return Tuple (26, -125.0, 125.0);
-   }
-   else
-   if (product == "VORTICITY")
-   {
-      return Tuple ("-5:-4:-3:-2:-1:0:1:2:3:4:5");
-   }
-   else
-   if (product == "FFDI")
-   {
-      return Tuple ("1:12:25:50:75:100:150");
-   }
-   else
-   if (product == "MSLP")
-   {
-      return Tuple ("980:990:1000:1010:1020:1030");
-   }
-   else
-   if (product == "PRECIP_RATE")
-   {
-      return Tuple ("0.05:0.1:1:2:5:10:20:30:50:75:100:150");
-   }
-   else
-   if (product == "WIND")
-   {
-      return Tuple ("0:30:60:90:120:150:180:210:240:270:300:330:360");
-   }
-   else
-   if (product == "TERRAIN")
-   {
-      return Tuple ("0:200:400:600:800:1000:1200:1400:1600:1800:2000");
-   }
-   else
-   if (product == "BRUNT_VAISALA")
-   {
-      return Tuple ("1e-3:3.2e-3:1e-2:3.2e-2:1e-1");
-   }
-   {
-      return Tuple ();
+
+      case Product::T:
+      {
+         return Tuple ("10:15:20:25:30:35");
+      }
+
+      case Product::TD:
+      {
+         return Tuple ("-10:-5:0:5:10:15:20");
+      }
+
+      case Product::RH:
+      {
+         return Tuple ("0:20:40:60:80:100");
+      }
+
+      case Product::THETA:
+      {
+         return Tuple ("0:10:20:30:40:50:60");
+      }
+
+      case Product::THETA_E:
+      {
+         return Tuple ("5:15:25:35:45:55:65");
+      }
+
+      case Product::Q:
+      {
+         return Tuple ("0:1:2:3:4:5:6:7:8:9:10");
+      }
+
+      case Product::RHO:
+      {
+         return Tuple ("0.0:1.0:2.0;3.0:4.0:5.0:6.0:7.0:8.0:9.0:10.0");
+      }
+
+      case Product::W:
+      {
+         return Tuple ("-4:-3:-2:-1:0:1:2:3:4");
+      }
+
+      case Product::W_TRANSLUCENT:
+      {
+         return Tuple ("-4:-3:-2:-1:0:1:2:3:4");
+      }
+
+      case Product::SPEED_HIGHER:
+      {
+         return Tuple ("0:5:15:25:35:45:55:65:75:85:95:105:115:125");
+      }
+
+      case Product::SPEED:
+      {
+         return Tuple ("0:5:10:15:20:25:30:35:40:45:50:55:60:65");
+      }
+
+      case Product::ALONG_SPEED:
+      case Product::NORMAL_SPEED:
+      {
+         return Tuple (26, -125.0, 125.0);
+      }
+
+      case Product::VORTICITY:
+      {
+         return Tuple ("-5:-4:-3:-2:-1:0:1:2:3:4:5");
+      }
+
+      case Product::FFDI:
+      {
+         return Tuple ("1:12:25:50:75:100:150");
+      }
+
+      case Product::MSLP:
+      {
+         return Tuple ("980:990:1000:1010:1020:1030");
+      }
+
+      case Product::PRECIP_RATE:
+      {
+         return Tuple ("0.05:0.1:1:2:5:10:20:30:50:75:100:150");
+      }
+
+      case Product::WIND:
+      {
+         return Tuple ("0:30:60:90:120:150:180:210:240:270:300:330:360");
+      }
+
+      case Product::TERRAIN:
+      {
+         return Tuple ("0:200:400:600:800:1000:1200:1400:1600:1800:2000");
+      }
+
+      case Product::BRUNT_VAISALA:
+      {
+         return Tuple ("1e-3:3.2e-3:1e-2:3.2e-2:1e-1");
+      }
+
+      default:
+      {
+         return Tuple ();
+      }
+
    }
 
 }
@@ -721,231 +735,242 @@ Display::get_color (const Product& product,
                     const Real datum)
 {
 
-   if (product == "T")
+   switch (product.enumeration)
    {
-      const Real hue = Domain_1D (35 + K, 10 + K).normalize (datum) * 0.833;
-      const Real brightness = (Integer (floor (datum)) % 2) ? 0.83:0.77;
-      return Color::hsb (hue, 0.8, brightness);
-   }
-   else
-   if (product == "TD")
-   {
-      const Real saturation = Domain_1D (-10+K, 20+K).normalize (datum);
-      const Real brightness = (Integer (floor (datum)) % 2) ? 0.82:0.78;
-      return Color::hsb (0.25, saturation, brightness);
-   }
-   else
-   if (product == "RH")
-   {
-      const Real hue = (datum < 0.5 ? 0.08 : 0.35);
-      //const Real saturation = std::min ((fabs (datum - 0.5) * 2), 1.0);
-      //return Color::hsb (hue, saturation, 1, 0.4);
-      const Real saturation = fabs (datum - 0.5) * 0.8;
-      return Color::hsb (hue, saturation, 1);
-   }
-   else
-   if (product == "THETA")
-   {
-      const Real jump = 28+K;
-      const Real deviate = datum - jump;
-      const Real x = atan (deviate / 1);
-      const Real fluctuation = (Integer (floor ((datum-K) / 1)) % 2) ? 0.03 : -0.03;
-      const Real brightness = Domain_1D (-M_PI_2, M_PI_2).normalize (x) * 0.5 + 0.45;
-      return Color::hsb (0.0, 0.0, brightness + fluctuation);
-   }
-   else
-   if (product == "THETA_E")
-   {
-      const Real saturation = Domain_1D (5+K, 65+K).normalize (datum);
-      const Real brightness = (Integer (floor ((datum-K) / 4)) % 2) ? 0.82:0.78;
-      return Color::hsb (0.35, saturation, brightness);
-   }
-   else
-   if (product == "Q")
-   {
-      const Real saturation = Domain_1D (0, 10).normalize (datum * 1e3);
-      const Real brightness = (Integer (floor (datum * 1e3)) % 2) ? 0.82:0.78;
-      return Color::hsb (0.45, saturation, brightness);
-   }
-   else
-   if (product == "RHO")
-   {
-      const Real jump = 1.10;
-      const Real deviate = datum - jump;
-      const Real x = atan (deviate / 0.05);
-      const Real b = Domain_1D (M_PI_2, -M_PI_2).normalize (x) * 0.85 + 0.15;
-      const Real s = exp (-fabs (deviate) / 0.01) * 0.8 + 0.2;
-      return Color::hsb (0.800, s, b);
-   }
-   else
-   if (product == "W")
-   {
-      const Real hue = (datum < 0 ? 0.667 : 0.000);
-      const Real absolute = fabs (datum);
-      const Real quantized = floor (absolute / 0.1) * 0.1;
-      const Real saturation = Domain_1D (0, 3.5).normalize (quantized) * 0.7;
-      return Color::hsb (hue, saturation, 1.0);
-   }
-   else
-   if (product == "W_TRANSLUCENT")
-   {
-      const Real hue = (datum < 0 ? 0.667 : 0.000);
-      const Real absolute = fabs (datum);
-      const Real quantized = floor (absolute / 0.1) * 0.1;
-      const Real alpha = Domain_1D (0, 3.5).normalize (quantized);
-      return Color::hsb (hue, 1.0, 1.0, alpha);
-   }
-   else
-   if (product == "SPEED_HIGHER")
-   {
-      const Real knots = datum * 3.6/1.852;
-      const Real m0 = modulo (knots, 5.0) / 5.0 * 0.15 + 0.85;
-      const Real m = modulo (knots - 5, 10.0) / 10.0 * 0.15 + 0.85;
-           if (knots <   5) { return Color::hsb (0.000, 0.00 * m0, 1.00 * m0); }
-      else if (knots <  15) { return Color::hsb (0.167, 0.30 * m, 1.00 * m); }
-      else if (knots <  25) { return Color::hsb (0.150, 0.35 * m, 0.95 * m); }
-      else if (knots <  35) { return Color::hsb (0.133, 0.40 * m, 0.90 * m); }
-      else if (knots <  45) { return Color::hsb (0.333, 0.40 * m, 0.95 * m); }
-      else if (knots <  55) { return Color::hsb (0.333, 0.40 * m, 0.75 * m); }
-      else if (knots <  65) { return Color::hsb (0.333, 0.40 * m, 0.65 * m); }
-      else if (knots <  75) { return Color::hsb (0.600, 0.40 * m, 1.00 * m); }
-      else if (knots <  85) { return Color::hsb (0.633, 0.40 * m, 0.90 * m); }
-      else if (knots <  95) { return Color::hsb (0.667, 0.40 * m, 0.80 * m); }
-      else if (knots < 105) { return Color::hsb (0.033, 0.40 * m, 0.65 * m); }
-      else if (knots < 115) { return Color::hsb (0.016, 0.45 * m, 0.80 * m); }
-      else if (knots < 125) { return Color::hsb (0.000, 0.50 * m, 0.95 * m); }
-      else                  { return Color (1.000, 1.000, 1.000); }
-   }
-   else
-   if (product == "SPEED")
-   {
-      const Real knots = datum * 3.6/1.852;
-      const Real m = modulo (knots, 5.0) / 5.0 * 0.15 + 0.85;
-           if (knots <  5) { return Color::hsb (0.000, 0.00 * m, 1.00 * m); }
-      else if (knots < 10) { return Color::hsb (0.167, 0.30 * m, 1.00 * m); }
-      else if (knots < 15) { return Color::hsb (0.150, 0.35 * m, 0.95 * m); }
-      else if (knots < 20) { return Color::hsb (0.133, 0.40 * m, 0.90 * m); }
-      else if (knots < 25) { return Color::hsb (0.333, 0.40 * m, 0.95 * m); }
-      else if (knots < 30) { return Color::hsb (0.333, 0.40 * m, 0.75 * m); }
-      else if (knots < 35) { return Color::hsb (0.333, 0.40 * m, 0.65 * m); }
-      else if (knots < 40) { return Color::hsb (0.600, 0.40 * m, 1.00 * m); }
-      else if (knots < 45) { return Color::hsb (0.633, 0.40 * m, 0.90 * m); }
-      else if (knots < 50) { return Color::hsb (0.667, 0.40 * m, 0.80 * m); }
-      else if (knots < 55) { return Color::hsb (0.033, 0.40 * m, 0.65 * m); }
-      else if (knots < 60) { return Color::hsb (0.016, 0.45 * m, 0.80 * m); }
-      else if (knots < 65) { return Color::hsb (0.000, 0.50 * m, 0.95 * m); }
-      else                 { return Color (1.000, 1.000, 1.000); }
-   }
-   else
-   if (product == "ALONG_SPEED" ||
-       product == "NORMAL_SPEED")
-   {
-      const bool negative = (datum < 0);
-      const Real knots = fabs (datum * 3.6/1.852);
-      const Real m0 = modulo (knots, 5.0) / 5.0 * 0.15 + 0.85;
-      const Real m = modulo (knots - 5, 10.0) / 10.0 * 0.15 + 0.85;
-      if (!negative)
+
+      case Product::T:
       {
-              if (knots <  5) { return Color::hsb (0.000, 0.00 *m0, 1.00 *m0); }
-         else if (knots < 15) { return Color::hsb (0.167, 0.30 * m, 1.00 * m); }
-         else if (knots < 25) { return Color::hsb (0.150, 0.35 * m, 0.95 * m); }
-         else if (knots < 35) { return Color::hsb (0.133, 0.40 * m, 0.90 * m); }
-         else if (knots < 45) { return Color::hsb (0.333, 0.40 * m, 0.95 * m); }
-         else if (knots < 55) { return Color::hsb (0.333, 0.40 * m, 0.75 * m); }
-         else if (knots < 65) { return Color::hsb (0.333, 0.40 * m, 0.65 * m); }
-         else if (knots < 75) { return Color::hsb (0.600, 0.40 * m, 1.00 * m); }
-         else if (knots < 85) { return Color::hsb (0.633, 0.40 * m, 0.90 * m); }
-         else if (knots < 95) { return Color::hsb (0.667, 0.40 * m, 0.80 * m); }
-         else if (knots < 105){ return Color::hsb (0.033, 0.40 * m, 0.65 * m); }
-         else if (knots < 115){ return Color::hsb (0.016, 0.45 * m, 0.80 * m); }
-         else if (knots < 125){ return Color::hsb (0.000, 0.50 * m, 0.95 * m); }
+         const Real hue = Domain_1D (35 + K, 10 + K).normalize (datum) * 0.833;
+         const Real brightness = (Integer (floor (datum)) % 2) ? 0.83:0.77;
+         return Color::hsb (hue, 0.8, brightness);
+      }
+
+      case Product::TD:
+      {
+         const Real saturation = Domain_1D (-10+K, 20+K).normalize (datum);
+         const Real brightness = (Integer (floor (datum)) % 2) ? 0.82:0.78;
+         return Color::hsb (0.25, saturation, brightness);
+      }
+
+      case Product::RH:
+      {
+         const Real hue = (datum < 0.5 ? 0.08 : 0.35);
+         //const Real saturation = std::min ((fabs (datum - 0.5) * 2), 1.0);
+         //return Color::hsb (hue, saturation, 1, 0.4);
+         const Real saturation = fabs (datum - 0.5) * 0.8;
+         return Color::hsb (hue, saturation, 1);
+      }
+
+      case Product::THETA:
+      {
+         const Real jump = 28+K;
+         const Real deviate = datum - jump;
+         const Real x = atan (deviate / 1);
+         const Real odd = (Integer (floor ((datum-K) / 1)) % 2);
+         const Real fluctuation = (odd ? 0.03 : -0.03);
+         const Domain_1D d1d (-M_PI_2, M_PI_2);
+         const Real brightness = d1d.normalize (x) * 0.5 + 0.45;
+         return Color::hsb (0.0, 0.0, brightness + fluctuation);
+      }
+
+      case Product::THETA_E:
+      {
+         const Real saturation = Domain_1D (5+K, 65+K).normalize (datum);
+         const Real odd = (Integer (floor ((datum-K) / 4)) % 2);
+         const Real brightness = (odd ? 0.82 : 0.78);
+         return Color::hsb (0.35, saturation, brightness);
+      }
+
+      case Product::Q:
+      {
+         const Real saturation = Domain_1D (0, 10).normalize (datum * 1e3);
+         const Real odd = (Integer (floor (datum * 1e3)) % 2);
+         const Real brightness = (odd ? 0.82 : 0.78);
+         return Color::hsb (0.45, saturation, brightness);
+      }
+
+      case Product::RHO:
+      {
+         const Real jump = 1.10;
+         const Real deviate = datum - jump;
+         const Real x = atan (deviate / 0.05);
+         const Domain_1D d1d (M_PI_2, -M_PI_2);
+         const Real b = d1d.normalize (x) * 0.85 + 0.15;
+         const Real s = exp (-fabs (deviate) / 0.01) * 0.8 + 0.2;
+         return Color::hsb (0.800, s, b);
+      }
+
+      case Product::W:
+      {
+         const Real hue = (datum < 0 ? 0.667 : 0.000);
+         const Real absolute = fabs (datum);
+         const Real quantized = floor (absolute / 0.1) * 0.1;
+         const Real saturation = Domain_1D (0, 3.5).normalize (quantized) * 0.7;
+         return Color::hsb (hue, saturation, 1.0);
+      }
+
+      case Product::W_TRANSLUCENT:
+      {
+         const Real hue = (datum < 0 ? 0.667 : 0.000);
+         const Real absolute = fabs (datum);
+         const Real quantized = floor (absolute / 0.1) * 0.1;
+         const Real alpha = Domain_1D (0, 3.5).normalize (quantized);
+         return Color::hsb (hue, 1.0, 1.0, alpha);
+      }
+
+      case Product::SPEED_HIGHER:
+      {
+         const Real knots = datum * 3.6/1.852;
+         const Real m0 = modulo (knots, 5.0) / 5.0 * 0.15 + 0.85;
+         const Real m = modulo (knots - 5, 10.0) / 10.0 * 0.15 + 0.85;
+              if (knots <   5) { return Color::hsb (0.000, 0.0*m0, 1.0*m0); }
+         else if (knots <  15) { return Color::hsb (0.167, 0.30*m, 1.00*m); }
+         else if (knots <  25) { return Color::hsb (0.150, 0.35*m, 0.95*m); }
+         else if (knots <  35) { return Color::hsb (0.133, 0.40*m, 0.90*m); }
+         else if (knots <  45) { return Color::hsb (0.333, 0.40*m, 0.95*m); }
+         else if (knots <  55) { return Color::hsb (0.333, 0.40*m, 0.75*m); }
+         else if (knots <  65) { return Color::hsb (0.333, 0.40*m, 0.65*m); }
+         else if (knots <  75) { return Color::hsb (0.600, 0.40*m, 1.00*m); }
+         else if (knots <  85) { return Color::hsb (0.633, 0.40*m, 0.90*m); }
+         else if (knots <  95) { return Color::hsb (0.667, 0.40*m, 0.80*m); }
+         else if (knots < 105) { return Color::hsb (0.033, 0.40*m, 0.65*m); }
+         else if (knots < 115) { return Color::hsb (0.016, 0.45*m, 0.80*m); }
+         else if (knots < 125) { return Color::hsb (0.000, 0.50*m, 0.95*m); }
+         else                  { return Color (1.000, 1.000, 1.000); }
+      }
+
+      case Product::SPEED:
+      {
+         const Real knots = datum * 3.6/1.852;
+         const Real m = modulo (knots, 5.0) / 5.0 * 0.15 + 0.85;
+              if (knots <  5) { return Color::hsb (0.000, 0.00*m, 1.00*m); }
+         else if (knots < 10) { return Color::hsb (0.167, 0.30*m, 1.00*m); }
+         else if (knots < 15) { return Color::hsb (0.150, 0.35*m, 0.95*m); }
+         else if (knots < 20) { return Color::hsb (0.133, 0.40*m, 0.90*m); }
+         else if (knots < 25) { return Color::hsb (0.333, 0.40*m, 0.95*m); }
+         else if (knots < 30) { return Color::hsb (0.333, 0.40*m, 0.75*m); }
+         else if (knots < 35) { return Color::hsb (0.333, 0.40*m, 0.65*m); }
+         else if (knots < 40) { return Color::hsb (0.600, 0.40*m, 1.00*m); }
+         else if (knots < 45) { return Color::hsb (0.633, 0.40*m, 0.90*m); }
+         else if (knots < 50) { return Color::hsb (0.667, 0.40*m, 0.80*m); }
+         else if (knots < 55) { return Color::hsb (0.033, 0.40*m, 0.65*m); }
+         else if (knots < 60) { return Color::hsb (0.016, 0.45*m, 0.80*m); }
+         else if (knots < 65) { return Color::hsb (0.000, 0.50*m, 0.95*m); }
          else                 { return Color (1.000, 1.000, 1.000); }
       }
-      else
+
+      case Product::ALONG_SPEED:
+      case Product::NORMAL_SPEED:
       {
-              if (knots <  5) { return Color::hsb (0.000, 0.00 *m0, 0.80 *m0); }
-         else if (knots < 15) { return Color::hsb (0.167, 0.20 * m, 0.80 * m); }
-         else if (knots < 25) { return Color::hsb (0.150, 0.25 * m, 0.75 * m); }
-         else if (knots < 35) { return Color::hsb (0.133, 0.30 * m, 0.70 * m); }
-         else if (knots < 45) { return Color::hsb (0.333, 0.30 * m, 0.75 * m); }
-         else if (knots < 55) { return Color::hsb (0.333, 0.30 * m, 0.55 * m); }
-         else if (knots < 65) { return Color::hsb (0.333, 0.30 * m, 0.45 * m); }
-         else if (knots < 75) { return Color::hsb (0.600, 0.30 * m, 0.80 * m); }
-         else if (knots < 85) { return Color::hsb (0.633, 0.30 * m, 0.70 * m); }
-         else if (knots < 95) { return Color::hsb (0.667, 0.30 * m, 0.60 * m); }
-         else if (knots < 105){ return Color::hsb (0.033, 0.30 * m, 0.45 * m); }
-         else if (knots < 115){ return Color::hsb (0.016, 0.35 * m, 0.60 * m); }
-         else if (knots < 125){ return Color::hsb (0.000, 0.40 * m, 0.75 * m); }
-         else                 { return Color (1.000, 1.000, 1.000); }
+         const bool negative = (datum < 0);
+         const Real knots = fabs (datum * 3.6/1.852);
+         const Real m0 = modulo (knots, 5.0) / 5.0 * 0.15 + 0.85;
+         const Real m = modulo (knots - 5, 10.0) / 10.0 * 0.15 + 0.85;
+         if (!negative)
+         {
+                 if (knots <  5) { return Color::hsb (0.000, 0.0*m0, 1.0*m0); }
+            else if (knots < 15) { return Color::hsb (0.167, 0.30*m, 1.00*m); }
+            else if (knots < 25) { return Color::hsb (0.150, 0.35*m, 0.95*m); }
+            else if (knots < 35) { return Color::hsb (0.133, 0.40*m, 0.90*m); }
+            else if (knots < 45) { return Color::hsb (0.333, 0.40*m, 0.95*m); }
+            else if (knots < 55) { return Color::hsb (0.333, 0.40*m, 0.75*m); }
+            else if (knots < 65) { return Color::hsb (0.333, 0.40*m, 0.65*m); }
+            else if (knots < 75) { return Color::hsb (0.600, 0.40*m, 1.00*m); }
+            else if (knots < 85) { return Color::hsb (0.633, 0.40*m, 0.90*m); }
+            else if (knots < 95) { return Color::hsb (0.667, 0.40*m, 0.80*m); }
+            else if (knots < 105){ return Color::hsb (0.033, 0.40*m, 0.65*m); }
+            else if (knots < 115){ return Color::hsb (0.016, 0.45*m, 0.80*m); }
+            else if (knots < 125){ return Color::hsb (0.000, 0.50*m, 0.95*m); }
+            else                 { return Color (1.000, 1.000, 1.000); }
+         }
+         else
+         {
+                 if (knots <  5) { return Color::hsb (0.000, 0.0*m0, 0.8*m0); }
+            else if (knots < 15) { return Color::hsb (0.167, 0.20*m, 0.80*m); }
+            else if (knots < 25) { return Color::hsb (0.150, 0.25*m, 0.75*m); }
+            else if (knots < 35) { return Color::hsb (0.133, 0.30*m, 0.70*m); }
+            else if (knots < 45) { return Color::hsb (0.333, 0.30*m, 0.75*m); }
+            else if (knots < 55) { return Color::hsb (0.333, 0.30*m, 0.55*m); }
+            else if (knots < 65) { return Color::hsb (0.333, 0.30*m, 0.45*m); }
+            else if (knots < 75) { return Color::hsb (0.600, 0.30*m, 0.80*m); }
+            else if (knots < 85) { return Color::hsb (0.633, 0.30*m, 0.70*m); }
+            else if (knots < 95) { return Color::hsb (0.667, 0.30*m, 0.60*m); }
+            else if (knots < 105){ return Color::hsb (0.033, 0.30*m, 0.45*m); }
+            else if (knots < 115){ return Color::hsb (0.016, 0.35*m, 0.60*m); }
+            else if (knots < 125){ return Color::hsb (0.000, 0.40*m, 0.75*m); }
+            else                 { return Color (1.000, 1.000, 1.000); }
+         }
       }
-   }
-   else
-   if (product == "VORTICITY")
-   {
-      const Real hue = (datum < 0 ? 0.667 : 0.000);
-      const Real modified_datum = (log10 (fabs (datum)) + 4) / 3;
-      const Real saturation = std::max (std::min (modified_datum, 1.0), 0.0);
-      //const Real saturation = Domain_1D (0, 1).normalize (modified_datum);
-      return Color::hsb (hue, saturation, 1, 1);
-   }
-   else
-   if (product == "FFDI")
-   {
-      const Ffdi_Color_Chooser ffdi_color_chooser (1.0);
-      return ffdi_color_chooser.get_color (datum);
-   }
-   else
-   if (product == "MSLP")
-   {
-      //const Real hue = Domain_1D (990e2, 1025e2).normalize (datum) * 0.833;
-      const Real brightness = (Integer (floor (datum/200)) % 2) ? 0.82:0.78;
-      return Color::hsb (0, 0, brightness);
-   }
-   else
-   if (product == "PRECIP_RATE")
-   {
-      const Real mmhr = datum * 3600;
-           if (mmhr < 0.1) { return Color::hsb (0.000, 0.00, 1.0); }
-      else if (mmhr <   1) { return Color::hsb (0.167, 0.60, 1.0); }
-      else if (mmhr <   2) { return Color::hsb (0.333, 0.60, 1.0); }
-      else if (mmhr <   5) { return Color::hsb (0.333, 0.60, 0.8); }
-      else if (mmhr <  10) { return Color::hsb (0.333, 0.60, 0.6); }
-      else if (mmhr <  20) { return Color::hsb (0.333, 0.60, 0.4); }
-      else if (mmhr <  30) { return Color::hsb (0.600, 0.60, 1.0); }
-      else if (mmhr <  50) { return Color::hsb (0.633, 0.60, 0.8); }
-      else if (mmhr <  75) { return Color::hsb (0.666, 0.60, 0.6); }
-      else if (mmhr < 100) { return Color::hsb (0.083, 0.60, 1.0); }
-      else if (mmhr < 150) { return Color::hsb (0.042, 0.60, 1.0); }
-      else                 { return Color::hsb (0.000, 0.60, 1.0); }
-   }
-   else
-   if (product == "TERRAIN")
-   {
-      const Real h = std::min (std::max (datum / 2000.0, 0.0), 1.0);
-      const Real hue = 0.45 - h * 0.4;
-      const Real brightness = h * 0.7 + 0.28;
-      return Color::hsb (hue, 0.34, brightness);
-   }
-   else
-   if (product == "TERRAIN_WATER")
-   {
-      const Real h = std::min (std::max (datum / 2000.0, 0.0), 1.0);
-      const Real hue = 0.67;
-      const Real brightness = h * 0.7 + 0.28;
-      return Color::hsb (hue, 0.34, brightness);
-   }
-   else
-   if (product == "BRUNT_VAISALA")
-   {
-      if (!gsl_finite (datum)) { return Color::white (); }
-      const Real e = log10 (datum) - (-3.0);
-      const Real x = std::max (std::min (e / 2.0, 1.0), 0.0);
-      const Real hue = 0.2 + (floor (e / 0.5)) * 0.10;
-      return Color::hsb (hue, x, 1.0 - x * 0.5);
-   }
-   else
-   {
-      return Color::transparent ();
+
+      case Product::VORTICITY:
+      {
+         const Real hue = (datum < 0 ? 0.667 : 0.000);
+         const Real modified_datum = (log10 (fabs (datum)) + 4) / 3;
+         const Real saturation = std::max (std::min (modified_datum, 1.0), 0.0);
+         //const Real saturation = Domain_1D (0, 1).normalize (modified_datum);
+         return Color::hsb (hue, saturation, 1, 1);
+      }
+
+      case Product::FFDI:
+      {
+         const Ffdi_Color_Chooser ffdi_color_chooser (1.0);
+         return ffdi_color_chooser.get_color (datum);
+      }
+
+      case Product::MSLP:
+      {
+         //const Real hue = Domain_1D (990e2, 1025e2).normalize (datum) * 0.833;
+         const Real brightness = (Integer (floor (datum/200)) % 2) ? 0.82:0.78;
+         return Color::hsb (0, 0, brightness);
+      }
+
+      case Product::PRECIP_RATE:
+      {
+         const Real mmhr = datum * 3600;
+              if (mmhr < 0.1) { return Color::hsb (0.000, 0.00, 1.0); }
+         else if (mmhr <   1) { return Color::hsb (0.167, 0.60, 1.0); }
+         else if (mmhr <   2) { return Color::hsb (0.333, 0.60, 1.0); }
+         else if (mmhr <   5) { return Color::hsb (0.333, 0.60, 0.8); }
+         else if (mmhr <  10) { return Color::hsb (0.333, 0.60, 0.6); }
+         else if (mmhr <  20) { return Color::hsb (0.333, 0.60, 0.4); }
+         else if (mmhr <  30) { return Color::hsb (0.600, 0.60, 1.0); }
+         else if (mmhr <  50) { return Color::hsb (0.633, 0.60, 0.8); }
+         else if (mmhr <  75) { return Color::hsb (0.666, 0.60, 0.6); }
+         else if (mmhr < 100) { return Color::hsb (0.083, 0.60, 1.0); }
+         else if (mmhr < 150) { return Color::hsb (0.042, 0.60, 1.0); }
+         else                 { return Color::hsb (0.000, 0.60, 1.0); }
+      }
+
+      case Product::TERRAIN:
+      {
+         const Real h = std::min (std::max (datum / 2000.0, 0.0), 1.0);
+         const Real hue = 0.45 - h * 0.4;
+         const Real brightness = h * 0.7 + 0.28;
+         return Color::hsb (hue, 0.34, brightness);
+      }
+
+      case Product::TERRAIN_WATER:
+      {
+         const Real h = std::min (std::max (datum / 2000.0, 0.0), 1.0);
+         const Real hue = 0.67;
+         const Real brightness = h * 0.7 + 0.28;
+         return Color::hsb (hue, 0.34, brightness);
+      }
+
+      case Product::BRUNT_VAISALA:
+      {
+         if (!gsl_finite (datum)) { return Color::white (); }
+         const Real e = log10 (datum) - (-3.0);
+         const Real x = std::max (std::min (e / 2.0, 1.0), 0.0);
+         const Real hue = 0.2 + (floor (e / 0.5)) * 0.10;
+         return Color::hsb (hue, x, 1.0 - x * 0.5);
+      }
+
+      default:
+      {
+         return Color::transparent ();
+      }
+
    }
 
 }
@@ -1039,57 +1064,66 @@ Display::render_product (const RefPtr<Context>& cr,
 
    Raster* raster_ptr = NULL;
 
-   if (product == "TERRAIN")
+   switch (product.enumeration)
    {
-      raster_ptr = get_terrain_raster_ptr (size_2d, transform, model, stage);
-   }
-   else
-   if (product == "T" ||
-       product == "P_THETA" ||
-       product == "P_RHO" ||
-       product == "TD" ||
-       product == "RH" ||
-       product == "Q" ||
-       product == "THETA" ||
-       product == "RHO" ||
-       product == "WIND" ||
-       product == "SPEED" ||
-       product == "SPEED_HIGHER" ||
-       product == "W" ||
-       product == "W_TRANSLUCENT" ||
-       product == "VORTICITY" ||
-       product == "THETA_E")
-   {
-      if (level.type == SURFACE_LEVEL)
+
+      case Product::TERRAIN:
       {
-         raster_ptr = get_surface_raster_ptr (size_2d,
-            transform, model, stage, product, dtime);
+         raster_ptr = get_terrain_raster_ptr (size_2d, transform, model, stage);
+         break;
       }
-      else
-      if (level.type == HEIGHT_LEVEL)
+
+      case Product::T:
+      case Product::P_THETA:
+      case Product::P_RHO:
+      case Product::TD:
+      case Product::RH:
+      case Product::Q:
+      case Product::THETA:
+      case Product::RHO:
+      case Product::WIND:
+      case Product::SPEED:
+      case Product::SPEED_HIGHER:
+      case Product::W:
+      case Product::W_TRANSLUCENT:
+      case Product::VORTICITY:
+      case Product::THETA_E:
       {
-         raster_ptr = get_uppers_raster_ptr (size_2d,
-            transform, model, stage, product, dtime, level);
+         if (level.type == SURFACE_LEVEL)
+         {
+            raster_ptr = get_surface_raster_ptr (size_2d,
+               transform, model, stage, product, dtime);
+         }
+         else
+         if (level.type == HEIGHT_LEVEL)
+         {
+            raster_ptr = get_uppers_raster_ptr (size_2d,
+               transform, model, stage, product, dtime, level);
+         }
+         break;
       }
-   }
-   else
-   if (product == "FFDI" ||
-       product == "MSLP" ||
-       product == "PRECIP_RATE")
-   {
-      raster_ptr = get_surface_raster_ptr (
-         size_2d, transform, model, stage, product, dtime);
-   }
-   else
-   if (product == "IR1" ||
-       product == "IR2" ||
-       product == "IR3" ||
-       product == "IR4" ||
-       product == "VIS" ||
-       product == "Pseudo")
-   {
-      raster_ptr = get_hrit_raster_ptr (
-         size_2d, transform, hrit, product, dtime);
+
+      case Product::FFDI:
+      case Product::MSLP:
+      case Product::PRECIP_RATE:
+      {
+         raster_ptr = get_surface_raster_ptr (
+            size_2d, transform, model, stage, product, dtime);
+         break;
+      }
+
+      case Product::IR1:
+      case Product::IR2:
+      case Product::IR3:
+      case Product::IR4:
+      case Product::VIS:
+      case Product::Pseudo:
+      {
+         raster_ptr = get_hrit_raster_ptr (
+            size_2d, transform, hrit, product, dtime);
+         break;
+      }
+
    }
 
    if (raster_ptr != NULL) { raster_ptr->blit (cr); }
@@ -1242,8 +1276,8 @@ Display::render_color_bar (const RefPtr<Context>& cr,
 
    const Domain_1D value_domain (tick_tuple.front (), tick_tuple.back ());
    const Domain_1D y_domain (bar_y + bar_height, bar_y);
-   const bool is_log = (product == "PRECIP_RATE" ||
-                        product == "BRUNT_VAISALA");
+   const bool is_log = (product.enumeration == Product::PRECIP_RATE ||
+                        product.enumeration == Product::BRUNT_VAISALA);
    Cartesian_Transform_1D transform (value_domain, y_domain, is_log);
 
    cr->save ();
@@ -1580,8 +1614,8 @@ Display::render_cross_section (const RefPtr<Context>& cr,
    raster_ptr->blit (cr);
    delete raster_ptr;
 
-   if (product == "RHO" ||
-       product == "THETA")
+   if (product.enumeration == Product::RHO ||
+       product.enumeration == Product::THETA)
    {
       render_cross_section_w (cr, transform, box_2d,
          model, stage, dtime, multi_journey);

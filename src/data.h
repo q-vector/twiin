@@ -32,20 +32,62 @@ namespace twiin
 
    };
 
-   class Product : public string
+   class Product
    {
 
       public:
 
-         Product (const string& str);
+         enum Enumeration
+         {
+            TERRAIN,
+            TERRAIN_WATER,
+            P_THETA,
+            P_RHO,
+            ALONG_SPEED,
+            NORMAL_SPEED,
+            BRUNT_VAISALA,
+            SCORER,
+            T,
+            TD,
+            RH,
+            THETA,
+            Q,
+            THETA_E,
+            RHO,
+            WIND,
+            SPEED,
+            SPEED_HIGHER,
+            VORTICITY,
+            W,
+            W_TRANSLUCENT,
+            FFDI,
+            MSLP,
+            PRECIP_RATE,
+            IR1,
+            IR2,
+            IR3,
+            IR4,
+            VIS,
+            Pseudo
+         };
+
+         Product::Enumeration
+         enumeration;
+
+         Product (const Enumeration& enumeration);
 
          Product (const Product& product);
+
+         Product (const string& str);
 
          string
          get_string () const;
 
          Nwp_Element
          get_nwp_element () const;
+
+         ostream&
+         operator<< (ostream& out_file) const;
 
    };
 
