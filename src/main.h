@@ -109,6 +109,7 @@ namespace twiin
                         const string& format,
                         const Tokens& title_tokens,
                         const string& filename,
+                        const Real u_bg,
                         const bool is_bludge) const;
 
          void

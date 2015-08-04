@@ -321,6 +321,7 @@ Twiin::cross_section (const string& stage_str,
                       const string& format,
                       const Tokens& title_tokens,
                       const string& filename,
+                      const Real u_bg,
                       const bool is_bludge) const
 {
 
@@ -397,8 +398,8 @@ Twiin::cross_section (const string& stage_str,
 
             if (s2d.i < 0 || s2d.j < 0) { continue; }
 
-            Display::render_cross_section (cr, transform, box_2d,
-               domain_z, model, stage, product, dtime, multi_journey);
+            Display::render_cross_section (cr, transform, box_2d, domain_z,
+               model, stage, product, dtime, multi_journey, u_bg);
 
             Display::render_color_bar (cr, size_2d, p);
 
@@ -641,6 +642,7 @@ main (int argc,
       { "title",            1, 0, 'T' },
       { "time",             1, 0, 't' },
       { "cross-section",    1, 0, 'x' },
+      { "u_bg",             1, 0, 'u' },
       { "vertical-profile", 1, 0, 'v' },
       { "no-wind-barb",     0, 0, 'W' },
       { "zoom",             1, 0, 'z' },
@@ -667,13 +669,14 @@ main (int argc,
    bool no_stage = false;
    bool no_wind_barb = false;
    bool is_vertical_profile = false;
+   Real u_bg = 0;
    string location_str ("");
    Multi_Journey multi_journey;
    string config_file_path (string (getenv ("HOME")) + "/.twiin.rc");
 
    int c;
    int option_index = 0;
-   while ((c = getopt_long (argc, argv, "a:bc:F:f:g:il:m:o:Pp:Ss:T:t:x:v:Wz:",
+   while ((c = getopt_long (argc, argv, "a:bc:F:f:g:il:m:o:Pp:Ss:T:t:x:u:v:Wz:",
           long_options, &option_index)) != -1)
    {
 
@@ -780,6 +783,12 @@ main (int argc,
             break;
          }
 
+         case 'u':
+         {
+            u_bg = stof (string (optarg));
+            break;
+         }
+
          case 'v':
          {
             is_interactive = false;
@@ -839,7 +848,7 @@ main (int argc,
          if (is_cross_section)
          {
             twiin.cross_section (stage_str, product_str, multi_journey,
-               time_str, format, title_tokens, filename, is_bludge);
+               time_str, format, title_tokens, filename, u_bg, is_bludge);
          }
          else
          if (is_meteogram)

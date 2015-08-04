@@ -552,13 +552,15 @@ namespace twiin
                      evaluate_along_speed (const Real azimuth,
                                            const Lat_Long& lat_long,
                                            const Real z,
-                                           const size_t l) const;
+                                           const size_t l,
+                                           const Real u_bg) const;
                                
                      Real
                      evaluate_scorer (const Real azimuth,
                                       const Lat_Long& lat_long,
                                       const Real z,
-                                      const size_t l) const;
+                                      const size_t l,
+                                      const Real u_bg = 0) const;
 
                      Real
                      evaluate_brunt_vaisala (const Lat_Long& lat_long,

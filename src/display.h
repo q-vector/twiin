@@ -78,7 +78,8 @@ namespace twiin
                                        const Stage& stage,
                                        const Product& product,
                                        const Dtime& dtime,
-                                       const Multi_Journey& multi_journey);
+                                       const Multi_Journey& multi_journey,
+                                       const Real u_bg = 0);
 
       public:
 
@@ -229,7 +230,8 @@ namespace twiin
                                       const Stage& stage,
                                       const Product& product,
                                       const Dtime& dtime,
-                                      const Multi_Journey& multi_journey);
+                                      const Multi_Journey& multi_journey,
+                                      const Real u_bg = 0);
 
          static void
          render_cross_section (const RefPtr<Context>& cr,
@@ -240,7 +242,8 @@ namespace twiin
                                const Stage& stage,
                                const Product& product,
                                const Dtime& dtime,
-                               const Multi_Journey& multi_journey);
+                               const Multi_Journey& multi_journey,
+                               const Real u_bg = 0);
 
          static void
          render_meteogram_mesh (const RefPtr<Context>& cr,

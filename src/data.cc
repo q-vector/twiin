@@ -1383,7 +1383,8 @@ Real
 Model::Uppers::Stage::evaluate_along_speed (const Real azimuth,
                                             const Lat_Long& lat_long,
                                             const Real z,
-                                            const size_t l) const
+                                            const size_t l,
+                                            const Real u_bg) const
 {
 
    size_t i, j;
@@ -1400,7 +1401,7 @@ Model::Uppers::Stage::evaluate_along_speed (const Real azimuth,
    const Real v = evaluate (V, i, j, k, l);
 
    const Real theta = azimuth * M_PI/180;
-   return u * sin (theta) + v * cos (theta);
+   return u * sin (theta) + v * cos (theta) - u_bg;
 
 }
 
@@ -1408,7 +1409,8 @@ Real
 Model::Uppers::Stage::evaluate_scorer (const Real azimuth,
                                        const Lat_Long& lat_long,
                                        const Real z,
-                                       const size_t l) const
+                                       const size_t l,
+                                       const Real u_bg) const
 {
 
    size_t i, j;
@@ -1448,9 +1450,9 @@ Model::Uppers::Stage::evaluate_scorer (const Real azimuth,
    const Real v_2 = evaluate (V, i, j, k_rho_2, l);
 
    const Real theta = azimuth * M_PI/180;
-   const Real along_0 = u_0 * sin (theta) + v_0 * cos (theta);
-   const Real along_1 = u_1 * sin (theta) + v_1 * cos (theta);
-   const Real along_2 = u_2 * sin (theta) + v_2 * cos (theta);
+   const Real along_0 = u_0 * sin (theta) + v_0 * cos (theta) - u_bg;
+   const Real along_1 = u_1 * sin (theta) + v_1 * cos (theta) - u_bg;
+   const Real along_2 = u_2 * sin (theta) + v_2 * cos (theta) - u_bg;
 
    const Real z_theta_0 = model.get_z (k_theta_0, topography, A_theta, B_theta);
    const Real z_theta_1 = model.get_z (k_theta_1, topography, A_theta, B_theta);

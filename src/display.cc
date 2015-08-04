@@ -281,7 +281,8 @@ Display::get_cross_section_raster_ptr (const Box_2D& box_2d,
                                        const Stage& stage,
                                        const Product& product,
                                        const Dtime& dtime,
-                                       const Multi_Journey& multi_journey)
+                                       const Multi_Journey& multi_journey,
+                                       const Real u_bg)
 {
 
    Raster* raster_ptr = new Raster (box_2d);
@@ -347,8 +348,8 @@ Display::get_cross_section_raster_ptr (const Box_2D& box_2d,
             {
                const Real azimuth =
                   multi_journey.get_azimuth_forward (x, geodesy);
-               const Real datum =
-                  uppers_stage.evaluate_scorer (azimuth, lat_long, z, l);
+               const Real datum = uppers_stage.evaluate_scorer (
+                  azimuth, lat_long, z, l, u_bg);
                color = Display::get_color (p, datum);
             }
             else
@@ -356,8 +357,8 @@ Display::get_cross_section_raster_ptr (const Box_2D& box_2d,
             {
                const Real azimuth =
                   multi_journey.get_azimuth_forward (x, geodesy);
-               const Real datum =
-                  uppers_stage.evaluate_along_speed (azimuth, lat_long, z, l);
+               const Real datum = uppers_stage.evaluate_along_speed (
+                  azimuth, lat_long, z, l, u_bg);
                color = Display::get_color (p, datum);
             }
             else
@@ -1530,7 +1531,8 @@ Display::render_cross_section_arrows (const RefPtr<Context>& cr,
                                       const Stage& stage,
                                       const Product& product,
                                       const Dtime& dtime,
-                                      const Multi_Journey& multi_journey)
+                                      const Multi_Journey& multi_journey,
+                                      const Real u_bg)
 {
 
    Real x;
@@ -1576,7 +1578,7 @@ Display::render_cross_section_arrows (const RefPtr<Context>& cr,
          Real u = uppers_stage.evaluate (U, lat_long, z, l);
          Real v = uppers_stage.evaluate (V, lat_long, z, l);
          Real w = uppers_stage.evaluate (W, lat_long, z, l);
-         Real uu = u * s + v * c;
+         Real uu = u * s + v * c - u_bg;
          transform.transform_uv (uu, w, x, z);
          const Real theta = atan2 (w, uu);
          const Real mag = sqrt (uu*uu + w*w);
@@ -1601,7 +1603,8 @@ Display::render_cross_section (const RefPtr<Context>& cr,
                                const Stage& stage,
                                const Product& product,
                                const Dtime& dtime,
-                               const Multi_Journey& multi_journey)
+                               const Multi_Journey& multi_journey,
+                               const Real u_bg)
 {
 
    cr->save ();
@@ -1610,7 +1613,7 @@ Display::render_cross_section (const RefPtr<Context>& cr,
    cr->paint ();
 
    Raster* raster_ptr = Display::get_cross_section_raster_ptr (box_2d,
-      transform, model, stage, product, dtime, multi_journey);
+      transform, model, stage, product, dtime, multi_journey, u_bg);
    raster_ptr->blit (cr);
    delete raster_ptr;
 
@@ -1624,7 +1627,16 @@ Display::render_cross_section (const RefPtr<Context>& cr,
    render_cross_section_mesh (cr, transform, domain_z, multi_journey);
 
    render_cross_section_arrows (cr, transform, box_2d, model, stage,
-      product, dtime, multi_journey);
+      product, dtime, multi_journey, u_bg);
+
+   if (u_bg != 0)
+   {
+      Color::black ().cairo (cr);
+      const string fmt ("%.2f ms\u207b\u00b9 removed");
+      const string& u_bg_string = string_render (fmt.c_str (), u_bg);
+      const Index_2D anchor = box_2d.get_ne ();
+      Label (u_bg_string, box_2d.get_ne (), 'r', 't', 10).cairo (cr);
+   }
 
    cr->restore ();
 
