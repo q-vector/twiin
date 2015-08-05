@@ -51,6 +51,7 @@ namespace twiin
             TD,
             RH,
             THETA,
+            THETA_V,
             Q,
             THETA_E,
             RHO,

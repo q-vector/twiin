@@ -51,6 +51,7 @@ Product::Product (const string& str)
    else if (str == "THETA")         { enumeration = Product::THETA; }
    else if (str == "Q")             { enumeration = Product::Q; }
    else if (str == "THETA_E")       { enumeration = Product::THETA_E; }
+   else if (str == "THETA_V")       { enumeration = Product::THETA_V; }
    else if (str == "RHO")           { enumeration = Product::RHO; }
    else if (str == "WIND")          { enumeration = Product::WIND; }
    else if (str == "SPEED")         { enumeration = Product::SPEED; }
@@ -88,6 +89,7 @@ Product::get_string () const
       case Product::THETA:         return "THETA";
       case Product::Q:             return "Q";
       case Product::THETA_E:       return "THETA_E";
+      case Product::THETA_V:       return "THETA_V";
       case Product::RHO:           return "RHO";
       case Product::WIND:          return "WIND";
       case Product::SPEED:         return "SPEED";
@@ -118,6 +120,7 @@ Product::get_nwp_element () const
       case Product::THETA:         return denise::THETA;
       case Product::Q:             return denise::Q;
       case Product::THETA_E:       return denise::THETA_E;
+      case Product::THETA_V:       return denise::THETA_V;
       case Product::RHO:           return denise::RHO;
       case Product::WIND:          return denise::WIND_DIRECTION;
       case Product::SPEED:         return denise::WIND_SPEED;
@@ -1160,6 +1163,20 @@ Model::Surface::Stage::evaluate (const Nwp_Element& nwp_element,
          break;
       };
 
+      case THETA_V:
+      {
+         typedef Thermo_Point Tp;
+         const Real t = evaluate_raw (string ("temp"), i, j, l);
+         const Real t_d = evaluate_raw (string ("dewpt"), i, j, l);
+         const Real mslp = evaluate_raw (string ("mslp"), i, j, l);
+         const Real topography = get_topography (i, j);
+         const Real surface_p = mslp - 11.76 * topography;
+         const Real r = Thermo_Point::t_p (t_d + K, surface_p).get_r_s ();
+         const Real t_v = Moisture::get_t_v (t + K, r) + K;
+         datum = Thermo_Point::t_p (t_v - K, surface_p).get_theta () + K;
+         break;
+      };
+
       case RHO:
       {
          const Real t = evaluate_raw (string ("temp"), i, j, l);
@@ -1532,7 +1549,8 @@ Model::Uppers::Stage::evaluate (const Nwp_Element& nwp_element,
                           (nwp_element == T) || 
                           (nwp_element == TD) || 
                           (nwp_element == RH) || 
-                          (nwp_element == THETA_E));
+                          (nwp_element == THETA_E) ||
+                          (nwp_element == THETA_V));
 
    const Tuple& A_rho = model.vertical_coefficients.get_A_rho ();
    const Tuple& B_rho = model.vertical_coefficients.get_B_rho ();
@@ -1657,6 +1675,19 @@ Model::Uppers::Stage::evaluate (const Nwp_Element& nwp_element,
          const Real r = q / (1 - q);
          const Real t_d = Thermo_Point::p_r_s (p, r).get_t () + K;
          datum = Tp::normand (t - K, t_d - K, p).get_theta_e () + K;
+         break;
+      };
+
+      case THETA_V:
+      {
+         typedef Thermo_Point Tp;
+         const Real p = evaluate_raw ("ml_ptheta", i, j, k, l);
+         const Real theta = evaluate_raw ("ml_theta", i, j, k, l);
+         const Real q = evaluate_raw ("ml_spechum", i, j, k, l);
+         const Real t = Thermo_Point::theta_p (theta - K, p).get_t () + K;
+         const Real r = q / (1 - q);
+         const Real t_v = Moisture::get_t_v (t + K, r) + K;
+         datum = Thermo_Point::t_p (t_v - K, p).get_theta () + K;
          break;
       };
 
@@ -2303,6 +2334,7 @@ Model::get_valid_time_set (const Product& product,
       case Product::VORTICITY:
       case Product::THETA:
       case Product::THETA_E:
+      case Product::THETA_V:
       {
          if (level.type == SURFACE_LEVEL)
          {
@@ -2364,6 +2396,14 @@ Model::get_marker_tokens (const Lat_Long& lat_long,
          const Real datum = evaluate (THETA, lat_long, level, dtime, stage);
          if (gsl_isnan (datum)) { return tokens; }
          tokens.push_back (string_render ("%.1f\u00b0C", datum - K));
+         break;
+      }
+
+      case Product::THETA_V:
+      {
+         const Real theta_e = evaluate (THETA_V, lat_long, level, dtime, stage);
+         if (gsl_isnan (theta_e)) { return tokens; }
+         tokens.push_back (string_render ("%.1f\u00b0C", theta_e - K));
          break;
       }
 

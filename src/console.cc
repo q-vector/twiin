@@ -231,6 +231,7 @@ Console::Console (Gtk::Window& gtk_window,
    product_panel.add_product ("Thermo", Product ("P_THETA"));
    product_panel.add_product ("Thermo", Product ("T"));
    product_panel.add_product ("Thermo", Product ("THETA"));
+   product_panel.add_product ("Thermo", Product ("THETA_V"));
    product_panel.add_product ("Thermo", Product ("Q"));
    product_panel.add_product ("Thermo", Product ("TD"));
    product_panel.add_product ("Thermo", Product ("RH"));

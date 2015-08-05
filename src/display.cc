@@ -529,6 +529,11 @@ Display::get_unit (const Product& product)
          return string ("\u00b0C");
       }
 
+      case Product::THETA_V:
+      {
+         return string ("\u00b0C");
+      }
+
       case Product::THETA_E:
       {
          return string ("\u00b0C");
@@ -633,6 +638,7 @@ Display::get_tick_tuple (const Product& product)
       }
 
       case Product::THETA:
+      case Product::THETA_V:
       {
          return Tuple ("0:10:20:30:40:50:60");
       }
@@ -763,6 +769,7 @@ Display::get_color (const Product& product,
       }
 
       case Product::THETA:
+      case Product::THETA_V:
       {
          const Real jump = 28+K;
          const Real deviate = datum - jump;
@@ -1081,6 +1088,7 @@ Display::render_product (const RefPtr<Context>& cr,
       case Product::RH:
       case Product::Q:
       case Product::THETA:
+      case Product::THETA_V:
       case Product::RHO:
       case Product::WIND:
       case Product::SPEED:
