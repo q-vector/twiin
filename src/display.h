@@ -78,7 +78,7 @@ namespace twiin
                                        const Stage& stage,
                                        const Product& product,
                                        const Dtime& dtime,
-                                       const Multi_Journey& multi_journey,
+                                       const Journey& journey,
                                        const Real u_bg = 0);
 
       public:
@@ -101,7 +101,7 @@ namespace twiin
                     const Stage& stage,
                     const Product& product,
                     const Dtime& dtime,
-                    const Multi_Journey& multi_journey);
+                    const Journey& journey);
 
          static void
          set_title (Title& title,
@@ -214,13 +214,13 @@ namespace twiin
                                  const Model& model,
                                  const Stage& stage,
                                  const Dtime& dtime,
-                                 const Multi_Journey& multi_journey);
+                                 const Journey& journey);
 
          static void
          render_cross_section_mesh (const RefPtr<Context>& cr,
                                     const Transform_2D& transform,
                                     const Domain_1D& domain_z,
-                                    const Multi_Journey& multi_journey);
+                                    const Journey& journey);
 
          static void
          render_cross_section_arrows (const RefPtr<Context>& cr,
@@ -230,7 +230,7 @@ namespace twiin
                                       const Stage& stage,
                                       const Product& product,
                                       const Dtime& dtime,
-                                      const Multi_Journey& multi_journey,
+                                      const Journey& journey,
                                       const Real u_bg = 0);
 
          static void
@@ -242,7 +242,7 @@ namespace twiin
                                const Stage& stage,
                                const Product& product,
                                const Dtime& dtime,
-                               const Multi_Journey& multi_journey,
+                               const Journey& journey,
                                const Real u_bg = 0);
 
          static void

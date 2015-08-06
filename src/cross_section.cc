@@ -43,7 +43,7 @@ Cross_Section::get_tokens (const Marker& marker) const
 
 
    const Geodesy geodesy;
-   const Tuple& tuple_x = multi_journey.get_tuple_x (geodesy);
+   const Tuple& tuple_x = journey.get_tuple_x (geodesy);
 
    Tokens tokens;
 
@@ -53,7 +53,7 @@ Cross_Section::get_tokens (const Marker& marker) const
       return tokens;
    }
 
-   const Lat_Long lat_long = multi_journey.get_lat_long (marker.x, geodesy);
+   const Lat_Long lat_long = journey.get_lat_long (marker.x, geodesy);
    const Level level (HEIGHT_LEVEL, marker.y);
    const Dtime& dtime = get_time_chooser ().get_time ();
 
@@ -127,7 +127,7 @@ Cross_Section::Cross_Section (Gtk::Window& gtk_window,
      Time_Canvas (*this, 12),
      product_panel (*this, 12),
      model (model),
-     multi_journey (route),
+     journey (route),
      stage (stage),
      product (product),
      domain_z (0, 8000)
@@ -220,7 +220,7 @@ Cross_Section::reset_transform ()
    const Real bottom_z = 0;
 
    const Geodesy geodesy;
-   const Real distance = multi_journey.get_distance (geodesy);
+   const Real distance = journey.get_distance (geodesy);
    const Domain_1D domain_z (top_z, bottom_z);
    const Domain_1D domain_x (0, distance);
    const Domain_2D domain_2d (domain_x, domain_z);
@@ -252,7 +252,7 @@ Cross_Section::render_queue_draw ()
 
    const Dtime& basetime = model.get_basetime ();
    const Dtime& dtime = get_time_chooser ().get_time ();
-   Display::set_title (title, basetime, stage, product, dtime, multi_journey);
+   Display::set_title (title, basetime, stage, product, dtime, journey);
 
    set_foreground_ready (false);
    Console_2D::render_queue_draw ();
@@ -275,7 +275,7 @@ Cross_Section::render_image_buffer (const RefPtr<Context>& cr)
    if (s2d.i < 0 || s2d.j < 0) { return; }
 
    Display::render_cross_section (cr, transform, box_2d,
-      domain_z, model, stage, product, dtime, multi_journey);
+      domain_z, model, stage, product, dtime, journey);
 
 }
 

@@ -173,7 +173,6 @@ Console::process_cross_section (const Integer route_id)
 {
 
    const auto& route = get_route_store ().get_route (route_id);
-   const Multi_Journey multi_journey (route);
 
    const Size_2D size_2d (960, 480);
    const Dtime& dtime = get_time_chooser ().get_time ();

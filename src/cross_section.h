@@ -62,8 +62,8 @@ namespace twiin
          const Model&
          model;
 
-         Multi_Journey
-         multi_journey;
+         Journey
+         journey;
 
          Domain_1D
          domain_z;

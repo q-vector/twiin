@@ -53,7 +53,7 @@ namespace twiin
                         const Stage& stage,
                         const Product& product,
                         const Dtime& dtime,
-                        const Multi_Journey& multi_journey) const;
+                        const Journey& journey) const;
 
          string
          get_file_path (const string& format,
@@ -104,7 +104,7 @@ namespace twiin
          void
          cross_section (const string& stage_str,
                         const string& product_str,
-                        const Multi_Journey& multi_journey,
+                        const Journey& journey,
                         const string& time_str,
                         const string& format,
                         const Tokens& title_tokens,

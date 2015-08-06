@@ -281,7 +281,7 @@ Display::get_cross_section_raster_ptr (const Box_2D& box_2d,
                                        const Stage& stage,
                                        const Product& product,
                                        const Dtime& dtime,
-                                       const Multi_Journey& multi_journey,
+                                       const Journey& journey,
                                        const Real u_bg)
 {
 
@@ -308,14 +308,14 @@ Display::get_cross_section_raster_ptr (const Box_2D& box_2d,
    const Geodesy geodesy;
    const Index_2D& index_2d = box_2d.index_2d;
    const Size_2D& size_2d = box_2d.size_2d;
-   const Real distance = multi_journey.get_distance (geodesy);
+   const Real distance = journey.get_distance (geodesy);
 
    for (Integer i = index_2d.i; i < index_2d.i + size_2d.i; i++)
    {
 
       transform.reverse (x, z, Real (i), 0);
       if (x < 0 || x > distance) { continue; }
-      const Lat_Long& lat_long = multi_journey.get_lat_long (x, geodesy);
+      const Lat_Long& lat_long = journey.get_lat_long (x, geodesy);
       const Lat_Long& ll = lat_long;
       if (model.out_of_bounds (lat_long, stage)) { continue; }
 
@@ -347,7 +347,7 @@ Display::get_cross_section_raster_ptr (const Box_2D& box_2d,
             if (is_scorer)
             {
                const Real azimuth =
-                  multi_journey.get_azimuth_forward (x, geodesy);
+                  journey.get_azimuth_forward (x, geodesy);
                const Real datum = uppers_stage.evaluate_scorer (
                   azimuth, lat_long, z, l, u_bg);
                color = Display::get_color (p, datum);
@@ -356,7 +356,7 @@ Display::get_cross_section_raster_ptr (const Box_2D& box_2d,
             if (is_along_speed)
             {
                const Real azimuth =
-                  multi_journey.get_azimuth_forward (x, geodesy);
+                  journey.get_azimuth_forward (x, geodesy);
                const Real datum = uppers_stage.evaluate_along_speed (
                   azimuth, lat_long, z, l, u_bg);
                color = Display::get_color (p, datum);
@@ -365,7 +365,7 @@ Display::get_cross_section_raster_ptr (const Box_2D& box_2d,
             if (is_normal_speed)
             {
                const Real azimuth =
-                  multi_journey.get_azimuth_forward (x, geodesy);
+                  journey.get_azimuth_forward (x, geodesy);
                const Real datum =
                   uppers_stage.evaluate_normal_speed (azimuth, lat_long, z, l);
                color = Display::get_color (p, datum);
@@ -416,7 +416,7 @@ Display::set_title (Title& title,
                     const Stage& stage,
                     const Product& product,
                     const Dtime& dtime,
-                    const Multi_Journey& multi_journey)
+                    const Journey& journey)
 {
 
    const Real forecast_hour = dtime.t - basetime.t;
@@ -424,12 +424,12 @@ Display::set_title (Title& title,
    const Integer fh = Integer (round (forecast_hour * 60)) / 60;
    const Integer fm = Integer (round (forecast_hour * 60)) % 60;
 
-   const Lat_Long orig (multi_journey.front ());
-   const Lat_Long dest (multi_journey.back ());
-   const bool complex_mj = (multi_journey.size () > 2);
+   const Lat_Long orig (journey.front ());
+   const Lat_Long dest (journey.back ());
+   const bool complex_j = (journey.size () > 2);
 
-   const string o_suffix (complex_mj ? " ..." : "");
-   const string d_preffix (complex_mj ? "... " : "");
+   const string o_suffix (complex_j ? " ..." : "");
+   const string d_preffix (complex_j ? "... " : "");
    const string& o_str = orig.get_string (4, true, true, true) + o_suffix;
    const string& d_str = d_preffix + dest.get_string (4, true, true, true);
 
@@ -1387,20 +1387,20 @@ Display::render_annotation (const RefPtr<Context>& cr,
       render_annotation_point (cr, transform, location, str);
    }
    else
-   if (genre == "multi_journey" ||
+   if (genre == "journey" ||
        genre == "route" ||
-       genre == "mj" ||
+       genre == "j" ||
        genre == "r")
    {
-      Multi_Journey multi_journey;
+      Journey journey;
       for (auto iterator = tokens.begin ();
            iterator != tokens.end (); iterator++)
       {
          if (iterator == tokens.begin ()) { continue; }
          const Location location (*(iterator));
-         multi_journey.push_back (location);
+         journey.push_back (location);
       }
-      multi_journey.cairo (cr, transform);
+      journey.cairo (cr, transform);
    }
 
 }
@@ -1474,11 +1474,10 @@ Display::render_cross_section_w (const RefPtr<Context>& cr,
                                  const Model& model,
                                  const Stage& stage,
                                  const Dtime& dtime,
-                                 const Multi_Journey& multi_journey)
+                                 const Journey& journey)
 {
    Raster* raster_ptr = Display::get_cross_section_raster_ptr (box_2d,
-      transform, model, stage, Product ("W_TRANSLUCENT"), dtime,
-      multi_journey);
+      transform, model, stage, Product ("W_TRANSLUCENT"), dtime, journey);
    raster_ptr->blit (cr);
    delete raster_ptr;
 }
@@ -1487,18 +1486,18 @@ void
 Display::render_cross_section_mesh (const RefPtr<Context>& cr,
                                     const Transform_2D& transform,
                                     const Domain_1D& domain_z,
-                                    const Multi_Journey& multi_journey)
+                                    const Journey& journey)
 {
 
    const Geodesy geodesy;
-   const Real distance = multi_journey.get_distance (geodesy);
+   const Real distance = journey.get_distance (geodesy);
 
    Real d_distance = 100e3;
    if (distance < 1000e3) { d_distance = 50e3; }
    if (distance < 400e3) { d_distance = 20e3; }
    if (distance < 200e3) { d_distance = 10e3; }
-   const Multi_Journey mj (multi_journey, geodesy, d_distance);
-   const Tuple& tuple_x = mj.get_tuple_x (geodesy);
+   const Journey j (journey, geodesy, d_distance);
+   const Tuple& tuple_x = j.get_tuple_x (geodesy);
 
    const Domain_1D domain_x (0, distance);
    const Domain_2D domain_2d (domain_x, domain_z);
@@ -1539,7 +1538,7 @@ Display::render_cross_section_arrows (const RefPtr<Context>& cr,
                                       const Stage& stage,
                                       const Product& product,
                                       const Dtime& dtime,
-                                      const Multi_Journey& multi_journey,
+                                      const Journey& journey,
                                       const Real u_bg)
 {
 
@@ -1558,7 +1557,7 @@ Display::render_cross_section_arrows (const RefPtr<Context>& cr,
    const Geodesy geodesy;
    const Index_2D& index_2d = box_2d.index_2d;
    const Size_2D& size_2d = box_2d.size_2d;
-   const Real distance = multi_journey.get_distance (geodesy);
+   const Real distance = journey.get_distance (geodesy);
 
    cr->set_line_width (1);
 
@@ -1568,11 +1567,11 @@ Display::render_cross_section_arrows (const RefPtr<Context>& cr,
       transform.reverse (x, z, Real (i), 0);
       if (x < 0 || x > distance) { continue; }
 
-      const Lat_Long lat_long = multi_journey.get_lat_long (x, geodesy);
+      const Lat_Long lat_long = journey.get_lat_long (x, geodesy);
       if (model.out_of_bounds (lat_long, stage)) { continue; }
 
       const Real topography = terrain_stage.get_topography (lat_long);
-      const Real azimuth = multi_journey.get_azimuth_forward (x, geodesy);
+      const Real azimuth = journey.get_azimuth_forward (x, geodesy);
       const Real theta = azimuth * DEGREE_TO_RADIAN;
       const Real c = cos (theta);
       const Real s = sin (theta);
@@ -1611,7 +1610,7 @@ Display::render_cross_section (const RefPtr<Context>& cr,
                                const Stage& stage,
                                const Product& product,
                                const Dtime& dtime,
-                               const Multi_Journey& multi_journey,
+                               const Journey& journey,
                                const Real u_bg)
 {
 
@@ -1621,7 +1620,7 @@ Display::render_cross_section (const RefPtr<Context>& cr,
    cr->paint ();
 
    Raster* raster_ptr = Display::get_cross_section_raster_ptr (box_2d,
-      transform, model, stage, product, dtime, multi_journey, u_bg);
+      transform, model, stage, product, dtime, journey, u_bg);
    raster_ptr->blit (cr);
    delete raster_ptr;
 
@@ -1629,13 +1628,13 @@ Display::render_cross_section (const RefPtr<Context>& cr,
        product.enumeration == Product::THETA)
    {
       render_cross_section_w (cr, transform, box_2d,
-         model, stage, dtime, multi_journey);
+         model, stage, dtime, journey);
    }
 
-   render_cross_section_mesh (cr, transform, domain_z, multi_journey);
+   render_cross_section_mesh (cr, transform, domain_z, journey);
 
    render_cross_section_arrows (cr, transform, box_2d, model, stage,
-      product, dtime, multi_journey, u_bg);
+      product, dtime, journey, u_bg);
 
    if (u_bg != 0)
    {

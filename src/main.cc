@@ -67,24 +67,24 @@ Twiin::get_file_path (const string& format,
                       const Stage& stage,
                       const Product& product,
                       const Dtime& dtime,
-                      const Multi_Journey& multi_journey) const
+                      const Journey& journey) const
 {
 
-   const Lat_Long origin (multi_journey.front ());
-   const Lat_Long destination (multi_journey.back ());
+   const Lat_Long origin (journey.front ());
+   const Lat_Long destination (journey.back ());
 
-   string mj_str;
-   for (auto iterator = multi_journey.begin ();
-        iterator != multi_journey.end (); iterator++)
+   string j_str;
+   for (auto iterator = journey.begin ();
+        iterator != journey.end (); iterator++)
    {
       const Lat_Long lat_long (*(iterator));
       const string& ll_str = lat_long.get_string (false, string ("%.4f"));
-      mj_str += ll_str;
+      j_str += ll_str;
    }
 
    const string& time_str = dtime.get_string ("%Y%m%d%H%M");
    const string& file_name = stage + "-" + product.get_string () + "-" +
-      time_str + "-" + mj_str + "." + format;
+      time_str + "-" + j_str + "." + format;
    return output_dir + "/" + file_name;
 
 }
@@ -316,7 +316,7 @@ Twiin::command_line (const string& stage_str,
 void
 Twiin::cross_section (const string& stage_str,
                       const string& product_str,
-                      const Multi_Journey& multi_journey,
+                      const Journey& journey,
                       const string& time_str,
                       const string& format,
                       const Tokens& title_tokens,
@@ -330,9 +330,9 @@ Twiin::cross_section (const string& stage_str,
    const Tokens product_tokens (product_str, ":");
 
    const Geodesy geodesy;
-   const Real distance = multi_journey.get_distance (geodesy);
-   const Lat_Long origin (multi_journey.front ());
-   const Lat_Long destination (multi_journey.back ());
+   const Real distance = journey.get_distance (geodesy);
+   const Lat_Long origin (journey.front ());
+   const Lat_Long destination (journey.back ());
 
    const Domain_1D domain_x (0, distance);
    const Domain_1D domain_z (0, 8000);
@@ -382,7 +382,7 @@ Twiin::cross_section (const string& stage_str,
             if (!time_set.match (dtime)) { continue; }
 
             const string& file_path = (filename == "") ?
-               get_file_path (format, stage, product, dtime, multi_journey) :
+               get_file_path (format, stage, product, dtime, journey) :
                output_dir + "/" + filename;
             cout << "Rendering " << file_path << endl;
             if (is_bludge) { continue; }
@@ -399,14 +399,14 @@ Twiin::cross_section (const string& stage_str,
             if (s2d.i < 0 || s2d.j < 0) { continue; }
 
             Display::render_cross_section (cr, transform, box_2d, domain_z,
-               model, stage, product, dtime, multi_journey, u_bg);
+               model, stage, product, dtime, journey, u_bg);
 
             Display::render_color_bar (cr, size_2d, p);
 
             if (title_tokens.size () == 0)
             {
                Display::set_title (title, basetime, stage,
-                  product, dtime, multi_journey);
+                  product, dtime, journey);
             }
             else
             {
@@ -538,13 +538,13 @@ Twiin::vertical_profile (const string& stage_str,
 
             const string& location_token = *j;
             const Location sole_location (location_token, station_map);
-            const bool is_mj = Reg_Exp ("@").match (location_token);
+            const bool is_j = Reg_Exp ("@").match (location_token);
 
-            if (is_mj)
+            if (is_j)
             {
                const Geodesy geodesy;
                const Tokens tokens (location_token, "/");
-               lat_long_list.add (Multi_Journey (tokens[0]), geodesy);
+               lat_long_list.add (Journey (tokens[0]), geodesy);
                location_name = tokens.size () > 1 ? tokens[1] : "mean";
             }
             else
@@ -671,7 +671,7 @@ main (int argc,
    bool is_vertical_profile = false;
    Real u_bg = 0;
    string location_str ("");
-   Multi_Journey multi_journey;
+   Journey journey;
    string config_file_path (string (getenv ("HOME")) + "/.twiin.rc");
 
    int c;
@@ -807,7 +807,7 @@ main (int argc,
          {
             is_interactive = false;
             is_cross_section = true;
-            multi_journey = Multi_Journey (string (optarg));
+            journey = Journey (string (optarg));
             break;
          }
 
@@ -847,7 +847,7 @@ main (int argc,
 
          if (is_cross_section)
          {
-            twiin.cross_section (stage_str, product_str, multi_journey,
+            twiin.cross_section (stage_str, product_str, journey,
                time_str, format, title_tokens, filename, u_bg, is_bludge);
          }
          else
