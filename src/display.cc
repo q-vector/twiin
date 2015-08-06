@@ -1496,8 +1496,8 @@ Display::render_cross_section_mesh (const RefPtr<Context>& cr,
    if (distance < 1000e3) { d_distance = 50e3; }
    if (distance < 400e3) { d_distance = 20e3; }
    if (distance < 200e3) { d_distance = 10e3; }
-   const Journey j (journey, geodesy, d_distance);
-   const Tuple& tuple_x = j.get_tuple_x (geodesy);
+   const Journey fj = Journey::fine_journey (journey, geodesy, d_distance);
+   const Tuple& tuple_x = fj.get_tuple_x (geodesy);
 
    const Domain_1D domain_x (0, distance);
    const Domain_2D domain_2d (domain_x, domain_z);
