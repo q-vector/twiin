@@ -109,8 +109,8 @@ Product::get_string () const
    }
 }
 
-Nwp_Element
-Product::get_nwp_element () const
+Met_Element
+Product::get_met_element () const
 {
    switch (enumeration)
    {
@@ -1059,17 +1059,17 @@ Model::Surface::Stage::get_l (const Dtime& dtime) const
 }
 
 Real
-Model::Surface::Stage::evaluate (const Nwp_Element& nwp_element,
+Model::Surface::Stage::evaluate (const Met_Element& met_element,
                                  const Lat_Long& lat_long,
                                  const size_t l) const
 {
    size_t i, j;
    acquire_ij (i, j, lat_long);
-   return evaluate (nwp_element, i, j, l);
+   return evaluate (met_element, i, j, l);
 }
 
 Real
-Model::Surface::Stage::evaluate (const Nwp_Element& nwp_element,
+Model::Surface::Stage::evaluate (const Met_Element& met_element,
                                  const size_t i,
                                  const size_t j,
                                  const size_t l) const
@@ -1078,7 +1078,7 @@ Model::Surface::Stage::evaluate (const Nwp_Element& nwp_element,
    int ret;
    float datum;
 
-   switch (nwp_element)
+   switch (met_element)
    {
 
       case W:
@@ -1204,7 +1204,7 @@ Model::Surface::Stage::evaluate (const Nwp_Element& nwp_element,
 
          Varname varname ("");
 
-         switch (nwp_element)
+         switch (met_element)
          {
             case T: { varname = string ("temp"); break; }
             case TD: { varname = string ("dewpt"); break; }
@@ -1316,8 +1316,8 @@ Model::Surface::Stage::get_color (const Product& product,
    }
    else
    {
-      const Nwp_Element nwp_element = product.get_nwp_element ();
-      const Real datum = evaluate (nwp_element, lat_long, l);
+      const Met_Element met_element = product.get_met_element ();
+      const Real datum = evaluate (met_element, lat_long, l);
       return Display::get_color (product, datum);
    }
 
@@ -1529,7 +1529,7 @@ Model::Uppers::Stage::evaluate_brunt_vaisala (const Lat_Long& lat_long,
 }
 
 Real
-Model::Uppers::Stage::evaluate (const Nwp_Element& nwp_element,
+Model::Uppers::Stage::evaluate (const Met_Element& met_element,
                                 const Lat_Long& lat_long,
                                 const Real z,
                                 const size_t l) const
@@ -1541,16 +1541,16 @@ Model::Uppers::Stage::evaluate (const Nwp_Element& nwp_element,
    const Real topography = get_topography (i, j);
    if (z < topography) { return GSL_NAN; }
 
-   const bool is_w = (nwp_element == W);
-   const bool is_theta = ((nwp_element == THETA) || 
-                          (nwp_element == Q) || 
-                          (nwp_element == RHO) || 
-                          (nwp_element == W) || 
-                          (nwp_element == T) || 
-                          (nwp_element == TD) || 
-                          (nwp_element == RH) || 
-                          (nwp_element == THETA_E) ||
-                          (nwp_element == THETA_V));
+   const bool is_w = (met_element == W);
+   const bool is_theta = ((met_element == THETA) || 
+                          (met_element == Q) || 
+                          (met_element == RHO) || 
+                          (met_element == W) || 
+                          (met_element == T) || 
+                          (met_element == TD) || 
+                          (met_element == RH) || 
+                          (met_element == THETA_E) ||
+                          (met_element == THETA_V));
 
    const Tuple& A_rho = model.vertical_coefficients.get_A_rho ();
    const Tuple& B_rho = model.vertical_coefficients.get_B_rho ();
@@ -1564,23 +1564,23 @@ Model::Uppers::Stage::evaluate (const Nwp_Element& nwp_element,
    const bool surface = (z < 0);
    const Integer k = surface ? -1 : model.get_k (z, topography, A, B);
 
-   return evaluate (nwp_element, i, j, (is_w ? k + 1 : k), l);
+   return evaluate (met_element, i, j, (is_w ? k + 1 : k), l);
 
 }
 
 Real
-Model::Uppers::Stage::evaluate (const Nwp_Element& nwp_element,
+Model::Uppers::Stage::evaluate (const Met_Element& met_element,
                                 const Lat_Long& lat_long,
                                 const size_t k,
                                 const size_t l) const
 {
    size_t i, j;
    acquire_ij (i, j, lat_long);
-   return evaluate (nwp_element, i, j, k, l);
+   return evaluate (met_element, i, j, k, l);
 }
 
 Real
-Model::Uppers::Stage::evaluate (const Nwp_Element& nwp_element,
+Model::Uppers::Stage::evaluate (const Met_Element& met_element,
                                 const size_t i,
                                 const size_t j,
                                 const size_t k,
@@ -1590,7 +1590,7 @@ Model::Uppers::Stage::evaluate (const Nwp_Element& nwp_element,
    int ret;
    float datum;
 
-   switch (nwp_element)
+   switch (met_element)
    {
 
       case WIND_SPEED:
@@ -1696,7 +1696,7 @@ Model::Uppers::Stage::evaluate (const Nwp_Element& nwp_element,
 
          Varname varname ("");
 
-         switch (nwp_element)
+         switch (met_element)
          {
             case U:       { varname = string ("ml_xwind"); break; } 
             case V:       { varname = string ("ml_ywind"); break; } 
@@ -1802,8 +1802,8 @@ Model::Uppers::Stage::get_color (const Product& product,
    }
    else
    {
-      const Nwp_Element nwp_element = product.get_nwp_element ();
-      const Real datum = evaluate (nwp_element, lat_long, z, l);
+      const Met_Element met_element = product.get_met_element ();
+      const Real datum = evaluate (met_element, lat_long, z, l);
       return Display::get_color (product, datum);
    }
 
@@ -2145,7 +2145,7 @@ Model::get_topography (const Lat_Long& lat_long,
 }
 
 Real
-Model::evaluate (const Nwp_Element& nwp_element,
+Model::evaluate (const Met_Element& met_element,
                  const Lat_Long& lat_long,
                  const size_t k,
 		 const Dtime& dtime,
@@ -2156,39 +2156,39 @@ Model::evaluate (const Nwp_Element& nwp_element,
    {
       const Model::Surface::Stage& surface_stage = surface.get_stage (stage);
       const Integer l = surface_stage.get_l (dtime);
-      return surface_stage.evaluate (nwp_element, lat_long, l);
+      return surface_stage.evaluate (met_element, lat_long, l);
    }
    else
    {
       const Model::Uppers::Stage& uppers_stage = uppers.get_stage (stage);
       const Integer l = uppers_stage.get_l (dtime);
-      return uppers_stage.evaluate (nwp_element, lat_long, k, l);
+      return uppers_stage.evaluate (met_element, lat_long, k, l);
    }
 }
 
 Real
-Model::evaluate (const Nwp_Element& nwp_element,
+Model::evaluate (const Met_Element& met_element,
                  const Lat_Long& lat_long,
                  const Level& level,
                  const Dtime& dtime,
                  const twiin::Stage& stage) const
 {
-   if (nwp_element == MSLP ||
-       nwp_element == PRECIP_RATE ||
-       nwp_element == FFDI ||
-       level.type == SURFACE_LEVEL)
+   if (met_element == MSLP ||
+       met_element == PRECIP_RATE ||
+       met_element == FFDI ||
+       level.type == Level::SURFACE)
    {
       const Model::Surface::Stage& surface_stage = surface.get_stage (stage);
       const Integer l = surface_stage.get_l (dtime);
-      return surface_stage.evaluate (nwp_element, lat_long, l);
+      return surface_stage.evaluate (met_element, lat_long, l);
    }
    else
-   if (level.type == HEIGHT_LEVEL)
+   if (level.type == Level::HEIGHT)
    {
       const Real z = level.value;
       const Model::Uppers::Stage& uppers_stage = uppers.get_stage (stage);
       const Integer l = uppers_stage.get_l (dtime);
-      return uppers_stage.evaluate (nwp_element, lat_long, z, l);
+      return uppers_stage.evaluate (met_element, lat_long, z, l);
    }
 }
 
@@ -2336,13 +2336,13 @@ Model::get_valid_time_set (const Product& product,
       case Product::THETA_E:
       case Product::THETA_V:
       {
-         if (level.type == SURFACE_LEVEL)
+         if (level.type == Level::SURFACE)
          {
             auto& surface_stage = surface.get_stage (stage);
             return surface_stage.get_valid_time_set ();
          }
          else
-         if (level.type == HEIGHT_LEVEL)
+         if (level.type == Level::HEIGHT)
          {
             auto& uppers_stage = uppers.get_stage (stage);
             return uppers_stage.get_valid_time_set ();

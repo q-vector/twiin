@@ -84,8 +84,8 @@ namespace twiin
          string
          get_string () const;
 
-         Nwp_Element
-         get_nwp_element () const;
+         Met_Element
+         get_met_element () const;
 
          ostream&
          operator<< (ostream& out_file) const;
@@ -475,12 +475,12 @@ namespace twiin
                      get_l (const Dtime& dtime) const;
 
                      Real
-                     evaluate (const Nwp_Element& nwp_element,
+                     evaluate (const Met_Element& met_element,
                                const Lat_Long& lat_long,
                                const size_t l) const;
                                
                      Real
-                     evaluate (const Nwp_Element& nwp_element,
+                     evaluate (const Met_Element& met_element,
                                const size_t i,
                                const size_t j,
                                const size_t l) const;
@@ -569,19 +569,19 @@ namespace twiin
                                              const size_t l) const;
                                
                      Real
-                     evaluate (const Nwp_Element& nwp_element,
+                     evaluate (const Met_Element& met_element,
                                const Lat_Long& lat_long,
                                const Real z,
                                const size_t l) const;
                                
                      Real
-                     evaluate (const Nwp_Element& nwp_element,
+                     evaluate (const Met_Element& met_element,
                                const Lat_Long& lat_long,
                                const size_t k,
                                const size_t l) const;
 
                      Real
-                     evaluate (const Nwp_Element& nwp_element,
+                     evaluate (const Met_Element& met_element,
                                const size_t i,
                                const size_t j,
                                const size_t k,
@@ -725,14 +725,14 @@ namespace twiin
                          const twiin::Stage& stage) const;
 
          Real
-         evaluate (const Nwp_Element& nwp_element,
+         evaluate (const Met_Element& met_element,
                    const Lat_Long& lat_long,
                    const size_t k,
                    const Dtime& dtime,
                    const twiin::Stage& stage) const;
 
          Real
-         evaluate (const Nwp_Element& nwp_element,
+         evaluate (const Met_Element& met_element,
                    const Lat_Long& lat_long,
                    const Level& level,
                    const Dtime& dtime,

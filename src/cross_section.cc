@@ -54,7 +54,7 @@ Cross_Section::get_tokens (const Marker& marker) const
    }
 
    const Lat_Long lat_long = journey.get_lat_long (marker.x, geodesy);
-   const Level level (HEIGHT_LEVEL, marker.y);
+   const Level level (Level::HEIGHT, marker.y);
    const Dtime& dtime = get_time_chooser ().get_time ();
 
    tokens = model.get_marker_tokens (

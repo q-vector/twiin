@@ -302,7 +302,7 @@ Display::get_cross_section_raster_ptr (const Box_2D& box_2d,
    const Product& p = (is_speed ? Product (Product::SPEED_HIGHER) : product);
 
    Real x;
-   Level level (HEIGHT_LEVEL, GSL_NAN);
+   Level level (Level::HEIGHT, GSL_NAN);
    Real& z = level.value;
 
    const Geodesy geodesy;
@@ -372,8 +372,8 @@ Display::get_cross_section_raster_ptr (const Box_2D& box_2d,
             }
             else
             {
-               const Nwp_Element nwp_element = product.get_nwp_element ();
-               const Real datum = uppers_stage.evaluate (nwp_element, ll, z, l);
+               const Met_Element met_element = product.get_met_element ();
+               const Real datum = uppers_stage.evaluate (met_element, ll, z, l);
                color = Display::get_color (p, datum);
             }
          }
@@ -1098,13 +1098,13 @@ Display::render_product (const RefPtr<Context>& cr,
       case Product::VORTICITY:
       case Product::THETA_E:
       {
-         if (level.type == SURFACE_LEVEL)
+         if (level.type == Level::SURFACE)
          {
             raster_ptr = get_surface_raster_ptr (size_2d,
                transform, model, stage, product, dtime);
          }
          else
-         if (level.type == HEIGHT_LEVEL)
+         if (level.type == Level::HEIGHT)
          {
             raster_ptr = get_uppers_raster_ptr (size_2d,
                transform, model, stage, product, dtime, level);
@@ -1509,9 +1509,9 @@ Display::render_cross_section_mesh (const RefPtr<Context>& cr,
    Color::black ().cairo (cr);
 
    //mesh_2d.render_label_x (cr, transform, 0, 0,
-   //   "%.0f", NUMBER_REAL, 'c', 't', 5);
+   //   "%.0f", Label::REAL, 'c', 't', 5);
    mesh_2d.render_label_y (cr, transform, 0, 0,
-      "%.0fm", NUMBER_REAL, 'r', 'c', 5);
+      "%.0fm", Label::REAL, 'r', 'c', 5);
 
    for (Tuple::const_iterator iterator = tuple_x.begin ();
         iterator != tuple_x.end (); iterator++)
@@ -1543,7 +1543,7 @@ Display::render_cross_section_arrows (const RefPtr<Context>& cr,
 {
 
    Real x;
-   Level level (HEIGHT_LEVEL, GSL_NAN);
+   Level level (Level::HEIGHT, GSL_NAN);
    Real& z = level.value;
 
    const Real arrow_size = 15;
@@ -1738,34 +1738,34 @@ Display::render_meteogram_mesh (const RefPtr<Context>& cr,
    Color::black ().cairo (cr);
 
    mesh_temperature.render_label_y (cr, transform_temperature, 2,
-      start_t, "%.0f\u00b0C", NUMBER_REAL, 'r', 'c', 5);
+      start_t, "%.0f\u00b0C", Label::REAL, 'r', 'c', 5);
    mesh_temperature.render_label_x (cr, transform_temperature, 2,
-      domain_temperature.end, "%b %d", NUMBER_TIME, 'c', 't', 15);
+      domain_temperature.end, "%b %d", Label::TIME, 'c', 't', 15);
    mesh_temperature.render_label_x (cr, transform_temperature, 1,
-      domain_temperature.end, "%HZ", NUMBER_TIME, 'c', 't', 5);
+      domain_temperature.end, "%HZ", Label::TIME, 'c', 't', 5);
 
    mesh_direction.render_label_y (cr, transform_direction, 2,
-      start_t, "%03.0f\u00b0", NUMBER_REAL, 'r', 'c', 5);
+      start_t, "%03.0f\u00b0", Label::REAL, 'r', 'c', 5);
    mesh_direction.render_label_x (cr, transform_direction, 2,
-      domain_direction.end, "%b %d", NUMBER_TIME, 'c', 't', 15);
+      domain_direction.end, "%b %d", Label::TIME, 'c', 't', 15);
    mesh_direction.render_label_x (cr, transform_direction, 1,
-      domain_direction.end, "%HZ", NUMBER_TIME, 'c', 't', 5);
+      domain_direction.end, "%HZ", Label::TIME, 'c', 't', 5);
 
    mesh_speed.render_label_y (cr, transform_speed, 2,
-      start_t, "%.0f ms\u207b\u00b9", NUMBER_REAL, 'r', 'c', 5);
+      start_t, "%.0f ms\u207b\u00b9", Label::REAL, 'r', 'c', 5);
    mesh_speed.render_label_x (cr, transform_speed, 2,
-      domain_speed.end, "%b %d", NUMBER_TIME, 'c', 't', 15);
+      domain_speed.end, "%b %d", Label::TIME, 'c', 't', 15);
    mesh_speed.render_label_x (cr, transform_speed, 1,
-      domain_speed.end, "%HZ", NUMBER_TIME, 'c', 't', 5);
+      domain_speed.end, "%HZ", Label::TIME, 'c', 't', 5);
 
    if (!ignore_pressure)
    {
       mesh_pressure.render_label_y (cr, transform_pressure, 2,
-         start_t, "%.0fPa", NUMBER_REAL, 'r', 'c', 5);
+         start_t, "%.0fPa", Label::REAL, 'r', 'c', 5);
       mesh_pressure.render_label_x (cr, transform_pressure, 2,
-         domain_pressure.end, "%b %d", NUMBER_TIME, 'c', 't', 15);
+         domain_pressure.end, "%b %d", Label::TIME, 'c', 't', 15);
       mesh_pressure.render_label_x (cr, transform_pressure, 1,
-         domain_pressure.end, "%HZ", NUMBER_TIME, 'c', 't', 5);
+         domain_pressure.end, "%HZ", Label::TIME, 'c', 't', 5);
    }
 
    cr->restore ();

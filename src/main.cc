@@ -239,7 +239,7 @@ Twiin::command_line (const string& stage_str,
          {
 
             const Level level (*k);
-            const bool is_higher = (level.type == HEIGHT_LEVEL) &&
+            const bool is_higher = (level.type == Level::HEIGHT) &&
                (level.value > 1500);
             const Product& p = ((is_speed && is_higher) ?
                Product (Product::SPEED_HIGHER) : product);
