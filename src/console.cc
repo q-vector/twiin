@@ -22,7 +22,7 @@ Console::Product_Panel::Product_Panel (Console& console,
 }
 
 void
-Console::Product_Panel::add_product (const string& drawer_str,
+Console::Product_Panel::add_product (const Dstring& drawer_str,
                                      const Product& product)
 {
    Button* pb_ptr = new Button (console, product, font_size);
@@ -56,7 +56,7 @@ Console::get_tokens (const Marker& marker) const
    Tokens tokens = model.get_marker_tokens (lat_long,
       dtime, product, stage, level);
 
-   const string& ll_str = lat_long.get_string (false, string ("%.4f\u00b0"));
+   const Dstring& ll_str = lat_long.get_string (false, Dstring ("%.4f\u00b0"));
    tokens.insert (tokens.begin (), ll_str);
 
    return tokens;

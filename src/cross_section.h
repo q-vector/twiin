@@ -51,7 +51,7 @@ namespace twiin
                               const Real font_size = 12);
 
                void
-               add_product (const string& drawer_str,
+               add_product (const Dstring& drawer_str,
                             const Product& product);
 
                Signal&

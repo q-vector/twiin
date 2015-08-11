@@ -9,17 +9,17 @@ using namespace denise;
 using namespace Cairo;
 using namespace twiin;
 
-Stage::Stage (const string& str)
-   : string (str)
+Stage::Stage (const Dstring& str)
+   : Dstring (str)
 {
 }
 
 Stage::Stage (const Stage& stage)
-   : string (stage)
+   : Dstring (stage)
 {
 }
 
-string
+Dstring
 Stage::get_string () const
 {
    return *this;
@@ -35,7 +35,7 @@ Product::Product (const Product& product)
 {
 }
 
-Product::Product (const string& str)
+Product::Product (const Dstring& str)
 {
         if (str == "TERRAIN")       { enumeration = Product::TERRAIN; }
    else if (str == "TERRAIN_WATER") { enumeration = Product::TERRAIN_WATER; }
@@ -70,7 +70,7 @@ Product::Product (const string& str)
    else if (str == "Pseudo")        { enumeration = Product::Pseudo; }
 }
 
-string
+Dstring
 Product::get_string () const
 {
    switch (enumeration)
@@ -145,7 +145,7 @@ Station::Station (const Integer id,
                   const Real latitude,
                   const Real longitude,
                   const Real height,
-                  const string& name)
+                  const Dstring& name)
    : Lat_Long (latitude, longitude),
      id (id),
      height (height),
@@ -157,30 +157,31 @@ Station::Map::Map ()
 {
 }
 
-Station::Map::Map (const string& file_path)
+Station::Map::Map (const Dstring& file_path)
 {
    ingest (file_path);
 }
 
 void
-Station::Map::ingest (const string& file_path)
+Station::Map::ingest (const Dstring& file_path)
 {
 
-   string input_string;
-   ifstream file (file_path.c_str ());
+   string is;
+   ifstream file (file_path.get_string ().c_str ());
 
-   while (getline (file, input_string))
+   while (getline (file, is))
    {
 
-      if (input_string.size () == 0) { continue; }
-      if (input_string.c_str ()[0] == '#') { continue; }
+      if (is.size () == 0) { continue; }
+      if (is[0] == '#') { continue; }
 
+      const Dstring input_string (is);
       const Tokens tokens (input_string, ":");
       const Integer id = stoi (tokens[0]);
       const Real latitude = stof (tokens[1]);
       const Real longitude = stof (tokens[2]);
       const Real height = stof (tokens[3]);
-      const string& name = tokens[4];
+      const Dstring& name = tokens[4];
       insert (make_pair (id, Station (id, latitude, longitude, height, name)));
 
    }
@@ -240,11 +241,11 @@ Station::Map::attract (Real& latitude,
    longitude = station.longitude;
 }
 
-pair<string, Lat_Long>
+pair<Dstring, Lat_Long>
 Station::Map::nearest (const Lat_Long& lat_long) const
 {
    const Station& station = get_nearest_station (lat_long);
-   const string& str = string_render ("%d", station.id);
+   const Dstring& str = Dstring::render ("%d", station.id);
    return make_pair (str, station);
 }
 
@@ -276,7 +277,7 @@ Location::Location (const Lat_Long& lat_long)
    this->long_str = Lat_Long::get_string (4, false);
 }
 
-Location::Location (const string& str,
+Location::Location (const Dstring& str,
                     const Station::Map& station_map)
    : Lat_Long (GSL_NAN, GSL_NAN),
      station_id (-1),
@@ -291,11 +292,11 @@ Location::Location (const string& str,
       const Tokens tokens (str, ",");
       this->latitude = stof (tokens[0]);
       this->longitude = stof (tokens[1]);
-      this->str = Lat_Long::get_string (false, string ("%.4f"));
+      this->str = Lat_Long::get_string (false, Dstring ("%.4f"));
    }
    else
    {
-      const string& station_id_str = str;
+      const Dstring& station_id_str = str;
       const Integer station_id = stof (station_id_str);
       const Station& station = station_map.at (station_id);
       this->latitude = station.latitude;
@@ -313,13 +314,13 @@ Location::get_station_id () const
    return station_id;
 }
 
-const string&
+const Dstring&
 Location::get_str () const
 {
    return str;
 }
 
-const string&
+const Dstring&
 Location::get_long_str () const
 {
    return long_str;
@@ -399,7 +400,7 @@ Aws::Key::operator < (const Key& key) const
 }
 
 Real
-Aws::Repository::to_real (const string& token)
+Aws::Repository::to_real (const Dstring& token)
 {
   return (token == "-9999" ? GSL_NAN : stof (token));
 }
@@ -408,7 +409,7 @@ Aws::Repository::Repository ()
 {
 }
 
-Aws::Repository::Repository (const string& file_path)
+Aws::Repository::Repository (const Dstring& file_path)
 {
    ingest (file_path);
 }
@@ -423,14 +424,15 @@ Aws::Repository::insert (const Aws::Key& key,
 }
 
 void
-Aws::Repository::ingest (const string& file_path)
+Aws::Repository::ingest (const Dstring& file_path)
 {
 
-   igzstream file (file_path);
+   igzstream file (file_path.get_string ());
 
-   for (string input_line; std::getline (file, input_line); )
+   for (string il; std::getline (file, il); )
    {
 
+      const Dstring input_line (il);
       const Tokens tokens (input_line, ":");
 
       const Integer station_id = stoi (tokens[0]);
@@ -451,15 +453,14 @@ Aws::Repository::ingest (const string& file_path)
    }
 
    file.close ();
-cout << "after ingest size = " << size () << endl;
 
 }
 
 void
-Aws::Repository::ingest_binary (const string& file_path)
+Aws::Repository::ingest_binary (const Dstring& file_path)
 {
 
-   igzstream file (file_path, ios_base::in | ios_base::binary);
+   igzstream file (file_path.get_string (), ios_base::in | ios_base::binary);
 
    const Integer buffer_size = 22;
    char* buffer = new char[buffer_size];
@@ -517,10 +518,10 @@ i++;
 }
 
 void
-Aws::Repository::write (const string& file_path) const
+Aws::Repository::write (const Dstring& file_path) const
 {
 
-   ogzstream file (file_path, ios_base::out);
+   ogzstream file (file_path.get_string (), ios_base::out);
 
    for (auto iterator = begin (); iterator != end (); iterator++)
    {
@@ -554,10 +555,10 @@ Aws::Repository::write (const string& file_path) const
 }
 
 void
-Aws::Repository::write_binary (const string& file_path) const
+Aws::Repository::write_binary (const Dstring& file_path) const
 {
 
-   ogzstream file (file_path, ios_base::out | ios::binary);
+   ogzstream file (file_path.get_string (), ios_base::out | ios::binary);
 
    const Integer buffer_size = 22;
    char* buffer = new char[buffer_size];
@@ -786,17 +787,17 @@ Aws::Repository::get_station_p_domain () const
 
 }
 
-Model::Varname::Varname (const string& str)
-   : string (str)
+Model::Varname::Varname (const Dstring& str)
+   : Dstring (str)
 {
 }
 
 Model::Varname::Varname (const Model::Varname& varname)
-   : string (varname)
+   : Dstring (varname)
 {
 }
 
-string
+Dstring
 Model::Varname::get_string () const
 {
    return *this;
@@ -804,9 +805,9 @@ Model::Varname::get_string () const
 
 void
 Model::File_Path_Map::insert (const Varname& varname,
-                              const string& file_path)
+                              const Dstring& file_path)
 {
-   map<Varname, string>::insert (make_pair (varname, file_path));
+   map<Varname, Dstring>::insert (make_pair (varname, file_path));
 }
 
 void
@@ -854,7 +855,7 @@ Model::Terrain::Stage::init (const File_Path_Map& file_path_map)
    {
 
       const Model::Varname& varname = iterator->first;
-      const string& file_path = iterator->second;
+      const Dstring& file_path = iterator->second;
 
       nc_file_ptr_map.insert (make_pair (varname, new Nc_File (file_path)));
       const Nc_File& nc_file = *(nc_file_ptr_map.at (varname));
@@ -867,9 +868,9 @@ Model::Terrain::Stage::init (const File_Path_Map& file_path_map)
          this->tuple_longitude = nc_file.get_coordinate_tuple ("longitude");
       }
 
-      const string& nc_varname = Model::get_nc_varname (varname);
+      const Dstring& nc_varname = Model::get_nc_varname (varname);
 
-      ret = nc_inq_varid (nc_id, nc_varname.c_str (), &varid);
+      ret = nc_inq_varid (nc_id, nc_varname.get_string ().c_str (), &varid);
       if (ret != NC_NOERR) { throw Exception ("nc_inq_varid " + nc_varname); }
       varid_map[varname] = varid;
 
@@ -1000,7 +1001,7 @@ Model::Surface::Stage::fill_valid_time_set ()
    ret = nc_get_att_text (nc_id, varid, "time_origin", attribute_char);
    if (ret != NC_NOERR) { throw Exception ("nc_get_att_text"); }
 
-   string str (attribute_char);
+   Dstring str (attribute_char);
    const Integer yyyy = stoi (str.substr (7, 4));
    const Integer mm = 10;
    const Integer dd = stoi (str.substr (0, 2));
@@ -1089,32 +1090,32 @@ Model::Surface::Stage::evaluate (const Met_Element& met_element,
 
       case WIND_SPEED:
       {
-         const Real u = evaluate_raw (string ("xwind"), i, j, l);
-         const Real v = evaluate_raw (string ("ywind"), i, j, l);
+         const Real u = evaluate_raw (Dstring ("xwind"), i, j, l);
+         const Real v = evaluate_raw (Dstring ("ywind"), i, j, l);
          datum = sqrt (u*u + v*v);
          break;
       };
 
       case WIND_DIRECTION:
       {
-         const Real u = evaluate_raw (string ("xwind"), i, j, l);
-         const Real v = evaluate_raw (string ("ywind"), i, j, l);
+         const Real u = evaluate_raw (Dstring ("xwind"), i, j, l);
+         const Real v = evaluate_raw (Dstring ("ywind"), i, j, l);
          datum = Wind (u, v).get_direction ();
          break;
       };
 
       case RH:
       {
-         const Real t = evaluate_raw (string ("temp"), i, j, l);
-         const Real t_d = evaluate_raw (string ("dewpt"), i, j, l);
+         const Real t = evaluate_raw (Dstring ("temp"), i, j, l);
+         const Real t_d = evaluate_raw (Dstring ("dewpt"), i, j, l);
          datum = Moisture::get_rh (t - K, t_d - K, WATER);
          break;
       };
 
       case Q:
       {
-         const Real t_d = evaluate_raw (string ("dewpt"), i, j, l);
-         const Real mslp = evaluate_raw (string ("mslp"), i, j, l);
+         const Real t_d = evaluate_raw (Dstring ("dewpt"), i, j, l);
+         const Real mslp = evaluate_raw (Dstring ("mslp"), i, j, l);
          const Real topography = get_topography (i, j);
          const Real surface_p = mslp - 11.76 * topography;
          datum = Moisture::get_q_s (t_d - K, surface_p);
@@ -1143,8 +1144,8 @@ Model::Surface::Stage::evaluate (const Met_Element& met_element,
 
       case THETA:
       {
-         const Real t = evaluate_raw (string ("temp"), i, j, l);
-         const Real mslp = evaluate_raw (string ("mslp"), i, j, l);
+         const Real t = evaluate_raw (Dstring ("temp"), i, j, l);
+         const Real mslp = evaluate_raw (Dstring ("mslp"), i, j, l);
          const Real topography = get_topography (i, j);
          const Real surface_p = mslp - 11.76 * topography;
          datum = Thermo_Point::t_p (t - K, surface_p).get_theta () + K;
@@ -1154,9 +1155,9 @@ Model::Surface::Stage::evaluate (const Met_Element& met_element,
       case THETA_E:
       {
          typedef Thermo_Point Tp;
-         const Real t = evaluate_raw (string ("temp"), i, j, l);
-         const Real t_d = evaluate_raw (string ("dewpt"), i, j, l);
-         const Real mslp = evaluate_raw (string ("mslp"), i, j, l);
+         const Real t = evaluate_raw (Dstring ("temp"), i, j, l);
+         const Real t_d = evaluate_raw (Dstring ("dewpt"), i, j, l);
+         const Real mslp = evaluate_raw (Dstring ("mslp"), i, j, l);
          const Real topography = get_topography (i, j);
          const Real surface_p = mslp - 11.76 * topography;
          datum = Tp::normand (t - K, t_d - K, surface_p).get_theta_e () + K;
@@ -1166,9 +1167,9 @@ Model::Surface::Stage::evaluate (const Met_Element& met_element,
       case THETA_V:
       {
          typedef Thermo_Point Tp;
-         const Real t = evaluate_raw (string ("temp"), i, j, l);
-         const Real t_d = evaluate_raw (string ("dewpt"), i, j, l);
-         const Real mslp = evaluate_raw (string ("mslp"), i, j, l);
+         const Real t = evaluate_raw (Dstring ("temp"), i, j, l);
+         const Real t_d = evaluate_raw (Dstring ("dewpt"), i, j, l);
+         const Real mslp = evaluate_raw (Dstring ("mslp"), i, j, l);
          const Real topography = get_topography (i, j);
          const Real surface_p = mslp - 11.76 * topography;
          const Real r = Thermo_Point::t_p (t_d + K, surface_p).get_r_s ();
@@ -1179,8 +1180,8 @@ Model::Surface::Stage::evaluate (const Met_Element& met_element,
 
       case RHO:
       {
-         const Real t = evaluate_raw (string ("temp"), i, j, l);
-         const Real mslp = evaluate_raw (string ("mslp"), i, j, l);
+         const Real t = evaluate_raw (Dstring ("temp"), i, j, l);
+         const Real mslp = evaluate_raw (Dstring ("mslp"), i, j, l);
          const Real topography = get_topography (i, j);
          const Real surface_p = mslp - 11.76 * topography;
          datum = surface_p / (R_d * t);
@@ -1189,11 +1190,11 @@ Model::Surface::Stage::evaluate (const Met_Element& met_element,
 
       case FFDI:
       {
-         const Real t = evaluate_raw (string ("temp"), i, j, l);
-         const Real t_d = evaluate_raw (string ("dewpt"), i, j, l);
+         const Real t = evaluate_raw (Dstring ("temp"), i, j, l);
+         const Real t_d = evaluate_raw (Dstring ("dewpt"), i, j, l);
          const Real rh = Moisture::get_rh (t - K, t_d - K, WATER);
-         const Real u = evaluate_raw (string ("xwind"), i, j, l);
-         const Real v = evaluate_raw (string ("ywind"), i, j, l);
+         const Real u = evaluate_raw (Dstring ("xwind"), i, j, l);
+         const Real v = evaluate_raw (Dstring ("ywind"), i, j, l);
          const Real speed = sqrt (u*u + v*v);
          datum = Fire::get_ffdi (t - K, rh * 100, speed * 3.6);
          break;
@@ -1206,12 +1207,12 @@ Model::Surface::Stage::evaluate (const Met_Element& met_element,
 
          switch (met_element)
          {
-            case T: { varname = string ("temp"); break; }
-            case TD: { varname = string ("dewpt"); break; }
-            case MSLP: { varname = string ("mslp"); break; }
-            case PRECIP_RATE: { varname = string ("prcp8p5"); break; }
-            case U: { varname = string ("xwind"); break; }
-            case V: { varname = string ("ywind"); break; }
+            case T: { varname = Dstring ("temp"); break; }
+            case TD: { varname = Dstring ("dewpt"); break; }
+            case MSLP: { varname = Dstring ("mslp"); break; }
+            case PRECIP_RATE: { varname = Dstring ("prcp8p5"); break; }
+            case U: { varname = Dstring ("xwind"); break; }
+            case V: { varname = Dstring ("ywind"); break; }
          }
 
          datum = evaluate_raw (varname, i, j, l);
@@ -1226,7 +1227,7 @@ Model::Surface::Stage::evaluate (const Met_Element& met_element,
 }
 
 Real
-Model::Surface::Stage::evaluate_raw (const string& varname,
+Model::Surface::Stage::evaluate_raw (const Dstring& varname,
                                      const size_t i,
                                      const size_t j,
                                      const size_t l) const
@@ -1698,13 +1699,13 @@ Model::Uppers::Stage::evaluate (const Met_Element& met_element,
 
          switch (met_element)
          {
-            case U:       { varname = string ("ml_xwind"); break; } 
-            case V:       { varname = string ("ml_ywind"); break; } 
-            case W:       { varname = string ("ml_zwind"); break; } 
-            case THETA:   { varname = string ("ml_theta"); break; } 
-            case Q:       { varname = string ("ml_spechum"); break; } 
-            case P_THETA: { varname = string ("ml_ptheta"); break; } 
-            case P_RHO:   { varname = string ("ml_prho"); break; } 
+            case U:       { varname = Dstring ("ml_xwind"); break; } 
+            case V:       { varname = Dstring ("ml_ywind"); break; } 
+            case W:       { varname = Dstring ("ml_zwind"); break; } 
+            case THETA:   { varname = Dstring ("ml_theta"); break; } 
+            case Q:       { varname = Dstring ("ml_spechum"); break; } 
+            case P_THETA: { varname = Dstring ("ml_ptheta"); break; } 
+            case P_RHO:   { varname = Dstring ("ml_prho"); break; } 
          }
 
          datum = evaluate_raw (varname, i, j, k, l);
@@ -1719,7 +1720,7 @@ Model::Uppers::Stage::evaluate (const Met_Element& met_element,
 }
 
 Real
-Model::Uppers::Stage::evaluate_raw (const string& varname,
+Model::Uppers::Stage::evaluate_raw (const Dstring& varname,
                                     const size_t i,
                                     const size_t j,
                                     const size_t k,
@@ -1858,24 +1859,25 @@ Model::Vertical_Coefficients::Vertical_Coefficients ()
 {
 }
 
-Model::Vertical_Coefficients::Vertical_Coefficients (const string& file_path)
+Model::Vertical_Coefficients::Vertical_Coefficients (const Dstring& file_path)
 {
    init (file_path);
 }
 
 void
-Model::Vertical_Coefficients::init (const string& file_path)
+Model::Vertical_Coefficients::init (const Dstring& file_path)
 {
 
-   string input_string;
-   ifstream file (file_path.c_str ());
+   string is;
+   ifstream file (file_path.get_string ().c_str ());
 
-   while (getline (file, input_string))
+   while (getline (file, is))
    {
 
-      if (input_string.size () == 0) { continue; }
-      if (input_string.c_str ()[0] == '#') { continue; }
+      if (is.size () == 0) { continue; }
+      if (is[0] == '#') { continue; }
 
+      const Dstring input_string (is);
       const Tokens tokens (input_string, ":");
       A_theta.push_back (stof (tokens[0]));
       B_theta.push_back (stof (tokens[1]));
@@ -1912,7 +1914,7 @@ Model::Vertical_Coefficients::get_B_rho () const
    return B_rho;
 }
 
-string
+Dstring
 Model::get_nc_varname (const Varname& varname)
 {
    if (varname == "orog") { return "ht"; }
@@ -1993,22 +1995,22 @@ Model::Model (const Config_File& config_file)
    Model::File_Path_Map uppers_file_path_3_map;
    Model::File_Path_Map uppers_file_path_4_map;
    Model::File_Path_Map uppers_file_path_5_map;
-   string vertical_coefficients_file_path;
+   Dstring vertical_coefficients_file_path;
 
-   map<string, Model::File_Path_Map> terrain_file_path_map;
-   map<string, Model::File_Path_Map> surface_file_path_map;
-   map<string, Model::File_Path_Map> uppers_file_path_map;
+   map<Dstring, Model::File_Path_Map> terrain_file_path_map;
+   map<Dstring, Model::File_Path_Map> surface_file_path_map;
+   map<Dstring, Model::File_Path_Map> uppers_file_path_map;
 
    for (auto iterator = config_file.begin ();
         iterator != config_file.end (); iterator++)
    {
 
-      const Tokens tokens (*(iterator));
+      const Tokens tokens (*(iterator), " \f\n\t");
       if (tokens.size () != 2 || tokens[0] != "model") { continue; }
 
-      const string& argument = tokens[1];
+      const Dstring& argument = tokens[1];
       const Tokens argument_tokens (argument, ":");
-      const string& model_identifier = argument_tokens[0];
+      const Dstring& model_identifier = argument_tokens[0];
 
       if (model_identifier == "RUN" && argument_tokens.size () == 2)
       {
@@ -2018,7 +2020,7 @@ Model::Model (const Config_File& config_file)
 
       if (model_identifier == "AB" && argument_tokens.size () == 2)
       {
-         vertical_coefficients_file_path = get_trimmed (argument_tokens[1]);
+         vertical_coefficients_file_path = argument_tokens[1].get_trimmed ();
          continue;
       }
 
@@ -2026,9 +2028,9 @@ Model::Model (const Config_File& config_file)
           argument_tokens.size () == 3)
       {
 
-         const string& stage_str = get_trimmed (argument_tokens[0]);
-         const string& var_str = get_trimmed (argument_tokens[1]);
-         const string& file_path = get_trimmed (argument_tokens[2]);
+         const Dstring& stage_str = argument_tokens[0].get_trimmed ();
+         const Dstring& var_str = argument_tokens[1].get_trimmed ();
+         const Dstring& file_path = argument_tokens[2].get_trimmed ();
 
          const bool is_terrain = (var_str == "orog" || var_str == "lsm");
          const bool is_uppers = (var_str.substr (0, 3) == "ml_");
@@ -2095,19 +2097,19 @@ Model::Model (const Config_File& config_file)
    const Tokens stage_tokens ("STAGE3 STAGE4 STAGE5");
 
    terrain.init (stage_tokens);
-   terrain.init_stage (string ("STAGE3"), terrain_file_path_3_map);
-   terrain.init_stage (string ("STAGE4"), terrain_file_path_4_map);
-   terrain.init_stage (string ("STAGE5"), terrain_file_path_5_map);
+   terrain.init_stage (Dstring ("STAGE3"), terrain_file_path_3_map);
+   terrain.init_stage (Dstring ("STAGE4"), terrain_file_path_4_map);
+   terrain.init_stage (Dstring ("STAGE5"), terrain_file_path_5_map);
 
    surface.init (stage_tokens);
-   surface.init_stage (string ("STAGE3"), surface_file_path_3_map);
-   surface.init_stage (string ("STAGE4"), surface_file_path_4_map);
-   surface.init_stage (string ("STAGE5"), surface_file_path_5_map);
+   surface.init_stage (Dstring ("STAGE3"), surface_file_path_3_map);
+   surface.init_stage (Dstring ("STAGE4"), surface_file_path_4_map);
+   surface.init_stage (Dstring ("STAGE5"), surface_file_path_5_map);
 
    uppers.init (stage_tokens);
-   uppers.init_stage (string ("STAGE3"), uppers_file_path_3_map);
-   uppers.init_stage (string ("STAGE4"), uppers_file_path_4_map);
-   uppers.init_stage (string ("STAGE5"), uppers_file_path_5_map);
+   uppers.init_stage (Dstring ("STAGE3"), uppers_file_path_3_map);
+   uppers.init_stage (Dstring ("STAGE4"), uppers_file_path_4_map);
+   uppers.init_stage (Dstring ("STAGE5"), uppers_file_path_5_map);
 
 }
 
@@ -2267,14 +2269,14 @@ Model::get_sounding_ptr (const Lat_Long::List& lat_long_list,
    else
    {
 
-      string location_str ("");
+      Dstring location_str ("");
       list<const Sounding*> sounding_ptr_list;
 
       for (auto iterator = lat_long_list.begin ();
            iterator != lat_long_list.end (); iterator++)
       {
          const Lat_Long& ll = *(iterator);
-         const string prefix (iterator == lat_long_list.begin () ? "" : ":");
+         const Dstring prefix (iterator == lat_long_list.begin () ? "" : ":");
          location_str += prefix + ll.get_string (4);
          const Sounding* sounding_ptr = get_sounding_ptr (ll, dtime, stage);
          sounding_ptr_list.push_back (sounding_ptr);
@@ -2379,7 +2381,7 @@ Model::get_marker_tokens (const Lat_Long& lat_long,
       {
          const Real datum = evaluate (P_THETA, lat_long, level, dtime, stage);
          if (gsl_isnan (datum)) { return tokens; }
-         tokens.push_back (string_render ("%.0fhPa", datum * 1e-2));
+         tokens.push_back (Dstring::render ("%.0fhPa", datum * 1e-2));
          break;
       }
 
@@ -2387,7 +2389,7 @@ Model::get_marker_tokens (const Lat_Long& lat_long,
       {
          const Real datum = evaluate (P_RHO, lat_long, level, dtime, stage);
          if (gsl_isnan (datum)) { return tokens; }
-         tokens.push_back (string_render ("%.1fhPa", datum * 1e-2));
+         tokens.push_back (Dstring::render ("%.1fhPa", datum * 1e-2));
          break;
       }
 
@@ -2395,7 +2397,7 @@ Model::get_marker_tokens (const Lat_Long& lat_long,
       {
          const Real datum = evaluate (THETA, lat_long, level, dtime, stage);
          if (gsl_isnan (datum)) { return tokens; }
-         tokens.push_back (string_render ("%.1f\u00b0C", datum - K));
+         tokens.push_back (Dstring::render ("%.1f\u00b0C", datum - K));
          break;
       }
 
@@ -2403,7 +2405,7 @@ Model::get_marker_tokens (const Lat_Long& lat_long,
       {
          const Real theta_e = evaluate (THETA_V, lat_long, level, dtime, stage);
          if (gsl_isnan (theta_e)) { return tokens; }
-         tokens.push_back (string_render ("%.1f\u00b0C", theta_e - K));
+         tokens.push_back (Dstring::render ("%.1f\u00b0C", theta_e - K));
          break;
       }
 
@@ -2411,7 +2413,7 @@ Model::get_marker_tokens (const Lat_Long& lat_long,
       {
          const Real datum = evaluate (Q, lat_long, level, dtime, stage);
          if (gsl_isnan (datum)) { return tokens; }
-         tokens.push_back (string_render ("%.3fg/kg", datum * 1e3));
+         tokens.push_back (Dstring::render ("%.3fg/kg", datum * 1e3));
          break;
       }
 
@@ -2419,7 +2421,7 @@ Model::get_marker_tokens (const Lat_Long& lat_long,
       {
          const Real datum = evaluate (T, lat_long, level, dtime, stage);
          if (gsl_isnan (datum)) { return tokens; }
-         tokens.push_back (string_render ("%.1f\u00b0C", datum - K));
+         tokens.push_back (Dstring::render ("%.1f\u00b0C", datum - K));
          break;
       }
 
@@ -2427,7 +2429,7 @@ Model::get_marker_tokens (const Lat_Long& lat_long,
       {
          const Real t_d = evaluate (TD, lat_long, level, dtime, stage);
          if (gsl_isnan (t_d)) { return tokens; }
-         tokens.push_back (string_render ("%.1f\u00b0C", t_d - K));
+         tokens.push_back (Dstring::render ("%.1f\u00b0C", t_d - K));
          break;
       }
 
@@ -2435,7 +2437,7 @@ Model::get_marker_tokens (const Lat_Long& lat_long,
       {
          const Real rh = evaluate (RH, lat_long, level, dtime, stage);
          if (gsl_isnan (rh)) { return tokens; }
-         tokens.push_back (string_render ("%.0f%%", rh * 100));
+         tokens.push_back (Dstring::render ("%.0f%%", rh * 100));
          break;
       }
 
@@ -2443,7 +2445,7 @@ Model::get_marker_tokens (const Lat_Long& lat_long,
       {
          const Real theta_e = evaluate (THETA_E, lat_long, level, dtime, stage);
          if (gsl_isnan (theta_e)) { return tokens; }
-         tokens.push_back (string_render ("%.1f\u00b0C", theta_e - K));
+         tokens.push_back (Dstring::render ("%.1f\u00b0C", theta_e - K));
          break;
       }
 
@@ -2451,7 +2453,7 @@ Model::get_marker_tokens (const Lat_Long& lat_long,
       {
          const Real rho = evaluate (RHO, lat_long, level, dtime, stage);
          if (gsl_isnan (rho)) { return tokens; }
-         tokens.push_back (string_render ("%.2fkg/m3", rho));
+         tokens.push_back (Dstring::render ("%.2fkg/m3", rho));
          break;
       }
 
@@ -2464,7 +2466,7 @@ Model::get_marker_tokens (const Lat_Long& lat_long,
          if (gsl_isnan (v)) { return tokens; }
          const Wind wind (u, v);
          const Real msknot = 3.6/1.852;
-         const string fmt ("%03.0f\u00b0 / %02.1fkt");
+         const Dstring fmt ("%03.0f\u00b0 / %02.1fkt");
          tokens.push_back (wind.get_string (msknot, fmt));
          break;
       }
@@ -2473,13 +2475,13 @@ Model::get_marker_tokens (const Lat_Long& lat_long,
       {
          const Real ffdi = evaluate (FFDI, lat_long, level, dtime, stage);
          if (gsl_isnan (ffdi)) { return tokens; }
-         string ffdr = "Low-Moderate";
+         Dstring ffdr ("Low-Moderate");
          if (ffdi > 12) { ffdr = "High"; }
          if (ffdi > 25) { ffdr = "Very High"; }
          if (ffdi > 50) { ffdr = "Severe"; }
          if (ffdi > 75) { ffdr = "Extreme"; }
          if (ffdi > 100) { ffdr = "Catastrophic"; }
-         tokens.push_back (string_render ("%02.2f", ffdi));
+         tokens.push_back (Dstring::render ("%02.2f", ffdi));
          tokens.push_back (ffdr);
          break;
       }
@@ -2488,9 +2490,9 @@ Model::get_marker_tokens (const Lat_Long& lat_long,
       case Product::TERRAIN_WATER:
       {
          const Model::Terrain::Stage& terrain_stage = terrain.get_stage (stage);
-         const Real orog = terrain_stage.evaluate (string ("orog"), lat_long);
+         const Real orog = terrain_stage.evaluate (Dstring ("orog"), lat_long);
          if (gsl_isnan (orog)) { return tokens; }
-         tokens.push_back (string_render ("%.2fm", orog));
+         tokens.push_back (Dstring::render ("%.2fm", orog));
          break;
       }
 
@@ -2498,7 +2500,7 @@ Model::get_marker_tokens (const Lat_Long& lat_long,
       {
          const Real w = evaluate (W, lat_long, level, dtime, stage);
          if (gsl_isnan (w)) { return tokens; }
-         tokens.push_back (string_render ("%.2fm/s", w));
+         tokens.push_back (Dstring::render ("%.2fm/s", w));
          break;
       }
 
@@ -2506,7 +2508,7 @@ Model::get_marker_tokens (const Lat_Long& lat_long,
       {
          const Real zeta = evaluate (ZETA, lat_long, level, dtime, stage);
          if (gsl_isnan (zeta)) { return tokens; }
-         tokens.push_back (string_render ("%.4e/s", zeta));
+         tokens.push_back (Dstring::render ("%.4e/s", zeta));
          break;
       }
 
@@ -2514,7 +2516,7 @@ Model::get_marker_tokens (const Lat_Long& lat_long,
       {
          const Real mslp = evaluate (MSLP, lat_long, level, dtime, stage);
          if (gsl_isnan (mslp)) { return tokens; }
-         tokens.push_back (string_render ("%0.1fhPa", mslp * 1e-2));
+         tokens.push_back (Dstring::render ("%0.1fhPa", mslp * 1e-2));
          break;
       }
 
@@ -2522,7 +2524,7 @@ Model::get_marker_tokens (const Lat_Long& lat_long,
       {
          const Real mmhr = evaluate (PRECIP_RATE, lat_long, level, dtime, stage);
          if (gsl_isnan (mmhr)) { return tokens; }
-         tokens.push_back (string_render ("%0.1fmm/hr", mmhr * 3600));
+         tokens.push_back (Dstring::render ("%0.1fmm/hr", mmhr * 3600));
          break;
       }
 
@@ -2541,23 +2543,23 @@ Data::Data (const Config_File& config_file)
         iterator != config_file.end (); iterator++)
    {
 
-      const Tokens tokens (*(iterator));
+      const Tokens tokens (*(iterator), " \f\n\t");
 
       if (tokens.size () == 2 && tokens[0] == "aws")
       {
-         const string& aws_file_path = tokens[1];
+         const Dstring& aws_file_path = tokens[1];
          aws_repository.ingest (aws_file_path);
       }
 
       if (tokens.size () == 2 && tokens[0] == "aws_bin")
       {
-         const string& aws_file_path = tokens[1];
+         const Dstring& aws_file_path = tokens[1];
          aws_repository.ingest_binary (aws_file_path);
       }
 
       if (tokens.size () == 2 && tokens[0] == "stations")
       {
-         const string& station_map_file_path = tokens[1];
+         const Dstring& station_map_file_path = tokens[1];
          station_map.ingest (station_map_file_path);
       }
 
@@ -2597,7 +2599,7 @@ Data::get_aws_repository_ptr (const Integer station_id,
 }
 
 Lat_Long
-Data::get_lat_long (const string& location_str) const
+Data::get_lat_long (const Dstring& location_str) const
 {
 
    const Tokens tokens (location_str, ":");

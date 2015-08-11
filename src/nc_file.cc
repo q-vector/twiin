@@ -4,7 +4,7 @@ using namespace std;
 using namespace denise;
 using namespace twiin;
 
-Nc_File::Nc_File (const string& file_path)
+Nc_File::Nc_File (const Dstring& file_path)
    : file_path (file_path)
 {
    int ret = nc_open (file_path.c_str (), NC_NOWRITE, &nc_id);
@@ -61,8 +61,8 @@ Nc_File::get_datum (const void* pointer,
 }
 
 Tuple
-Nc_File::get_coordinate_tuple (const string& dim_str,
-                               string var_str) const
+Nc_File::get_coordinate_tuple (const Dstring& dim_str,
+                               Dstring var_str) const
 {
 
    if (var_str == "") { var_str = dim_str; }

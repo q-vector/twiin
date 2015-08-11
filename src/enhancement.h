@@ -58,7 +58,7 @@ class Enhancement
       get_color (const uint16_t datum) const;
 
       static Enhancement
-      get_enhancement (const string& str);
+      get_enhancement (const Dstring& str);
 
 };
 

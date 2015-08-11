@@ -20,7 +20,7 @@ namespace twiin
 
       private:
 
-         class Transform_Ptr_Map : public map<string, Geodetic_Transform*>
+         class Transform_Ptr_Map : public map<Dstring, Geodetic_Transform*>
          {
 
             public:
@@ -38,37 +38,37 @@ namespace twiin
          const Config_File
          config_file;
 
-         const string
+         const Dstring
          output_dir;
 
-         string
-         get_file_path (const string& format,
+         Dstring
+         get_file_path (const Dstring& format,
                         const Stage& stage,
                         const Product& product,
                         const Level& level,
                         const Dtime& dtime) const;
 
-         string
-         get_file_path (const string& format,
+         Dstring
+         get_file_path (const Dstring& format,
                         const Stage& stage,
                         const Product& product,
                         const Dtime& dtime,
                         const Journey& journey) const;
 
-         string
-         get_file_path (const string& format,
+         Dstring
+         get_file_path (const Dstring& format,
                         const Stage& stage,
                         const Dtime& dtime,
                         const Location& location) const;
 
-         string
-         get_file_path (const string& format,
+         Dstring
+         get_file_path (const Dstring& format,
                         const Stage& stage,
                         const Dtime& dtime,
-                        const string& location_name) const;
+                        const Dstring& location_name) const;
 
-         string
-         get_file_path (const string& format,
+         Dstring
+         get_file_path (const Dstring& format,
                         const Stage& stage,
                         const Location& location) const;
 
@@ -76,59 +76,59 @@ namespace twiin
 
          Twiin (const Size_2D& size_2d,
                 const Config_File& config_file,
-                const string& output_dir);
+                const Dstring& output_dir);
 
 #ifndef ENABLE_GTKMM
 #else /* ENABLE_GTKMM */
          void
-         interactive (const string& stage_str,
-                      const string& product_str,
-                      const string& level_str,
-                      const string& time_str) const;
+         interactive (const Dstring& stage_str,
+                      const Dstring& product_str,
+                      const Dstring& level_str,
+                      const Dstring& time_str) const;
 #endif /* ENABLE_GTKMM */
 
          void
-         command_line (const string& stage_str,
-                       const string& product_str,
-                       const string& level_str,
-                       const string& time_str,
-                       const string& zoom_str,
+         command_line (const Dstring& stage_str,
+                       const Dstring& product_str,
+                       const Dstring& level_str,
+                       const Dstring& time_str,
+                       const Dstring& zoom_str,
                        const Tokens& annotation_tokens,
-                       const string& format,
+                       const Dstring& format,
                        const Tokens& title_tokens,
-                       const string& filename,
+                       const Dstring& filename,
                        const bool no_stage,
                        const bool no_wind_barb,
                        const bool is_bludge) const;
 
          void
-         cross_section (const string& stage_str,
-                        const string& product_str,
+         cross_section (const Dstring& stage_str,
+                        const Dstring& product_str,
                         const Journey& journey,
-                        const string& time_str,
-                        const string& format,
+                        const Dstring& time_str,
+                        const Dstring& format,
                         const Tokens& title_tokens,
-                        const string& filename,
+                        const Dstring& filename,
                         const Real u_bg,
                         const bool is_bludge) const;
 
          void
-         meteogram (const string& stage_str,
-                    const string& location_str,
-                    const string& time_str,
-                    const string& format,
+         meteogram (const Dstring& stage_str,
+                    const Dstring& location_str,
+                    const Dstring& time_str,
+                    const Dstring& format,
                     const Tokens& title_tokens,
-                    const string& filename,
+                    const Dstring& filename,
                     const bool ignore_pressure,
                     const bool is_bludge) const;
 
          void
-         vertical_profile (const string& stage_str,
-                           const string& location_str,
-                           const string& time_str,
-                           const string& format,
+         vertical_profile (const Dstring& stage_str,
+                           const Dstring& location_str,
+                           const Dstring& time_str,
+                           const Dstring& format,
                            const Tokens& title_tokens,
-                           const string& filename,
+                           const Dstring& filename,
                            const bool is_bludge) const;
 
    };

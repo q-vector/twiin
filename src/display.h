@@ -115,7 +115,7 @@ namespace twiin
                     const Dtime& basetime,
                     const Stage& stage,
                     const Dtime& dtime,
-                    const string& location_str);
+                    const Dstring& location_str);
 
          static void
          set_title (Title& title,
@@ -123,7 +123,7 @@ namespace twiin
                     const Stage& stage,
                     const Location& location);
 
-         static string
+         static Dstring
          get_unit (const Product& product);
 
          static Tuple
@@ -140,7 +140,7 @@ namespace twiin
          static Color
          get_color (const Product& product,
                     const Real datum,
-                    const string& unit);
+                    const Dstring& unit);
 
          static void
          render_stages (const RefPtr<Context>& cr,
@@ -181,12 +181,12 @@ namespace twiin
          render_annotation_point (const RefPtr<Context>& cr,
                                   const Geodetic_Transform& transform,
                                   const Lat_Long& lat_long,
-                                  const string& str);
+                                  const Dstring& str);
 
          static void
          render_annotation (const RefPtr<Context>& cr,
                             const Geodetic_Transform& transform,
-                            const string& annotation_str);
+                            const Dstring& annotation_str);
 
          static void
          render_annotations (const RefPtr<Context>& cr,

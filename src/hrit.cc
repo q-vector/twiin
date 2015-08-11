@@ -10,7 +10,7 @@ using namespace denise;
 using namespace Cairo;
 
 void
-Hrit::init (const string& data_path)
+Hrit::init (const Dstring& data_path)
 {
 
    this->data_path = data_path;
@@ -22,8 +22,8 @@ Hrit::init (const string& data_path)
         l != dir_listing.end (); l++)
    {
 
-      const string& leaf = *(l);
-      const string& time_str = leaf.substr (5, 11) + "2";
+      const Dstring& leaf = *(l);
+      const Dstring& time_str = leaf.substr (5, 11) + "2";
       const Dtime dtime (time_str);
 
       frame_map.insert (make_pair (dtime, Frame (*this, leaf)));
@@ -64,8 +64,8 @@ Hrit::File::get_data_size ()
    return get_uint32_t (12, 4) / 8;
 }
 
-Hrit::File::File (const string& file_path)
-   : ifstream (file_path)
+Hrit::File::File (const Dstring& file_path)
+   : ifstream (file_path.get_string ())
 {
    disk_size.i = get_uint32_t (16 + 6, 2);
    disk_size.j = get_uint32_t (16 + 4, 2);
@@ -189,26 +189,28 @@ Hrit::Frame::Map::get_frame (const Dtime& dtime) const
 }
 
 Hrit::Frame::Frame (const Hrit& hrit,
-                    const string& leaf)
+                    const Dstring& leaf)
    : hrit (hrit)
 {
 
    const Reg_Exp re ("DK01_[0-9]+");
 
-   const string& time_str = leaf.substr (5, 11) + "2";
+   const Dstring& time_str = leaf.substr (5, 11) + "2";
 
    for (auto c = hrit.channel_tokens.begin ();
         c != hrit.channel_tokens.end (); c++)
    {
 
-      const string& channel = *(c);
+      const Dstring& channel = *(c);
       Tokens file_path_tokens;
 
       for (Integer s = 1; s <= 10; s++)
       {
-         const string& prefix = hrit.get_data_path () + "/" + leaf + "/IMG_DK01";
-         const string& segment_str = string_render ("_%03d", s);
-         const string& file_path = prefix + channel + "_" + time_str + segment_str;
+         const Dstring& prefix = hrit.get_data_path () +
+            "/" + leaf + "/IMG_DK01";
+         const Dstring& segment_str = Dstring::render ("_%03d", s);
+         const Dstring& file_path = prefix +
+            channel + "_" + time_str + segment_str;
          file_path_tokens.push_back (file_path);
       }
 
@@ -218,33 +220,33 @@ Hrit::Frame::Frame (const Hrit& hrit,
 
 }
 
-const string&
+const Dstring&
 Hrit::get_data_path () const
 {
    return data_path;
 }
 
-string
-Hrit::Frame::get_file_path (const string& channel,
+Dstring
+Hrit::Frame::get_file_path (const Dstring& channel,
                             const Integer segment) const
 {
    return at (channel).at (segment);
 }
 
 Geos_Transform 
-Hrit::Frame::get_navigation (const string& channel) const
+Hrit::Frame::get_navigation (const Dstring& channel) const
 {
    Hrit::File file (at (channel).at (0));
    return file.get_navigation ();
 }
 
 Hrit::Disk::Disk (const Frame& frame,
-                  const string& channel)
+                  const Dstring& channel)
 {
 
    for (Integer segment = 0; segment < 10; segment++)
    {
-      const string& file_path = frame.get_file_path (channel, segment);
+      const Dstring& file_path = frame.get_file_path (channel, segment);
       push_back (new Hrit::File (file_path));
    }
 
@@ -299,7 +301,7 @@ Hrit::Disk_Ptr_Map::~Disk_Ptr_Map ()
    }
 }
 
-Hrit::Hrit (const string& data_path)
+Hrit::Hrit (const Dstring& data_path)
    : channel_tokens ("IR1 IR2 IR3 IR4 VIS")
 {
    init (data_path);
@@ -317,7 +319,7 @@ Hrit::Hrit (const Config_File& config_file)
       if (tokens.size () != 2) { continue; }
       if (tokens[0] != "hrit") { continue; }
 
-      const string& data_path = tokens[1];
+      const Dstring& data_path = tokens[1];
       init (data_path);
       break;
 
@@ -325,9 +327,9 @@ Hrit::Hrit (const Config_File& config_file)
 
 }
 
-string
+Dstring
 Hrit::get_file_path (const Dtime& dtime,
-                     const string& channel,
+                     const Dstring& channel,
                      const Integer segment) const
 {
    return frame_map.get_frame (dtime).at (channel).at (segment);
@@ -335,22 +337,22 @@ Hrit::get_file_path (const Dtime& dtime,
 
 Geos_Transform
 Hrit::get_navigation (const Dtime& dtime,
-                      const string& channel) const
+                      const Dstring& channel) const
 {
    Hrit::File file (frame_map.get_frame (dtime).at (channel).at (0));
    return file.get_navigation ();
 }
 
-map<string, Geos_Transform>
+map<Dstring, Geos_Transform>
 Hrit::get_navigation_map (const Dtime& dtime) const
 {
 
-   map<string, Geos_Transform> navigation_map;
+   map<Dstring, Geos_Transform> navigation_map;
 
    for (auto c = channel_tokens.begin ();
         c != channel_tokens.end (); c++)
    {
-      const string& channel = *(c);
+      const Dstring& channel = *(c);
       const Geos_Transform& navigation = get_navigation (dtime, channel);
       navigation_map.insert (make_pair (channel, navigation));
    }
@@ -361,7 +363,7 @@ Hrit::get_navigation_map (const Dtime& dtime) const
 
 Hrit::Disk*
 Hrit::get_disk_ptr (const Dtime& dtime,
-                const string& channel) const
+                const Dstring& channel) const
 {
    const Hrit::Frame& frame = frame_map.get_frame (dtime);
    return new Hrit::Disk (frame, channel);
@@ -376,7 +378,7 @@ Hrit::get_disk_ptr_map (const Dtime& dtime) const
    for (auto c = channel_tokens.begin ();
         c != channel_tokens.end (); c++)
    {
-      const string& channel = *(c);
+      const Dstring& channel = *(c);
       Hrit::Disk* disk_ptr = get_disk_ptr (dtime, channel);
       disk_ptr_map.insert (make_pair (channel, disk_ptr));
    }
@@ -402,9 +404,9 @@ Hrit::get_datum (Hrit::Disk& disk,
 }
 
 Color
-Hrit::get_color (const string& hrit_product,
+Hrit::get_color (const Dstring& hrit_product,
                  Disk_Ptr_Map& disk_ptr_map,
-                 const map<string, Geos_Transform>& navigation_map,
+                 const map<Dstring, Geos_Transform>& navigation_map,
                  const Lat_Long& lat_long)
 {
 
@@ -417,7 +419,7 @@ Hrit::get_color (const string& hrit_product,
        hrit_product == "VIS")
    {
 
-      const string channel (hrit_product);
+      const Dstring channel (hrit_product);
 
       const auto& navigation = navigation_map.at (channel);
       auto& disk = *(disk_ptr_map.at (channel));

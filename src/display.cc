@@ -119,7 +119,7 @@ Display::get_terrain_raster_ptr (const Size_2D& size_2d,
          }
 
          const Real orog = terrain_stage.get_topography (lat_long);
-         const Real lsm = terrain_stage.evaluate (string ("lsm"), lat_long);
+         const Real lsm = terrain_stage.evaluate (Dstring ("lsm"), lat_long);
          const Product product (lsm > 0.5 ?
             Product::TERRAIN : Product::TERRAIN_WATER);
          const Color& color = Display::get_color (product, orog);
@@ -237,7 +237,7 @@ Display::get_hrit_raster_ptr (const Size_2D& size_2d,
                               const Dtime& dtime)
 {
 
-   const string channel (product.get_string ());
+   const Dstring channel (product.get_string ());
    const Integer max_index = (channel == "VIS" ? 1024 : 1024);
 
    auto* raster_ptr = new Raster (size_2d);
@@ -400,11 +400,11 @@ Display::set_title (Title& title,
    const Integer fh = forecast_minutes / 60;
    const Integer fm = forecast_minutes % 60;
 
-   const string fmt ("%Y.%m.%d %H:%M UTC");
-   const string& time_str = dtime.get_string (fmt);
-   const string& basetime_str = basetime.get_string () +
-      string_render (" +%d:%02d", fh, fm);
-   const string stage_product = stage + " / " + product.get_string ();
+   const Dstring fmt ("%Y.%m.%d %H:%M UTC");
+   const Dstring& time_str = dtime.get_string (fmt);
+   const Dstring& basetime_str = basetime.get_string () +
+      Dstring::render (" +%d:%02d", fh, fm);
+   const Dstring stage_product = stage + " / " + product.get_string ();
 
    title.set (time_str, "", stage_product, basetime_str, level.get_string ());
 
@@ -428,16 +428,16 @@ Display::set_title (Title& title,
    const Lat_Long dest (journey.back ());
    const bool complex_j = (journey.size () > 2);
 
-   const string o_suffix (complex_j ? " ..." : "");
-   const string d_preffix (complex_j ? "... " : "");
-   const string& o_str = orig.get_string (4, true, true, true) + o_suffix;
-   const string& d_str = d_preffix + dest.get_string (4, true, true, true);
+   const Dstring o_suffix (complex_j ? " ..." : "");
+   const Dstring d_preffix (complex_j ? "... " : "");
+   const Dstring& o_str = orig.get_string (4, true, true, true) + o_suffix;
+   const Dstring& d_str = d_preffix + dest.get_string (4, true, true, true);
 
-   const string fmt ("%Y.%m.%d %H:%M UTC");
-   const string& time_str = dtime.get_string (fmt);
-   const string& basetime_str = basetime.get_string () +
-      string_render (" +%d:%02d", fh, fm);
-   const string stage_product = stage + " / " + product.get_string ();
+   const Dstring fmt ("%Y.%m.%d %H:%M UTC");
+   const Dstring& time_str = dtime.get_string (fmt);
+   const Dstring& basetime_str = basetime.get_string () +
+      Dstring::render (" +%d:%02d", fh, fm);
+   const Dstring stage_product = stage + " / " + product.get_string ();
 
    title.set (time_str, o_str, stage_product, basetime_str, d_str);
 
@@ -457,12 +457,12 @@ Display::set_title (Title& title,
    const Integer fm = forecast_minutes % 60;
 
    const Lat_Long& lat_long (location);
-   const string& ll_str = lat_long.get_string (4, true, true, true);
+   const Dstring& ll_str = lat_long.get_string (4, true, true, true);
 
-   const string fmt ("%Y.%m.%d %H:%M UTC");
-   const string& time_str = dtime.get_string (fmt);
-   const string& basetime_str = basetime.get_string () +
-      string_render (" +%d:%02d", fh, fm);
+   const Dstring fmt ("%Y.%m.%d %H:%M UTC");
+   const Dstring& time_str = dtime.get_string (fmt);
+   const Dstring& basetime_str = basetime.get_string () +
+      Dstring::render (" +%d:%02d", fh, fm);
 
    title.set (time_str, stage, location.get_long_str (), basetime_str, ll_str);
 
@@ -473,7 +473,7 @@ Display::set_title (Title& title,
                     const Dtime& basetime,
                     const Stage& stage,
                     const Dtime& dtime,
-                    const string& location_name)
+                    const Dstring& location_name)
 {
 
    const Real forecast_hour = dtime.t - basetime.t;
@@ -481,10 +481,10 @@ Display::set_title (Title& title,
    const Integer fh = forecast_minutes / 60;
    const Integer fm = forecast_minutes % 60;
 
-   const string fmt ("%Y.%m.%d %H:%M UTC");
-   const string& time_str = dtime.get_string (fmt);
-   const string& basetime_str = basetime.get_string () +
-      string_render (" +%d:%02d", fh, fm);
+   const Dstring fmt ("%Y.%m.%d %H:%M UTC");
+   const Dstring& time_str = dtime.get_string (fmt);
+   const Dstring& basetime_str = basetime.get_string () +
+      Dstring::render (" +%d:%02d", fh, fm);
 
    title.set (time_str, stage, location_name, basetime_str, "");
 
@@ -496,13 +496,13 @@ Display::set_title (Title& title,
                     const Stage& stage,
                     const Location& location)
 {
-   const string& basetime_str = basetime.get_string ();
+   const Dstring& basetime_str = basetime.get_string ();
    const Lat_Long& lat_long (location);
-   const string& ll_str = lat_long.get_string (4, true, true, true);
+   const Dstring& ll_str = lat_long.get_string (4, true, true, true);
    title.set ("", stage, location.get_long_str (), basetime_str, ll_str);
 }
 
-string
+Dstring
 Display::get_unit (const Product& product)
 {
 
@@ -511,104 +511,104 @@ Display::get_unit (const Product& product)
 
       case Product::T:
       {
-         return string ("\u00b0C");
+         return Dstring ("\u00b0C");
       }
 
       case Product::TD:
       {
-         return string ("\u00b0C");
+         return Dstring ("\u00b0C");
       }
 
       case Product::RH:
       {
-         return string ("%%");
+         return Dstring ("%%");
       }
 
       case Product::THETA:
       {
-         return string ("\u00b0C");
+         return Dstring ("\u00b0C");
       }
 
       case Product::THETA_V:
       {
-         return string ("\u00b0C");
+         return Dstring ("\u00b0C");
       }
 
       case Product::THETA_E:
       {
-         return string ("\u00b0C");
+         return Dstring ("\u00b0C");
       }
 
       case Product::Q:
       {
-         return string ("g kg\u207b\u00b9");
+         return Dstring ("gkg\u207b\u00b9");
       }
 
       case Product::RHO:
       {
-         return string ("kg m\u207b\u00b9");
+         return Dstring ("kgm\u207b\u00b9");
       }
 
       case Product::W:
       {
-         return string ("m s\u207b\u00b9");
+         return Dstring ("ms\u207b\u00b9");
       }
 
       case Product::W_TRANSLUCENT:
       {
-         return string ("m s\u207b\u00b9");
+         return Dstring ("ms\u207b\u00b9");
       }
 
       case Product::SPEED_HIGHER:
       {
-         return string ("knots");
+         return Dstring ("knots");
       }
 
       case Product::SPEED:
       case Product::ALONG_SPEED:
       case Product::NORMAL_SPEED:
       {
-         return string ("knots");
+         return Dstring ("knots");
       }
 
       case Product::VORTICITY:
       {
-         return string ("10\u207b\u00b3 s\u207b\u00b9");
+         return Dstring ("10\u207b\u00b3 s\u207b\u00b9");
       }
 
       case Product::FFDI:
       {
-         return string ("");
+         return Dstring ("");
       }
 
       case Product::MSLP:
       {
-         return string ("hPa");
+         return Dstring ("hPa");
       }
 
       case Product::PRECIP_RATE:
       {
-         return string ("mm hr\u207b\u00b9");
+         return Dstring ("mm hr\u207b\u00b9");
       }
 
       case Product::WIND:
       {
-         return string ("degree");
+         return Dstring ("degree");
       }
 
       case Product::TERRAIN:
       {
-         return string ("m");
+         return Dstring ("m");
       }
 
       case Product::BRUNT_VAISALA:
       {
-         return string ("s\u207b\u00b9");
+         return Dstring ("s\u207b\u00b9");
       }
 
       default:
       {
-         return string ("");
+         return Dstring ("");
       }
 
    }
@@ -986,7 +986,7 @@ Display::get_color (const Product& product,
 Color
 Display::get_color (const Product& product,
                     const Real datum,
-                    const string& unit)
+                    const Dstring& unit)
 {
 
    if (unit == "\u00b0C")
@@ -1242,13 +1242,13 @@ Display::render_scale_bar (const RefPtr<Context>& cr,
       const Real x = point.x + i * tick;
       const Point_2D p (x, point.y);
       const Real tick_length = fabs ((bar_length - i * bar_length/5) * 1e-3);
-      const string& str = string_render ("%.0f", tick_length);
+      const Dstring& str = Dstring::render ("%.0f", tick_length);
       Label (str, p, 'c', 't', bar_height*1.5).cairo (cr);
    }
 
    const Real x = point.x + pixels;
    Label ("0", point + Point_2D (pixels, 0), 'c', 't', bar_height*1.5).cairo (cr);
-   Label (string_render ("%.0f", bar_length*1e-3),
+   Label (Dstring::render ("%.0f", bar_length*1e-3),
       point + Point_2D (2 * pixels, 0), 'c', 't', bar_height*1.5).cairo (cr);
 
    Label ("kilometres", point + Point_2D (pixels, 0), 'c', 'b', bar_height*1.5).cairo (cr);
@@ -1263,7 +1263,7 @@ Display::render_color_bar (const RefPtr<Context>& cr,
                            const Product& product)
 {
 
-   const string& unit = Display::get_unit (product);
+   const Dstring& unit = Display::get_unit (product);
    const Tuple& tick_tuple = Display::get_tick_tuple (product);
    if (tick_tuple.size () < 2) { return; }
 
@@ -1328,7 +1328,7 @@ Display::render_color_bar (const RefPtr<Context>& cr,
       const Real tick_value = *(iterator);
       const Real y = transform.transform (tick_value);
       const Point_2D point (bar_x, y);
-      const string& str = string_render ("%g", tick_value);
+      const Dstring& str = Dstring::render ("%g", tick_value);
       Label (str, point, 'r', 'c', font_size/2).cairo (cr);
    }
 
@@ -1345,7 +1345,7 @@ void
 Display::render_annotation_point (const RefPtr<Context>& cr,
                                   const Geodetic_Transform& transform,
                                   const Lat_Long& lat_long,
-                                  const string& str)
+                                  const Dstring& str)
 {
 
    const Real ring_size = 4;
@@ -1372,18 +1372,18 @@ Display::render_annotation_point (const RefPtr<Context>& cr,
 void
 Display::render_annotation (const RefPtr<Context>& cr,
                             const Geodetic_Transform& transform,
-                            const string& annotation_str)
+                            const Dstring& annotation_str)
 {
 
    const Tokens tokens (annotation_str, ":");
-   const string& genre = tokens[0];
+   const Dstring& genre = tokens[0];
 
    if (genre == "location" ||
        genre == "lat_long" ||
        genre == "l")
    {
       const Location location (tokens[1]);
-      const string& str = (tokens.size () > 2 ? tokens[2] : string (""));
+      const Dstring& str = (tokens.size () > 2 ? tokens[2] : Dstring (""));
       render_annotation_point (cr, transform, location, str);
    }
    else
@@ -1417,7 +1417,7 @@ Display::render_annotations (const RefPtr<Context>& cr,
    for (auto iterator = annotation_tokens.begin ();
         iterator != annotation_tokens.end (); iterator++)
    {
-      const string& annotation_str = *(iterator);
+      const Dstring& annotation_str = *(iterator);
       render_annotation (cr, transform, annotation_str);
    }
 
@@ -1522,7 +1522,7 @@ Display::render_cross_section_mesh (const RefPtr<Context>& cr,
       const Point_2D& point_b = transform.transform (Point_2D (d, 8000));
 
       const Integer i = std::distance (tuple_x.begin (), iterator);
-      const string& str = string_render ("%d", i);
+      const Dstring& str = Dstring::render ("%d", i);
 
       Label (str, point_a, 'c', 't', 6).cairo (cr);
 
@@ -1639,8 +1639,8 @@ Display::render_cross_section (const RefPtr<Context>& cr,
    if (u_bg != 0)
    {
       Color::black ().cairo (cr);
-      const string fmt ("%.2f ms\u207b\u00b9 removed");
-      const string& u_bg_string = string_render (fmt.c_str (), u_bg);
+      const Dstring fmt ("%.2f ms\u207b\u00b9 removed");
+      const Dstring& u_bg_string = Dstring::render (fmt, u_bg);
       const Index_2D anchor = box_2d.get_ne ();
       Label (u_bg_string, box_2d.get_ne (), 'r', 't', 10).cairo (cr);
    }
@@ -1797,7 +1797,7 @@ Display::render_meteogram (const RefPtr<Context>& cr,
       const Aws::Key& key = iterator->first;
       const Aws::Obs& obs = iterator->second;
       const Dtime& dtime = key.dtime;
-      const string& time_str = dtime.get_string ("%Y%m%d%H%M");
+      const Dstring& time_str = dtime.get_string ("%Y%m%d%H%M");
 
       const Real temperature = obs.temperature;
       const Point_2D p_temperature (dtime.t, temperature);

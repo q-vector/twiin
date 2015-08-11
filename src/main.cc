@@ -24,12 +24,12 @@ Twiin::Transform_Ptr_Map::Transform_Ptr_Map (const Size_2D& size_2d,
         iterator != config_file.end (); iterator++)
    {
 
-      const Tokens tokens (*(iterator));
+      const Tokens tokens (*(iterator), " \f\t\n");
       if (tokens.size () != 3) { continue; }
       if (tokens[0] != "geodetic_transform") { continue; }
 
-      const string& identifier = tokens[1];
-      const string& zoom_str = tokens[2];
+      const Dstring& identifier = tokens[1];
+      const Dstring& zoom_str = tokens[2];
       Gt* gt_ptr = Gt::get_transform_ptr (zoom_str, centre);
       insert (make_pair (identifier, gt_ptr));
 
@@ -49,21 +49,21 @@ Twiin::Transform_Ptr_Map::~Transform_Ptr_Map ()
 
 }
 
-string
-Twiin::get_file_path (const string& format,
+Dstring
+Twiin::get_file_path (const Dstring& format,
                       const Stage& stage,
                       const Product& product,
                       const Level& level,
                       const Dtime& dtime) const
 {
-   const string& time_str = dtime.get_string ("%Y%m%d%H%M");
-   const string& file_name = stage + "-" + product.get_string () + "-" +
+   const Dstring& time_str = dtime.get_string ("%Y%m%d%H%M");
+   const Dstring& file_name = stage + "-" + product.get_string () + "-" +
       level.get_string () + "-" + time_str + "." + format;
    return output_dir + "/" + file_name;
 }
 
-string
-Twiin::get_file_path (const string& format,
+Dstring
+Twiin::get_file_path (const Dstring& format,
                       const Stage& stage,
                       const Product& product,
                       const Dtime& dtime,
@@ -73,60 +73,60 @@ Twiin::get_file_path (const string& format,
    const Lat_Long origin (journey.front ());
    const Lat_Long destination (journey.back ());
 
-   string j_str;
+   Dstring j_str;
    for (auto iterator = journey.begin ();
         iterator != journey.end (); iterator++)
    {
       const Lat_Long lat_long (*(iterator));
-      const string& ll_str = lat_long.get_string (false, string ("%.4f"));
+      const Dstring& ll_str = lat_long.get_string (false, Dstring ("%.4f"));
       j_str += ll_str;
    }
 
-   const string& time_str = dtime.get_string ("%Y%m%d%H%M");
-   const string& file_name = stage + "-" + product.get_string () + "-" +
+   const Dstring& time_str = dtime.get_string ("%Y%m%d%H%M");
+   const Dstring& file_name = stage + "-" + product.get_string () + "-" +
       time_str + "-" + j_str + "." + format;
    return output_dir + "/" + file_name;
 
 }
 
-string
-Twiin::get_file_path (const string& format,
+Dstring
+Twiin::get_file_path (const Dstring& format,
                       const Stage& stage,
                       const Dtime& dtime,
                       const Location& location) const
 {
-   const string& location_str = location.get_str ();
-   const string& time_str = dtime.get_string ("%Y%m%d%H%M");
-   const string& file_name = stage + "-" + time_str + "-"
+   const Dstring& location_str = location.get_str ();
+   const Dstring& time_str = dtime.get_string ("%Y%m%d%H%M");
+   const Dstring& file_name = stage + "-" + time_str + "-"
       + location_str + "." + format;
    return output_dir + "/" + file_name;
 }
 
-string
-Twiin::get_file_path (const string& format,
+Dstring
+Twiin::get_file_path (const Dstring& format,
                       const Stage& stage,
                       const Dtime& dtime,
-                      const string& location_name) const
+                      const Dstring& location_name) const
 {
-   const string& time_str = dtime.get_string ("%Y%m%d%H%M");
-   const string& file_name = stage + "-" + time_str + "-"
+   const Dstring& time_str = dtime.get_string ("%Y%m%d%H%M");
+   const Dstring& file_name = stage + "-" + time_str + "-"
       + location_name + "." + format;
    return output_dir + "/" + file_name;
 }
 
-string
-Twiin::get_file_path (const string& format,
+Dstring
+Twiin::get_file_path (const Dstring& format,
                       const Stage& stage,
                       const Location& location) const
 {
-   const string& location_str = location.get_str ();
-   const string& file_name = stage + "_" + location_str + "." + format;
+   const Dstring& location_str = location.get_str ();
+   const Dstring& file_name = stage + "_" + location_str + "." + format;
    return output_dir + "/" + file_name;
 }
 
 Twiin::Twiin (const Size_2D& size_2d,
               const Config_File& config_file,
-              const string& output_dir)
+              const Dstring& output_dir)
    : size_2d (size_2d),
      config_file (config_file),
      output_dir (output_dir)
@@ -136,10 +136,10 @@ Twiin::Twiin (const Size_2D& size_2d,
 #ifndef ENABLE_GTKMM
 #else /* ENABLE_GTKMM */
 void
-Twiin::interactive (const string& stage_str,
-                    const string& product_str,
-                    const string& level_str,
-                    const string& time_str) const
+Twiin::interactive (const Dstring& stage_str,
+                    const Dstring& product_str,
+                    const Dstring& level_str,
+                    const Dstring& time_str) const
 {
 
    const Tokens stage_tokens (stage_str, ":");
@@ -166,15 +166,15 @@ Twiin::interactive (const string& stage_str,
 #endif /* ENABLE_GTKMM */
 
 void
-Twiin::command_line (const string& stage_str,
-                     const string& product_str,
-                     const string& level_str,
-                     const string& time_str,
-                     const string& zoom_str,
+Twiin::command_line (const Dstring& stage_str,
+                     const Dstring& product_str,
+                     const Dstring& level_str,
+                     const Dstring& time_str,
+                     const Dstring& zoom_str,
                      const Tokens& annotation_tokens,
-                     const string& format,
+                     const Dstring& format,
                      const Tokens& title_tokens,
-                     const string& filename,
+                     const Dstring& filename,
                      const bool no_stage,
                      const bool no_wind_barb,
                      const bool is_bludge) const
@@ -186,14 +186,14 @@ Twiin::command_line (const string& stage_str,
         iterator != config_file.end (); iterator++)
    {
 
-      const Tokens tokens (*(iterator));
+      const Tokens tokens (*(iterator), " \f\t\n");
       if (tokens.size () != 2) { continue; }
       if (tokens[0] != "overlay") { continue; }
 
       const Tokens overlay_tokens (tokens[1], ":");
       if (overlay_tokens[0] != "GSHHS") { continue; }
 
-      const string gshhs_file_path (overlay_tokens[8]);
+      const Dstring gshhs_file_path (overlay_tokens[8]);
       gshhs_ptr = new Gshhs (gshhs_file_path);
       break;
 
@@ -254,7 +254,7 @@ Twiin::command_line (const string& stage_str,
                const Dtime& dtime = *(l);
                if (!time_set.match (dtime)) { continue; }
 
-               const string& file_path = (filename == "") ?
+               const Dstring& file_path = (filename == "") ?
                   get_file_path (format, stage, product, level, dtime) :
                   output_dir + "/" + filename;
                cout << "Rendering " << file_path << endl;
@@ -299,7 +299,10 @@ Twiin::command_line (const string& stage_str,
                Display::render_scale_bar (cr, transform, size_2d);
                Display::render_color_bar (cr, size_2d, p);
 
-               if (format == "png") { surface->write_to_png (file_path); }
+               if (format == "png")
+               {
+                  surface->write_to_png (file_path.get_string ());
+               }
 
             }
 
@@ -314,13 +317,13 @@ Twiin::command_line (const string& stage_str,
 }
 
 void
-Twiin::cross_section (const string& stage_str,
-                      const string& product_str,
+Twiin::cross_section (const Dstring& stage_str,
+                      const Dstring& product_str,
                       const Journey& journey,
-                      const string& time_str,
-                      const string& format,
+                      const Dstring& time_str,
+                      const Dstring& format,
                       const Tokens& title_tokens,
-                      const string& filename,
+                      const Dstring& filename,
                       const Real u_bg,
                       const bool is_bludge) const
 {
@@ -381,7 +384,7 @@ Twiin::cross_section (const string& stage_str,
             const Dtime& dtime = *(iterator);
             if (!time_set.match (dtime)) { continue; }
 
-            const string& file_path = (filename == "") ?
+            const Dstring& file_path = (filename == "") ?
                get_file_path (format, stage, product, dtime, journey) :
                output_dir + "/" + filename;
             cout << "Rendering " << file_path << endl;
@@ -414,7 +417,10 @@ Twiin::cross_section (const string& stage_str,
             }
             title.cairo (cr);
 
-            if (format == "png") { surface->write_to_png (file_path); }
+            if (format == "png")
+            {
+               surface->write_to_png (file_path.get_string ());
+            }
 
          }
 
@@ -424,12 +430,12 @@ Twiin::cross_section (const string& stage_str,
 };
 
 void
-Twiin::meteogram (const string& stage_str,
-                  const string& location_str,
-                  const string& time_str,
-                  const string& format,
+Twiin::meteogram (const Dstring& stage_str,
+                  const Dstring& location_str,
+                  const Dstring& time_str,
+                  const Dstring& format,
                   const Tokens& title_tokens,
-                  const string& filename,
+                  const Dstring& filename,
                   const bool ignore_pressure,
                   const bool is_bludge) const
 {
@@ -460,7 +466,7 @@ Twiin::meteogram (const string& stage_str,
 
          const Location location (*j, station_map);
 
-         const string& file_path = (filename == "") ?
+         const Dstring& file_path = (filename == "") ?
             get_file_path (format, stage, location) :
             output_dir + "/" + filename;
          cout << "Rendering " << file_path << endl;
@@ -483,7 +489,10 @@ Twiin::meteogram (const string& stage_str,
          }
          title.cairo (cr);
 
-         if (format == "png") { surface->write_to_png (file_path); }
+         if (format == "png")
+         {
+            surface->write_to_png (file_path.get_string ());
+         }
 
       }
 
@@ -492,12 +501,12 @@ Twiin::meteogram (const string& stage_str,
 }
 
 void
-Twiin::vertical_profile (const string& stage_str,
-                         const string& location_str,
-                         const string& time_str,
-                         const string& format,
+Twiin::vertical_profile (const Dstring& stage_str,
+                         const Dstring& location_str,
+                         const Dstring& time_str,
+                         const Dstring& format,
                          const Tokens& title_tokens,
-                         const string& filename,
+                         const Dstring& filename,
                          const bool is_bludge) const
 {
 
@@ -533,10 +542,10 @@ Twiin::vertical_profile (const string& stage_str,
               j != location_tokens.end (); j++)
          {
 
-            string location_name ("");
+            Dstring location_name ("");
             Lat_Long::List lat_long_list;
 
-            const string& location_token = *j;
+            const Dstring& location_token = *j;
             const Location sole_location (location_token, station_map);
             const bool is_j = Reg_Exp ("@").match (location_token);
 
@@ -552,7 +561,7 @@ Twiin::vertical_profile (const string& stage_str,
                lat_long_list.push_back (Location (location_token, station_map));
             }
 
-            const string& file_path =
+            const Dstring& file_path =
                (filename == "") ?
                   ((location_name == "") ?
                      get_file_path (format, stage, dtime, sole_location) :
@@ -606,7 +615,10 @@ Twiin::vertical_profile (const string& stage_str,
                }
                title.cairo (cr);
 
-               if (format == "png") { surface->write_to_png (file_path); }
+               if (format == "png")
+               {
+                  surface->write_to_png (file_path.get_string ());
+               }
 
             }
 
@@ -650,16 +662,16 @@ main (int argc,
    };
 
    Size_2D size_2d (960, 960);
-   string output_dir (".");
-   string product_str ("WIND");
-   string stage_str ("STAGE3");
-   string level_str ("Surface");
-   string time_str;
-   string zoom_str ("");
-   string format ("png");
+   Dstring output_dir (".");
+   Dstring product_str ("WIND");
+   Dstring stage_str ("STAGE3");
+   Dstring level_str ("Surface");
+   Dstring time_str;
+   Dstring zoom_str ("");
+   Dstring format ("png");
    Tokens annotation_tokens;
 
-   string filename ("");
+   Dstring filename ("");
    Tokens title_tokens;
    bool is_bludge = false;
    bool is_cross_section = false;
@@ -670,9 +682,9 @@ main (int argc,
    bool no_wind_barb = false;
    bool is_vertical_profile = false;
    Real u_bg = 0;
-   string location_str ("");
+   Dstring location_str ("");
    Journey journey;
-   string config_file_path (string (getenv ("HOME")) + "/.twiin.rc");
+   Dstring config_file_path (Dstring (getenv ("HOME")) + "/.twiin.rc");
 
    int c;
    int option_index = 0;
@@ -685,7 +697,7 @@ main (int argc,
 
          case 'a':
          {
-            annotation_tokens.push_back (string (optarg));
+            annotation_tokens.push_back (Dstring (optarg));
             break;
          }
 
@@ -697,25 +709,25 @@ main (int argc,
 
          case 'c':
          {
-            config_file_path = (string (optarg));
+            config_file_path = (Dstring (optarg));
             break;
          }
 
          case 'F':
          {
-            filename = (string (optarg));
+            filename = (Dstring (optarg));
             break;
          }
 
          case 'f':
          {
-            format = (string (optarg));
+            format = (Dstring (optarg));
             break;
          }
 
          case 'g':
          {
-            const Tokens tokens (string (optarg), "x");
+            const Tokens tokens (Dstring (optarg), "x");
             size_2d.i = stof (tokens[0]);
             size_2d.j = stof (tokens[1]);
             break;
@@ -729,7 +741,7 @@ main (int argc,
 
          case 'l':
          {
-            level_str = (string (optarg));
+            level_str = (Dstring (optarg));
             break;
          }
 
@@ -737,13 +749,13 @@ main (int argc,
          {
             is_interactive = false;
             is_meteogram = true;
-            location_str = (string (optarg));
+            location_str = (Dstring (optarg));
             break;
          }
 
          case 'o':
          {
-            output_dir = (string (optarg));
+            output_dir = (Dstring (optarg));
             break;
          }
 
@@ -755,7 +767,7 @@ main (int argc,
 
          case 'p':
          {
-            product_str = (string (optarg));
+            product_str = (Dstring (optarg));
             break;
          }
 
@@ -767,25 +779,25 @@ main (int argc,
 
          case 's':
          {
-            stage_str = (string (optarg));
+            stage_str = (Dstring (optarg));
             break;
          }
 
          case 'T':
          {
-            title_tokens = Tokens (string (optarg), ":");
+            title_tokens = Tokens (Dstring (optarg), ":");
             break;
          }
 
          case 't':
          {
-            time_str = (string (optarg));
+            time_str = (Dstring (optarg));
             break;
          }
 
          case 'u':
          {
-            u_bg = stof (string (optarg));
+            u_bg = stof (Dstring (optarg));
             break;
          }
 
@@ -793,7 +805,7 @@ main (int argc,
          {
             is_interactive = false;
             is_vertical_profile = true;
-            location_str = (string (optarg));
+            location_str = (Dstring (optarg));
             break;
          }
 
@@ -807,13 +819,13 @@ main (int argc,
          {
             is_interactive = false;
             is_cross_section = true;
-            journey = Journey (string (optarg));
+            journey = Journey (Dstring (optarg));
             break;
          }
 
          case 'z':
          {
-            zoom_str = (string (optarg));
+            zoom_str = (Dstring (optarg));
             break;
          }
 
@@ -873,7 +885,7 @@ main (int argc,
    }
    catch (const Exception& e)
    {
-      cerr << "Exception " << e << endl;
+      cerr << "Exception " << e.what () << endl;
    }
    catch (const std::exception& se)
    {

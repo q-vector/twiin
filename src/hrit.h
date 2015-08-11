@@ -13,11 +13,11 @@ class Hrit
 
    private:
 
-      string
+      Dstring
       data_path;
 
       void
-      init (const string& data_path);
+      init (const Dstring& data_path);
 
    public:
 
@@ -44,7 +44,7 @@ class Hrit
 
          public:
 
-            File (const string& file_path);
+            File (const Dstring& file_path);
 
             ~File ();
 
@@ -66,7 +66,7 @@ class Hrit
 
       };
 
-      class Frame : public map<string, Tokens>
+      class Frame : public map<Dstring, Tokens>
       {
 
          private:
@@ -90,14 +90,14 @@ class Hrit
             };
 
             Frame (const Hrit& hrit,
-                   const string& leaf);
+                   const Dstring& leaf);
 
-            string
-            get_file_path (const string& channel,
+            Dstring
+            get_file_path (const Dstring& channel,
                            const Integer segment) const;
 
             Geos_Transform
-            get_navigation (const string& channel) const;
+            get_navigation (const Dstring& channel) const;
 
       };
 
@@ -112,7 +112,7 @@ class Hrit
          public:
 
             Disk (const Frame& frame,
-                  const string& channel);
+                  const Dstring& channel);
 
             //Disk (const Disk& disk);
 
@@ -124,7 +124,7 @@ class Hrit
 
       };
 
-      class Disk_Ptr_Map : public map<string, Disk*>
+      class Disk_Ptr_Map : public map<Dstring, Disk*>
       {
 
          public:
@@ -136,28 +136,28 @@ class Hrit
       Frame::Map
       frame_map;
 
-      Hrit (const string& data_path);
+      Hrit (const Dstring& data_path);
 
       Hrit (const Config_File& config_file);
 
-      const string&
+      const Dstring&
       get_data_path () const;
 
-      string
+      Dstring
       get_file_path (const Dtime& dtime,
-                     const string& channel,
+                     const Dstring& channel,
                      const Integer segment) const;
 
       Geos_Transform
       get_navigation (const Dtime& dtime,
-                      const string& channel) const;
+                      const Dstring& channel) const;
 
-      map<string, Geos_Transform>
+      map<Dstring, Geos_Transform>
       get_navigation_map (const Dtime& dtime) const;
 
       Disk*
       get_disk_ptr (const Dtime& dtime,
-                    const string& channel) const;
+                    const Dstring& channel) const;
 
       Disk_Ptr_Map
       get_disk_ptr_map (const Dtime& dtime) const;
@@ -168,9 +168,9 @@ class Hrit
                  const Lat_Long& lat_long);
 
       static Color
-      get_color (const string& hrit_product,
+      get_color (const Dstring& hrit_product,
                  Disk_Ptr_Map& disk_ptr_map,
-                 const map<string, Geos_Transform>& navigation_map,
+                 const map<Dstring, Geos_Transform>& navigation_map,
                  const Lat_Long& lat_long);
 
 };

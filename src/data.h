@@ -18,16 +18,16 @@ using namespace Cairo;
 namespace twiin
 {
 
-   class Stage : public string
+   class Stage : public Dstring
    {
 
       public:
 
-         Stage (const string& str);
+         Stage (const Dstring& str);
 
          Stage (const Stage& stage);
 
-         string
+         Dstring
          get_string () const;
 
    };
@@ -79,9 +79,9 @@ namespace twiin
 
          Product (const Product& product);
 
-         Product (const string& str);
+         Product (const Dstring& str);
 
-         string
+         Dstring
          get_string () const;
 
          Met_Element
@@ -100,7 +100,7 @@ namespace twiin
          const Integer
          id;
 
-         const string
+         const Dstring
          name;
 
          const Real
@@ -110,7 +110,7 @@ namespace twiin
                   const Real latitude,
                   const Real longitude,
                   const Real height,
-                  const string& name);
+                  const Dstring& name);
 
          class Map : public map<Integer, Station>,
                      public Attractor,
@@ -121,10 +121,10 @@ namespace twiin
 
                Map ();
 
-               Map (const string& file_path);
+               Map (const Dstring& file_path);
 
                void
-               ingest (const string& file_path);
+               ingest (const Dstring& file_path);
 
                const Station&
                get_station (const Lat_Long& lat_long,
@@ -137,7 +137,7 @@ namespace twiin
                attract (Real& latitude,
                         Real& longitude) const;
 
-               pair<string, Lat_Long>
+               pair<Dstring, Lat_Long>
                nearest (const Lat_Long& lat_long) const;
 
                void
@@ -157,26 +157,26 @@ namespace twiin
          Integer
          station_id;
 
-         string
+         Dstring
          str;
 
-         string
+         Dstring
          long_str;
 
       public:
 
          Location (const Lat_Long& lat_long);
 
-         Location (const string& location_str,
+         Location (const Dstring& location_str,
                    const Station::Map& station_map);
 
          Integer
          get_station_id () const;
 
-         const string&
+         const Dstring&
          get_str () const;
 
-         const string&
+         const Dstring&
          get_long_str () const;
 
    };
@@ -263,29 +263,29 @@ namespace twiin
                valid_time_set;
 
                static Real
-               to_real (const string& token);
+               to_real (const Dstring& token);
 
             public:
 
                Repository ();
 
-               Repository (const string& file_path);
+               Repository (const Dstring& file_path);
 
                void
                insert (const Key& key,
                        const Obs& obs);
 
                void
-               ingest (const string& file_path);
+               ingest (const Dstring& file_path);
 
                void
-               ingest_binary (const string& file_path);
+               ingest_binary (const Dstring& file_path);
 
                void
-               write (const string& file_path) const;
+               write (const Dstring& file_path) const;
 
                void
-               write_binary (const string& file_path) const;
+               write_binary (const Dstring& file_path) const;
 
                const set<Integer>&
                get_station_id_set () const;
@@ -321,28 +321,28 @@ namespace twiin
 
       private:
 
-         class Varname : public string
+         class Varname : public Dstring
          {
 
             public:
 
-               Varname (const string& str);
+               Varname (const Dstring& str);
 
                Varname (const Varname& varname);
 
-               string
+               Dstring
                get_string () const;
 
          };
 
-         class File_Path_Map : public map<Varname, string>
+         class File_Path_Map : public map<Varname, Dstring>
          {
 
             public:
 
                void
                insert (const Varname& varname,
-                       const string& file_path);
+                       const Dstring& file_path);
 
          };
 
@@ -486,7 +486,7 @@ namespace twiin
                                const size_t l) const;
 
                      Real
-                     evaluate_raw (const string& varname,
+                     evaluate_raw (const Dstring& varname,
                                    const size_t i,
                                    const size_t j,
                                    const size_t l) const;
@@ -588,7 +588,7 @@ namespace twiin
                                const size_t l) const;
 
                      Real
-                     evaluate_raw (const string& varname,
+                     evaluate_raw (const Dstring& varname,
                                    const size_t i,
                                    const size_t j,
                                    const size_t k,
@@ -651,10 +651,10 @@ namespace twiin
 
                Vertical_Coefficients ();
 
-               Vertical_Coefficients (const string& file_path);
+               Vertical_Coefficients (const Dstring& file_path);
 
                void
-               init (const string& file_path);
+               init (const Dstring& file_path);
 
                const Tuple&
                get_A_theta () const;
@@ -678,7 +678,7 @@ namespace twiin
          Vertical_Coefficients
          vertical_coefficients;
 
-         static string
+         static Dstring
          get_nc_varname (const Varname& varname);
 
          const Real
@@ -810,7 +810,7 @@ namespace twiin
                                  const Dtime::Span& time_Span) const;
 
          Lat_Long
-         get_lat_long (const string& location_str) const;
+         get_lat_long (const Dstring& location_str) const;
 
    };
 

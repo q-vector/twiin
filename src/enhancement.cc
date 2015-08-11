@@ -73,11 +73,10 @@ Enhancement::get_color (const uint16_t datum) const
 }
 
 Enhancement
-Enhancement::get_enhancement (const string& str)
+Enhancement::get_enhancement (const Dstring& str)
 {
 
-   string s (str);
-   denise::to_upper_case (s);
+   const Dstring& s = str.get_upper_case ();
 
    if (s == "BRIGHT") { return get_enhancement ("GAMMA 0.8"); }
    if (s == "BRIGHTER") { return get_enhancement ("GAMMA 0.6"); }
@@ -85,7 +84,7 @@ Enhancement::get_enhancement (const string& str)
 
    if (s.substr (0, 5) == "GAMMA")
    {
-      const Real gamma = atof (s.substr (6).c_str ());
+      const Real gamma = stof (s.substr (6));
       return Enhancement_Gamma (gamma);
    }
 

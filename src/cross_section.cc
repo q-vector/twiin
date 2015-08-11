@@ -20,7 +20,7 @@ Cross_Section::Product_Panel::Product_Panel (Cross_Section& cross_section,
 }
 
 void
-Cross_Section::Product_Panel::add_product (const string& drawer_str,
+Cross_Section::Product_Panel::add_product (const Dstring& drawer_str,
                                            const Product& product)
 {
    Button* pb_ptr = new Button (cross_section, product, font_size);
@@ -60,8 +60,8 @@ Cross_Section::get_tokens (const Marker& marker) const
    tokens = model.get_marker_tokens (
       lat_long, dtime, product, stage, level);
 
-   const string& ll_str = lat_long.get_string (false, string ("%.4f\u00b0"));
-   const string& height_str = level.get_string ();
+   const Dstring& ll_str = lat_long.get_string (false, Dstring ("%.4f\u00b0"));
+   const Dstring& height_str = level.get_string ();
    tokens.insert (tokens.begin (), ll_str);
    tokens.insert (tokens.begin (), height_str);
 

@@ -21,10 +21,10 @@ namespace twiin
 
       public:
 
-         const string
+         const Dstring
          file_path;
 
-         Nc_File (const string& file_path);
+         Nc_File (const Dstring& file_path);
 
          ~Nc_File ();
 
@@ -39,8 +39,8 @@ namespace twiin
                     const nc_type nc_type);
 
          Tuple
-         get_coordinate_tuple (const string& dim_str,
-                               string var_str = "") const;
+         get_coordinate_tuple (const Dstring& dim_str,
+                               Dstring var_str = "") const;
 
    };
 
