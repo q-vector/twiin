@@ -59,6 +59,10 @@ Product::Product (const Dstring& str)
    else if (str == "VORTICITY")     { enumeration = Product::VORTICITY; }
    else if (str == "W")             { enumeration = Product::W; }
    else if (str == "W_TRANSLUCENT") { enumeration = Product::W_TRANSLUCENT; }
+   else if (str == "Q_H_ADVECTION") { enumeration = Product::Q_H_ADVECTION; }
+   else if (str == "Q_V_ADVECTION") { enumeration = Product::Q_V_ADVECTION; }
+   else if (str == "Q_S_ADVECTION") { enumeration = Product::Q_S_ADVECTION; }
+   else if (str == "Q_N_ADVECTION") { enumeration = Product::Q_N_ADVECTION; }
    else if (str == "FFDI")          { enumeration = Product::FFDI; }
    else if (str == "MSLP")          { enumeration = Product::MSLP; }
    else if (str == "PRECIP_RATE")   { enumeration = Product::PRECIP_RATE; }
@@ -68,6 +72,7 @@ Product::Product (const Dstring& str)
    else if (str == "IR4")           { enumeration = Product::IR4; }
    else if (str == "VIS")           { enumeration = Product::VIS; }
    else if (str == "Pseudo")        { enumeration = Product::Pseudo; }
+   else                             { enumeration = Product::NIL; }
 }
 
 Dstring
@@ -97,9 +102,57 @@ Product::get_string () const
       case Product::VORTICITY:     return "VORTICITY";
       case Product::W:             return "W";
       case Product::W_TRANSLUCENT: return "W_TRANSLUCENT";
+      case Product::Q_H_ADVECTION: return "Q_H_ADVECTION";
+      case Product::Q_V_ADVECTION: return "Q_V_ADVECTION";
+      case Product::Q_S_ADVECTION: return "Q_S_ADVECTION";
+      case Product::Q_N_ADVECTION: return "Q_N_ADVECTION";
       case Product::FFDI:          return "FFDI";
       case Product::MSLP:          return "MSLP";
       case Product::PRECIP_RATE:   return "PRECIP_RATE";
+      case Product::IR1:           return "IR1";
+      case Product::IR2:           return "IR2";
+      case Product::IR3:           return "IR3";
+      case Product::IR4:           return "IR4";
+      case Product::VIS:           return "VIS";
+      case Product::Pseudo:        return "Pseudo";
+      default:                     return "";
+   }
+}
+
+Dstring
+Product::get_description () const
+{
+   switch (enumeration)
+   {
+      case Product::TERRAIN:       return "Terrain";
+      case Product::TERRAIN_WATER: return "Terrain Water";
+      case Product::P_THETA:       return "P_\u03b8";
+      case Product::P_RHO:         return "P_\u03c1";
+      case Product::ALONG_SPEED:   return "Along Speed";
+      case Product::NORMAL_SPEED:  return "Normal Speed";
+      case Product::BRUNT_VAISALA: return "Brunt-V\u00e4IS\u00e4L\u00e4";
+      case Product::SCORER:        return "Scorer's Parameter";
+      case Product::T:             return "Temperature";
+      case Product::TD:            return "Dew Point";
+      case Product::RH:            return "Relative Humidity";
+      case Product::THETA:         return "Potential Temperature";
+      case Product::Q:             return "Specific Humidity";
+      case Product::THETA_E:       return "Equivalent Potential Temperature";
+      case Product::THETA_V:       return "Virtual Temperature";
+      case Product::RHO:           return "Density";
+      case Product::WIND:          return "Wind";
+      case Product::SPEED:         return "Speed";
+      case Product::SPEED_HIGHER:  return "Higher Speed";
+      case Product::VORTICITY:     return "Vertical Vorticity";
+      case Product::W:             return "Vertical Velocity";
+      case Product::W_TRANSLUCENT: return "Vertical Velocity";
+      case Product::Q_H_ADVECTION: return "Horizontal Q Advection";
+      case Product::Q_V_ADVECTION: return "Vertical Q Advection";
+      case Product::Q_S_ADVECTION: return "Stream Q Advection";
+      case Product::Q_N_ADVECTION: return "Normal Q Advection";
+      case Product::FFDI:          return "FFDI";
+      case Product::MSLP:          return "MSLP";
+      case Product::PRECIP_RATE:   return "Precipitation Rate";
       case Product::IR1:           return "IR1";
       case Product::IR2:           return "IR2";
       case Product::IR3:           return "IR3";
@@ -128,9 +181,47 @@ Product::get_met_element () const
       case Product::VORTICITY:     return denise::RELATIVE_VORTICITY;
       case Product::W:             return denise::W;
       case Product::W_TRANSLUCENT: return denise::W;
+      case Product::Q_H_ADVECTION: return denise::Q_H_ADVECTION;
+      case Product::Q_V_ADVECTION: return denise::Q_V_ADVECTION;
+      case Product::Q_S_ADVECTION: return denise::Q_S_ADVECTION;
+      case Product::Q_N_ADVECTION: return denise::Q_N_ADVECTION;
       case Product::FFDI:          return denise::FFDI;
       case Product::MSLP:          return denise::MSLP;
       case Product::PRECIP_RATE:   return denise::PRECIP_RATE;
+   }
+}
+
+Dstring
+Product::get_unit () const
+{
+   switch (enumeration)
+   {
+      case Product::T:             return "\u00b0C";
+      case Product::TD:            return "\u00b0C";
+      case Product::RH:            return "%%";
+      case Product::THETA:         return "\u00b0C";
+      case Product::THETA_V:       return "\u00b0C";
+      case Product::THETA_E:       return "\u00b0C";
+      case Product::Q:             return "g kg\u207b\u00b9";
+      case Product::RHO:           return "kgm\u207b\u00b9";
+      case Product::W:             return "ms\u207b\u00b9";
+      case Product::W_TRANSLUCENT: return "ms\u207b\u00b9";
+      case Product::Q_H_ADVECTION: return "g kg\u207b\u00b9s\u207b\u00b9";
+      case Product::Q_V_ADVECTION: return "g kg\u207b\u00b9s\u207b\u00b9";
+      case Product::Q_S_ADVECTION: return "g kg\u207b\u00b9s\u207b\u00b9";
+      case Product::Q_N_ADVECTION: return "g kg\u207b\u00b9s\u207b\u00b9";
+      case Product::SPEED_HIGHER:  return "knots";
+      case Product::SPEED:         return "knots";
+      case Product::ALONG_SPEED:   return "knots";
+      case Product::NORMAL_SPEED:  return "knots";
+      case Product::VORTICITY:     return "10\u207b\u00b3 s\u207b\u00b9";
+      case Product::FFDI:          return "";
+      case Product::MSLP:          return "hPa";
+      case Product::PRECIP_RATE:   return "mm hr\u207b\u00b9";
+      case Product::WIND:          return "degree";
+      case Product::TERRAIN:       return "m";
+      case Product::BRUNT_VAISALA: return "s\u207b\u00b9";
+      default:                     return "";
    }
 }
 
@@ -1060,6 +1151,24 @@ Model::Surface::Stage::get_l (const Dtime& dtime) const
 }
 
 Real
+Model::Surface::Stage::evaluate_h_advection (const Met_Element& met_element,
+                                             const Lat_Long& lat_long,
+                                             const size_t l) const
+{
+
+   size_t i, j;
+   acquire_ij (i, j, lat_long);
+
+   const Real u = evaluate (U, i, j, l);
+   const Real v = evaluate (V, i, j, l);
+   const Real ddx = evaluate_dx (met_element, i, j, l);
+   const Real ddy = evaluate_dy (met_element, i, j, l);
+
+   return -u * ddx - v * ddy;
+
+}
+
+Real
 Model::Surface::Stage::evaluate (const Met_Element& met_element,
                                  const Lat_Long& lat_long,
                                  const size_t l) const
@@ -1207,12 +1316,12 @@ Model::Surface::Stage::evaluate (const Met_Element& met_element,
 
          switch (met_element)
          {
-            case T: { varname = Dstring ("temp"); break; }
-            case TD: { varname = Dstring ("dewpt"); break; }
-            case MSLP: { varname = Dstring ("mslp"); break; }
+            case T:           { varname = Dstring ("temp"); break;    }
+            case TD:          { varname = Dstring ("dewpt"); break;   }
+            case MSLP:        { varname = Dstring ("mslp"); break;    }
             case PRECIP_RATE: { varname = Dstring ("prcp8p5"); break; }
-            case U: { varname = Dstring ("xwind"); break; }
-            case V: { varname = Dstring ("ywind"); break; }
+            case U:           { varname = Dstring ("xwind"); break;   }
+            case V:           { varname = Dstring ("ywind"); break;   }
          }
 
          datum = evaluate_raw (varname, i, j, l);
@@ -1223,6 +1332,67 @@ Model::Surface::Stage::evaluate (const Met_Element& met_element,
    }
 
    return Real (datum);
+
+}
+
+Real
+Model::Surface::Stage::evaluate_dx (const Met_Element& met_element,
+                                    const Lat_Long& lat_long,
+                                    const size_t l) const
+{
+   size_t i, j;
+   acquire_ij (i, j, lat_long);
+   return evaluate_dx (met_element, i, j, l);
+}
+
+Real
+Model::Surface::Stage::evaluate_dx (const Met_Element& met_element,
+                                    const size_t i,
+                                    const size_t j,
+                                    const size_t l) const
+{
+
+   const Integer m = tuple_longitude.size ();
+   if (j < 0 || j >= m) { return GSL_NAN; }
+
+   const Integer upper_j = (j == m-1 ? j : j+1);
+   const Integer lower_j = (j == 0   ? j : j-1);
+   const Real upper = evaluate (met_element, i, upper_j, l);
+   const Real lower = evaluate (met_element, i, lower_j, l);
+   const Real delta = upper - lower;
+   const Real c = cos (tuple_latitude[i] * DEGREE_TO_RADIAN);
+   const Real dlongitude = tuple_longitude[upper_j] - tuple_longitude[lower_j];
+   return (delta / dlongitude) / (LATITUDE_LENGTH * c);
+
+}
+
+Real
+Model::Surface::Stage::evaluate_dy (const Met_Element& met_element,
+                                    const Lat_Long& lat_long,
+                                    const size_t l) const
+{
+   size_t i, j;
+   acquire_ij (i, j, lat_long);
+   return evaluate_dy (met_element, i, j, l);
+}
+
+Real
+Model::Surface::Stage::evaluate_dy (const Met_Element& met_element,
+                                    const size_t i,
+                                    const size_t j,
+                                    const size_t l) const
+{
+
+   const Integer n = tuple_latitude.size ();
+   if (i < 0 || i >= n) { return GSL_NAN; }
+
+   const Integer upper_i = (i == n-1 ? i : i+1);
+   const Integer lower_i = (i == 0   ? i : i-1);
+   const Real upper = evaluate (met_element, upper_i, j, l);
+   const Real lower = evaluate (met_element, lower_i, j, l);
+   const Real delta = upper - lower;
+   const Real dlongitude = tuple_latitude[upper_i] - tuple_latitude[lower_i];
+   return (delta / dlongitude) / (LATITUDE_LENGTH);
 
 }
 
@@ -1305,21 +1475,33 @@ Model::Surface::Stage::get_color (const Product& product,
                                   const size_t l) const
 {
 
-   if (product.enumeration == Product::WIND)
+   switch (product.enumeration)
    {
-      const Real u = evaluate (U, lat_long, l);
-      const Real v = evaluate (V, lat_long, l);
-      const Real speed = sqrt (u*u + v*v);
-      const Real theta = atan2 (-u, -v);
-      const Real hue = (theta < 0 ? theta + 2*M_PI : theta)/ (2*M_PI);
-      const Real brightness = std::min (speed / 15, 1.0);
-      return Color::hsb (hue, 0.8, brightness);
-   }
-   else
-   {
-      const Met_Element met_element = product.get_met_element ();
-      const Real datum = evaluate (met_element, lat_long, l);
-      return Display::get_color (product, datum);
+
+      case Product::WIND:
+      {
+         const Real u = evaluate (U, lat_long, l);
+         const Real v = evaluate (V, lat_long, l);
+         const Real speed = sqrt (u*u + v*v);
+         const Real theta = atan2 (-u, -v);
+         const Real hue = (theta < 0 ? theta + 2*M_PI : theta)/ (2*M_PI);
+         const Real brightness = std::min (speed / 15, 1.0);
+         return Color::hsb (hue, 0.8, brightness);
+      }
+
+      case Product::Q_H_ADVECTION:
+      {
+         const Real datum = evaluate_h_advection (Q, lat_long, l);
+         return Display::get_color (product, datum);
+      }
+
+      default:
+      {
+         const Met_Element met_element = product.get_met_element ();
+         const Real datum = evaluate (met_element, lat_long, l);
+         return Display::get_color (product, datum);
+      }
+
    }
 
 }
@@ -1365,34 +1547,74 @@ Model::Surface::init_stage (const twiin::Stage& twiin_stage,
    stage.init (file_path_map);
 }
 
+void
+Model::Uppers::Stage::acquire_k (size_t& k,
+                                 const Met_Element& met_element,
+                                 const size_t i,
+                                 const size_t j,
+                                 const Level& level) const
+{
+
+   switch (level.type)
+   {
+
+      case Level::MODEL:
+      {
+         k = size_t (round (level.value));
+         return;
+      }
+
+      case Level::HEIGHT:
+      {
+
+         const Real z = level.value;
+         const Real topography = get_topography (i, j);
+         if (z < topography) { k = -1; return; }
+
+         const bool is_w = (met_element == W);
+         const bool is_theta = Model::is_theta (met_element);
+         const Tuple& A = model.vertical_coefficients.get_A (is_theta);
+         const Tuple& B = model.vertical_coefficients.get_B (is_theta);
+         if (z > A.back ()) { k = -1; return; }
+
+         const bool surface = (z < 0);
+         k = surface ? -1 : model.get_k (z, topography, A, B);
+         break;
+
+      }
+
+      default:
+      {
+         k = -1;
+         break;
+      };
+
+   }
+
+}
+
 Model::Uppers::Stage::Stage (const Model& model,
                              const twiin::Stage& stage)
    : Model::Surface::Stage (model, stage)
 {
 }
 
-
 Real
 Model::Uppers::Stage::evaluate_normal_speed (const Real azimuth,
                                              const Lat_Long& lat_long,
-                                             const Real z,
+                                             const Level& level,
                                              const size_t l) const
 {
 
-   size_t i, j;
+   size_t i, j, k;
    acquire_ij (i, j, lat_long);
-
-   const Real topography = get_topography (i, j);
-   if (z < topography) { return GSL_NAN; }
-
-   const Tuple& A = model.vertical_coefficients.get_A_rho ();
-   const Tuple& B = model.vertical_coefficients.get_B_rho ();
-   const Integer k = model.get_k (z, topography, A, B);
+   acquire_k (k, U, i, j, level);
+   if (k < 0 || k > 69) { return GSL_NAN; }
 
    const Real u = evaluate (U, i, j, k, l);
    const Real v = evaluate (V, i, j, k, l);
 
-   const Real theta = azimuth * M_PI/180;
+   const Real theta = azimuth * DEGREE_TO_RADIAN;
    return v * sin (theta) - u * cos (theta);
 
 }
@@ -1400,25 +1622,20 @@ Model::Uppers::Stage::evaluate_normal_speed (const Real azimuth,
 Real
 Model::Uppers::Stage::evaluate_along_speed (const Real azimuth,
                                             const Lat_Long& lat_long,
-                                            const Real z,
+                                            const Level& level,
                                             const size_t l,
                                             const Real u_bg) const
 {
 
-   size_t i, j;
+   size_t i, j, k;
    acquire_ij (i, j, lat_long);
-
-   const Real topography = get_topography (i, j);
-   if (z < topography) { return GSL_NAN; }
-
-   const Tuple& A = model.vertical_coefficients.get_A_rho ();
-   const Tuple& B = model.vertical_coefficients.get_B_rho ();
-   const Integer k = model.get_k (z, topography, A, B);
+   acquire_k (k, U, i, j, level);
+   if (k < 0 || k > 69) { return GSL_NAN; }
 
    const Real u = evaluate (U, i, j, k, l);
    const Real v = evaluate (V, i, j, k, l);
 
-   const Real theta = azimuth * M_PI/180;
+   const Real theta = azimuth * DEGREE_TO_RADIAN;
    return u * sin (theta) + v * cos (theta) - u_bg;
 
 }
@@ -1426,26 +1643,25 @@ Model::Uppers::Stage::evaluate_along_speed (const Real azimuth,
 Real
 Model::Uppers::Stage::evaluate_scorer (const Real azimuth,
                                        const Lat_Long& lat_long,
-                                       const Real z,
+                                       const Level& level,
                                        const size_t l,
                                        const Real u_bg) const
 {
 
-   size_t i, j;
+   size_t i, j, k_rho, k_theta;
    acquire_ij (i, j, lat_long);
 
-   const Real topography = get_topography (i, j);
-   if (z < topography) { return GSL_NAN; }
+   acquire_k (k_rho, U, i, j, level);
+   if (k_rho <= 0 || k_rho >= 69) { return GSL_NAN; }
 
+   acquire_k (k_theta, THETA, i, j, level);
+   if (k_theta <= 0 || k_theta >= 69) { return GSL_NAN; }
+
+   const Real topography = get_topography (i, j);
    const Tuple& A_rho = model.vertical_coefficients.get_A_rho ();
    const Tuple& B_rho = model.vertical_coefficients.get_B_rho ();
-   const Integer k_rho = model.get_k (z, topography, A_rho, B_rho);
-   if (k_rho == 0 && k_rho == 69) { return GSL_NAN; }
-
    const Tuple& A_theta = model.vertical_coefficients.get_A_theta ();
    const Tuple& B_theta = model.vertical_coefficients.get_B_theta ();
-   const Integer k_theta = model.get_k (z, topography, A_theta, B_theta);
-   if (k_theta == 0 && k_theta == 69) { return GSL_NAN; }
 
    const Integer k_rho_0 = k_rho - 1;
    const Integer k_rho_1 = k_rho;
@@ -1467,7 +1683,7 @@ Model::Uppers::Stage::evaluate_scorer (const Real azimuth,
    const Real v_1 = evaluate (V, i, j, k_rho_1, l);
    const Real v_2 = evaluate (V, i, j, k_rho_2, l);
 
-   const Real theta = azimuth * M_PI/180;
+   const Real theta = azimuth * DEGREE_TO_RADIAN;
    const Real along_0 = u_0 * sin (theta) + v_0 * cos (theta) - u_bg;
    const Real along_1 = u_1 * sin (theta) + v_1 * cos (theta) - u_bg;
    const Real along_2 = u_2 * sin (theta) + v_2 * cos (theta) - u_bg;
@@ -1494,20 +1710,18 @@ Model::Uppers::Stage::evaluate_scorer (const Real azimuth,
 
 Real
 Model::Uppers::Stage::evaluate_brunt_vaisala (const Lat_Long& lat_long,
-                                              const Real z,
+                                              const Level& level,
                                               const size_t l) const
 {
 
-   size_t i, j;
+   size_t i, j, k;
    acquire_ij (i, j, lat_long);
+   acquire_k (k, THETA, i, j, level);
+   if (k <= 0 || k >= 69) { return GSL_NAN; }
 
    const Real topography = get_topography (i, j);
-   if (z < topography) { return GSL_NAN; }
-
    const Tuple& A_theta = model.vertical_coefficients.get_A_theta ();
    const Tuple& B_theta = model.vertical_coefficients.get_B_theta ();
-   const Integer k = model.get_k (z, topography, A_theta, B_theta);
-   if (k == 0 && k == 69) { return GSL_NAN; }
 
    const Integer k_0 = k - 1;
    const Integer k_1 = k;
@@ -1530,41 +1744,134 @@ Model::Uppers::Stage::evaluate_brunt_vaisala (const Lat_Long& lat_long,
 }
 
 Real
-Model::Uppers::Stage::evaluate (const Met_Element& met_element,
-                                const Lat_Long& lat_long,
-                                const Real z,
-                                const size_t l) const
+Model::Uppers::Stage::evaluate_h_advection (const Met_Element& met_element,
+                                            const Lat_Long& lat_long,
+                                            const Level& level,
+                                            const size_t l) const
 {
 
    size_t i, j;
    acquire_ij (i, j, lat_long);
 
-   const Real topography = get_topography (i, j);
-   if (z < topography) { return GSL_NAN; }
+   size_t k, k_rho;
+   acquire_k (k_rho, U, i, j, level);
+   acquire_k (k, met_element, i, j, level);
+   if (k < 0 || k > 69) { return GSL_NAN; }
+
+   const Real u = evaluate (U, i, j, k_rho, l);
+   const Real v = evaluate (V, i, j, k_rho, l);
+   const Real ddx = evaluate_dx (met_element, lat_long, level, l);
+   const Real ddy = evaluate_dy (met_element, lat_long, level, l);
+
+   const Real datum = -u * ddx - v * ddy;
+   if (level.value < 500 & datum > 9e-6)
+   {
+      cout << datum << " " << u << " " << v << " " << ddx << " " << ddy << endl;
+   }
+
+   return -u * ddx - v * ddy;
+
+}
+
+Real
+Model::Uppers::Stage::evaluate_v_advection (const Met_Element& met_element,
+                                            const Lat_Long& lat_long,
+                                            const Level& level,
+                                            const size_t l) const
+{
+
+   size_t i, j, k, k_w;
+   acquire_ij (i, j, lat_long);
+
+   acquire_k (k, met_element, i, j, level);
+   if (k < 0 || k > 69) { return GSL_NAN; }
+
+   acquire_k (k_w, W, i, j, level);
+   if (k_w < 0 || k_w > 69) { return GSL_NAN; }
+
+   const Real w = evaluate (W, i, j, k_w, l);
+   const Real ddz = evaluate_dz (met_element, i, j, k, l);
+
+   return -w * ddz;
+
+}
+
+Real
+Model::Uppers::Stage::evaluate_s_advection (const Met_Element& met_element,
+                                            const Real azimuth,
+                                            const Lat_Long& lat_long,
+                                            const Level& level,
+                                            const size_t l,
+                                            const Real u_bg) const
+{
+
+   size_t i, j, k, k_rho;
+   acquire_ij (i, j, lat_long);
+
+   acquire_k (k, met_element, i, j, level);
+   if (k < 0 || k > 69) { return GSL_NAN; }
+
+   acquire_k (k_rho, U, i, j, level);
+   if (k_rho < 0 || k_rho > 69) { return GSL_NAN; }
+
+   const Real theta = azimuth * DEGREE_TO_RADIAN;
+
+   const Real u = evaluate (U, i, j, k_rho, l);
+   const Real v = evaluate (V, i, j, k_rho, l);
+   const Real s = u * sin (theta) + v * cos (theta) - u_bg;
+
+   const Real ddx = evaluate_dx (met_element, lat_long, level, l);
+   const Real ddy = evaluate_dy (met_element, lat_long, level, l);
+   const Real dds = ddx * sin (theta) + ddy * cos (theta);
+
+   return -s * dds;
+
+}
+
+Real
+Model::Uppers::Stage::evaluate_n_advection (const Met_Element& met_element,
+                                            const Real azimuth,
+                                            const Lat_Long& lat_long,
+                                            const Level& level,
+                                            const size_t l) const
+{
+
+   size_t i, j, k, k_rho;
+   acquire_ij (i, j, lat_long);
+
+   acquire_k (k, met_element, i, j, level);
+   if (k < 0 || k > 69) { return GSL_NAN; }
+
+   acquire_k (k_rho, U, i, j, level);
+   if (k_rho < 0 || k_rho > 69) { return GSL_NAN; }
+
+   const Real theta = azimuth * DEGREE_TO_RADIAN;
+
+   const Real u = evaluate (U, i, j, k_rho, l);
+   const Real v = evaluate (V, i, j, k_rho, l);
+   const Real n = v * sin (theta) - u * cos (theta);
+
+   const Real ddx = evaluate_dx (met_element, lat_long, level, l);
+   const Real ddy = evaluate_dy (met_element, lat_long, level, l);
+   const Real ddn = ddy * sin (theta) - ddx * cos (theta);
+
+   return -n * ddn;
+
+}
+
+Real
+Model::Uppers::Stage::evaluate (const Met_Element& met_element,
+                                const Lat_Long& lat_long,
+                                const Level& level,
+                                const size_t l) const
+{
+
+   size_t i, j, k;
+   acquire_ij (i, j, lat_long);
+   acquire_k (k, met_element, i, j, level);
+   if (k < 0 || k > 69) { return GSL_NAN; }
 
    const bool is_w = (met_element == W);
-   const bool is_theta = ((met_element == THETA) || 
-                          (met_element == Q) || 
-                          (met_element == RHO) || 
-                          (met_element == W) || 
-                          (met_element == T) || 
-                          (met_element == TD) || 
-                          (met_element == RH) || 
-                          (met_element == THETA_E) ||
-                          (met_element == THETA_V));
-
-   const Tuple& A_rho = model.vertical_coefficients.get_A_rho ();
-   const Tuple& B_rho = model.vertical_coefficients.get_B_rho ();
-   const Tuple& A_theta = model.vertical_coefficients.get_A_theta ();
-   const Tuple& B_theta = model.vertical_coefficients.get_B_theta ();
-
-   const Tuple& A = (is_theta ? A_theta : A_rho);
-   const Tuple& B = (is_theta ? B_theta : B_rho);
-   if (z > A.back ()) { return GSL_NAN; }
-
-   const bool surface = (z < 0);
-   const Integer k = surface ? -1 : model.get_k (z, topography, A, B);
-
    return evaluate (met_element, i, j, (is_w ? k + 1 : k), l);
 
 }
@@ -1720,6 +2027,193 @@ Model::Uppers::Stage::evaluate (const Met_Element& met_element,
 }
 
 Real
+Model::Uppers::Stage::evaluate_dx (const Met_Element& met_element,
+                                   const Lat_Long& lat_long,
+                                   const Level& level,
+                                   const size_t l) const
+{
+
+   size_t i, j;
+   size_t upper_k, lower_k;
+   acquire_ij (i, j, lat_long);
+
+   const Integer m = tuple_longitude.size ();
+   if (j < 0 || j >= m) { return GSL_NAN; }
+
+   const Integer upper_j = (j == m-1 ? j : j+1);
+   const Integer lower_j = (j == 0   ? j : j-1);
+
+   acquire_k (upper_k, met_element, i, upper_j, level);
+   if (upper_k < 0 || upper_k > 69) { return GSL_NAN; }
+
+   acquire_k (lower_k, met_element, i, lower_j, level);
+   if (lower_k < 0 || lower_k > 69) { return GSL_NAN; }
+
+   const Real upper = evaluate (met_element, i, upper_j, upper_k, l);
+   const Real lower = evaluate (met_element, i, lower_j, upper_k, l);
+   const Real delta = upper - lower;
+   const Real c = cos (tuple_latitude[i] * DEGREE_TO_RADIAN);
+   const Real dlongitude = tuple_longitude[upper_j] - tuple_longitude[lower_j];
+   return (delta / dlongitude) / (LATITUDE_LENGTH * c);
+
+}
+
+Real
+Model::Uppers::Stage::evaluate_dx (const Met_Element& met_element,
+                                   const Lat_Long& lat_long,
+                                   const size_t k,
+                                   const size_t l) const
+{
+   size_t i, j;
+   acquire_ij (i, j, lat_long);
+   return evaluate_dx (met_element, i, j, k, l);
+}
+
+Real
+Model::Uppers::Stage::evaluate_dx (const Met_Element& met_element,
+                                   const size_t i,
+                                   const size_t j,
+                                   const size_t k,
+                                   const size_t l) const
+{
+
+   const Integer m = tuple_longitude.size ();
+   if (j < 0 || j >= m) { return GSL_NAN; }
+
+   const Integer upper_j = (j == m-1 ? j : j+1);
+   const Integer lower_j = (j == 0   ? j : j-1);
+   const Real upper = evaluate (met_element, i, upper_j, k, l);
+   const Real lower = evaluate (met_element, i, lower_j, k, l);
+   const Real delta = upper - lower;
+   const Real c = cos (tuple_latitude[i] * DEGREE_TO_RADIAN);
+   const Real dlongitude = tuple_longitude[upper_j] - tuple_longitude[lower_j];
+   return (delta / dlongitude) / (LATITUDE_LENGTH * c);
+
+}
+
+Real
+Model::Uppers::Stage::evaluate_dy (const Met_Element& met_element,
+                                   const Lat_Long& lat_long,
+                                   const Level& level,
+                                   const size_t l) const
+{
+
+   size_t i, j;
+   size_t upper_k, lower_k;
+   acquire_ij (i, j, lat_long);
+
+   const Integer n = tuple_latitude.size ();
+   if (i < 0 || i >= n) { return GSL_NAN; }
+
+   const Integer upper_i = (i == n-1 ? i : i+1);
+   const Integer lower_i = (i == 0   ? i : i-1);
+
+   acquire_k (upper_k, met_element, upper_i, j, level);
+   if (upper_k < 0 || upper_k > 69) { return GSL_NAN; }
+
+   acquire_k (lower_k, met_element, lower_i, j, level);
+   if (lower_k < 0 || lower_k > 69) { return GSL_NAN; }
+
+   const Real upper = evaluate (met_element, upper_i, j, upper_k, l);
+   const Real lower = evaluate (met_element, upper_i, j, upper_k, l);
+   const Real delta = upper - lower;
+   const Real c = cos (tuple_latitude[i] * DEGREE_TO_RADIAN);
+   const Real dlongitude = tuple_longitude[upper_i] - tuple_longitude[lower_i];
+   return (delta / dlongitude) / (LATITUDE_LENGTH * c);
+
+}
+
+Real
+Model::Uppers::Stage::evaluate_dy (const Met_Element& met_element,
+                                   const Lat_Long& lat_long,
+                                   const size_t k,
+                                   const size_t l) const
+{
+   size_t i, j;
+   acquire_ij (i, j, lat_long);
+   return evaluate_dy (met_element, i, j, k, l);
+}
+
+Real
+Model::Uppers::Stage::evaluate_dy (const Met_Element& met_element,
+                                   const size_t i,
+                                   const size_t j,
+                                   const size_t k,
+                                   const size_t l) const
+{
+
+   const Integer n = tuple_latitude.size ();
+   if (i < 0 || i >= n) { return GSL_NAN; }
+
+   const Integer upper_i = (i == n-1 ? i : i+1);
+   const Integer lower_i = (i == 0   ? i : i-1);
+   const Real upper = evaluate (met_element, upper_i, j, k, l);
+   const Real lower = evaluate (met_element, lower_i, j, k, l);
+   const Real delta = upper - lower;
+   const Real dlongitude = tuple_latitude[upper_i] - tuple_latitude[lower_i];
+   return (delta / dlongitude) / (LATITUDE_LENGTH);
+
+}
+
+Real
+Model::Uppers::Stage::evaluate_dz (const Met_Element& met_element,
+                                   const Lat_Long& lat_long,
+                                   const Level& level,
+                                   const size_t l) const
+{
+
+   size_t i, j, k;
+   acquire_ij (i, j, lat_long);
+   acquire_k (k, met_element, i, j, level);
+
+   return evaluate_dz (met_element, i, j, k, l);
+
+}
+
+Real
+Model::Uppers::Stage::evaluate_dz (const Met_Element& met_element,
+                                   const Lat_Long& lat_long,
+                                   const size_t k,
+                                   const size_t l) const
+{
+   size_t i, j;
+   acquire_ij (i, j, lat_long);
+   return evaluate_dy (met_element, i, j, k, l);
+}
+
+Real
+Model::Uppers::Stage::evaluate_dz (const Met_Element& met_element,
+                                   const size_t i,
+                                   const size_t j,
+                                   const size_t k,
+                                   const size_t l) const
+{
+
+   const Integer n = 70;
+   if (k < 1 || k >= n - 1) { return GSL_NAN; }
+
+   const bool is_theta = Model::is_theta (met_element);
+   const Tuple& A = model.vertical_coefficients.get_A (met_element);
+   const Tuple& B = model.vertical_coefficients.get_B (met_element);
+
+   const Integer k_0 = (k == 0   ? k : k-1);
+   const Integer k_1 = k;
+   const Integer k_2 = (k == n-1 ? k : k+1);
+
+   const Real topography = get_topography (i, j);
+   const Real z_0 = model.get_z (k_0, topography, A, B);
+   const Real z_1 = model.get_z (k_1, topography, A, B);
+   const Real z_2 = model.get_z (k_2, topography, A, B);
+
+   const Real datum_0 = evaluate (met_element, i, j, k_0, l);
+   const Real datum_1 = evaluate (met_element, i, j, k_1, l);
+   const Real datum_2 = evaluate (met_element, i, j, k_2, l);
+
+   return Differentiation::d_1 (datum_0, datum_1, datum_2, z_0, z_1, z_2);
+
+}
+
+Real
 Model::Uppers::Stage::evaluate_raw (const Dstring& varname,
                                     const size_t i,
                                     const size_t j,
@@ -1787,25 +2281,54 @@ Model::Uppers::Stage::get_color (const Product& product,
                                  const size_t l) const
 {
 
-   const Real z = level.value;
-   const Real topography = get_topography (lat_long);
-   if (z < topography) { return transparent; }
+   switch (product.enumeration)
+   {
 
-   if (product.enumeration == Product::WIND)
-   {
-      const Real u = evaluate (U, lat_long, z, l);
-      const Real v = evaluate (V, lat_long, z, l);
-      const Real speed = sqrt (u*u + v*v);
-      const Real theta = atan2 (-u, -v);
-      const Real hue = (theta < 0 ? theta + 2*M_PI : theta)/ (2*M_PI);
-      const Real brightness = std::min (speed / 15, 1.0);
-      return Color::hsb (hue, 0.8, brightness);
-   }
-   else
-   {
-      const Met_Element met_element = product.get_met_element ();
-      const Real datum = evaluate (met_element, lat_long, z, l);
-      return Display::get_color (product, datum);
+      case Product::WIND:
+      {
+
+         size_t i, j, k;
+         acquire_ij (i, j, lat_long);
+         acquire_k (k, U, i, j, level);
+         if (k < 0 || k > 69) { return transparent; }
+
+         const Real u = evaluate (U, i, j, k, l);
+         const Real v = evaluate (V, i, j, k, l);
+         const Real speed = sqrt (u*u + v*v);
+         const Real theta = atan2 (-u, -v);
+         const Real hue = (theta < 0 ? theta + 2*M_PI : theta)/ (2*M_PI);
+         const Real brightness = std::min (speed / 15, 1.0);
+         return Color::hsb (hue, 0.8, brightness);
+
+      }
+
+      case Product::Q_H_ADVECTION:
+      {
+         const Real datum = evaluate_h_advection (Q, lat_long, level, l);
+         return Display::get_color (product, datum);
+      }
+
+      case Product::Q_V_ADVECTION:
+      {
+         const Real datum = evaluate_v_advection (Q, lat_long, level, l);
+         return Display::get_color (product, datum);
+      }
+
+      default:
+      {
+
+         const Met_Element met_element = product.get_met_element ();
+
+         size_t i, j, k;
+         acquire_ij (i, j, lat_long);
+         acquire_k (k, met_element, i, j, level);
+         if (k < 0 || k > 69) { return transparent; }
+
+         const Real datum = evaluate (met_element, i, j, k, l);
+         return Display::get_color (product, datum);
+
+      }
+
    }
 
 }
@@ -1914,6 +2437,30 @@ Model::Vertical_Coefficients::get_B_rho () const
    return B_rho;
 }
 
+const Tuple&
+Model::Vertical_Coefficients::get_A (const bool is_theta) const
+{
+   return (is_theta ? A_theta : A_rho);
+}
+
+const Tuple&
+Model::Vertical_Coefficients::get_B (const bool is_theta) const
+{
+   return (is_theta ? B_theta : B_rho);
+}
+
+const Tuple&
+Model::Vertical_Coefficients::get_A (const Met_Element& met_element) const
+{
+   return get_A (Model::is_theta (met_element));
+}
+
+const Tuple&
+Model::Vertical_Coefficients::get_B (const Met_Element& met_element) const
+{
+   return get_B (Model::is_theta (met_element));
+}
+
 Dstring
 Model::get_nc_varname (const Varname& varname)
 {
@@ -1945,7 +2492,7 @@ Model::get_z (const Integer k,
    return A[k] + B[k] * topography;
 }
 
-const Integer
+const size_t
 Model::get_k (const Real z,
               const Real topography,
               const Tuple& A,
@@ -2117,6 +2664,20 @@ Model::~Model ()
 {
 }
 
+bool
+Model::is_theta (const Met_Element& met_element)
+{
+   return ((met_element == THETA) || 
+           (met_element == Q) || 
+           (met_element == RHO) || 
+           (met_element == W) || 
+           (met_element == T) || 
+           (met_element == TD) || 
+           (met_element == RH) || 
+           (met_element == THETA_E) ||
+           (met_element == THETA_V));
+}
+
 const Dtime&
 Model::get_basetime () const
 {
@@ -2185,12 +2746,10 @@ Model::evaluate (const Met_Element& met_element,
       return surface_stage.evaluate (met_element, lat_long, l);
    }
    else
-   if (level.type == Level::HEIGHT)
    {
-      const Real z = level.value;
       const Model::Uppers::Stage& uppers_stage = uppers.get_stage (stage);
       const Integer l = uppers_stage.get_l (dtime);
-      return uppers_stage.evaluate (met_element, lat_long, z, l);
+      return uppers_stage.evaluate (met_element, lat_long, level, l);
    }
 }
 
@@ -2322,6 +2881,10 @@ Model::get_valid_time_set (const Product& product,
       case Product::P_THETA:
       case Product::P_RHO:
       case Product::Q:
+      case Product::Q_H_ADVECTION:
+      case Product::Q_V_ADVECTION:
+      case Product::Q_S_ADVECTION:
+      case Product::Q_N_ADVECTION:
       case Product::TD:
       case Product::RH:
       case Product::RHO:

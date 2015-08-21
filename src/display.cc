@@ -293,12 +293,6 @@ Display::get_cross_section_raster_ptr (const Box_2D& box_2d,
    const size_t l = uppers_stage.get_l (dtime);
 
    const bool is_speed = (product.enumeration == Product::SPEED);
-   const bool is_along_speed = (product.enumeration == Product::ALONG_SPEED);
-   const bool is_normal_speed = (product.enumeration == Product::NORMAL_SPEED);
-   const bool is_wind = (product.enumeration == Product::WIND);
-   const bool is_scorer = (product.enumeration == Product::SCORER);
-   const bool is_brunt_vaisala = (product.enumeration == Product::BRUNT_VAISALA);
-
    const Product& p = (is_speed ? Product (Product::SPEED_HIGHER) : product);
 
    Real x;
@@ -327,57 +321,104 @@ Display::get_cross_section_raster_ptr (const Box_2D& box_2d,
          if (z < topography) { color = Color::black (); }
          else
          {
-            if (is_wind)
+
+            switch (product.enumeration)
             {
-               const Real u = uppers_stage.evaluate (U, lat_long, z, l);
-               const Real v = uppers_stage.evaluate (V, lat_long, z, l);
-               const Wind wind (u, v);
-               const Real direction = wind.get_direction ();
-               const Real speed = wind.get_speed ();
-               color = Display::get_wind_color (direction, speed);
+
+               case Product::WIND:
+               {
+                  const Real u = uppers_stage.evaluate (U, lat_long, level, l);
+                  const Real v = uppers_stage.evaluate (V, lat_long, level, l);
+                  const Wind wind (u, v);
+                  const Real direction = wind.get_direction ();
+                  const Real speed = wind.get_speed ();
+                  color = Display::get_wind_color (direction, speed);
+                  break;
+               }
+
+               case Product::BRUNT_VAISALA:
+               {
+                  const Real datum =
+                     uppers_stage.evaluate_brunt_vaisala (lat_long, level, l);
+                  color = Display::get_color (p, datum);
+                  break;
+               }
+
+               case Product::SCORER:
+               {
+                  const Real azimuth = journey.get_azimuth_forward (x, geodesy);
+                  const Real datum = uppers_stage.evaluate_scorer (
+                     azimuth, lat_long, level, l, u_bg);
+                  color = Display::get_color (p, datum);
+                  break;
+               }
+
+               case Product::ALONG_SPEED:
+               {
+                  const Real azimuth = journey.get_azimuth_forward (x, geodesy);
+                  const Real datum = uppers_stage.evaluate_along_speed (
+                     azimuth, lat_long, level, l, u_bg);
+                  color = Display::get_color (p, datum);
+                  break;
+               }
+
+               case Product::NORMAL_SPEED:
+               {
+                  const Real azimuth = journey.get_azimuth_forward (x, geodesy);
+                  const Real datum = uppers_stage.evaluate_normal_speed (
+                     azimuth, lat_long, level, l);
+                  color = Display::get_color (p, datum);
+                  break;
+               }
+
+               case Product::Q_H_ADVECTION:
+               {
+                  const Real datum = uppers_stage.evaluate_h_advection (
+                     Q, lat_long, level, l);
+                  color = Display::get_color (p, datum);
+                  break;
+               }
+
+               case Product::Q_V_ADVECTION:
+               {
+                  const Real datum = uppers_stage.evaluate_v_advection (
+                     Q, lat_long, level, l);
+                  color = Display::get_color (p, datum);
+                  break;
+               }
+
+               case Product::Q_S_ADVECTION:
+               {
+                  const Real azimuth = journey.get_azimuth_forward (x, geodesy);
+                  const Real datum = uppers_stage.evaluate_s_advection (
+                     Q, azimuth, lat_long, level, l, u_bg);
+                  color = Display::get_color (p, datum);
+                  break;
+               }
+
+               case Product::Q_N_ADVECTION:
+               {
+                  const Real azimuth = journey.get_azimuth_forward (x, geodesy);
+                  const Real datum = uppers_stage.evaluate_n_advection (
+                     Q, azimuth, lat_long, level, l);
+                  color = Display::get_color (p, datum);
+                  break;
+               }
+
+               default:
+               {
+                  const Met_Element met_element = product.get_met_element ();
+                  const Real datum = uppers_stage.evaluate (met_element, ll, level, l);
+                  color = Display::get_color (p, datum);
+                  break;
+               }
+
             }
-            else
-            if (is_brunt_vaisala)
-            {
-               const Real datum =
-                  uppers_stage.evaluate_brunt_vaisala (lat_long, z, l);
-               color = Display::get_color (p, datum);
-            }
-            else
-            if (is_scorer)
-            {
-               const Real azimuth =
-                  journey.get_azimuth_forward (x, geodesy);
-               const Real datum = uppers_stage.evaluate_scorer (
-                  azimuth, lat_long, z, l, u_bg);
-               color = Display::get_color (p, datum);
-            }
-            else
-            if (is_along_speed)
-            {
-               const Real azimuth =
-                  journey.get_azimuth_forward (x, geodesy);
-               const Real datum = uppers_stage.evaluate_along_speed (
-                  azimuth, lat_long, z, l, u_bg);
-               color = Display::get_color (p, datum);
-            }
-            else
-            if (is_normal_speed)
-            {
-               const Real azimuth =
-                  journey.get_azimuth_forward (x, geodesy);
-               const Real datum =
-                  uppers_stage.evaluate_normal_speed (azimuth, lat_long, z, l);
-               color = Display::get_color (p, datum);
-            }
-            else
-            {
-               const Met_Element met_element = product.get_met_element ();
-               const Real datum = uppers_stage.evaluate (met_element, ll, z, l);
-               color = Display::get_color (p, datum);
-            }
+
          }
+
          raster_ptr->set_pixel (i - index_2d.i, j - index_2d.j, color);
+
       }
 
    }
@@ -404,7 +445,7 @@ Display::set_title (Title& title,
    const Dstring& time_str = dtime.get_string (fmt);
    const Dstring& basetime_str = basetime.get_string () +
       Dstring::render (" +%d:%02d", fh, fm);
-   const Dstring stage_product = stage + " / " + product.get_string ();
+   const Dstring stage_product = stage + " / " + product.get_description ();
 
    title.set (time_str, "", stage_product, basetime_str, level.get_string ());
 
@@ -437,7 +478,7 @@ Display::set_title (Title& title,
    const Dstring& time_str = dtime.get_string (fmt);
    const Dstring& basetime_str = basetime.get_string () +
       Dstring::render (" +%d:%02d", fh, fm);
-   const Dstring stage_product = stage + " / " + product.get_string ();
+   const Dstring stage_product = stage + " / " + product.get_description ();
 
    title.set (time_str, o_str, stage_product, basetime_str, d_str);
 
@@ -500,119 +541,6 @@ Display::set_title (Title& title,
    const Lat_Long& lat_long (location);
    const Dstring& ll_str = lat_long.get_string (4, true, true, true);
    title.set ("", stage, location.get_long_str (), basetime_str, ll_str);
-}
-
-Dstring
-Display::get_unit (const Product& product)
-{
-
-   switch (product.enumeration)
-   {
-
-      case Product::T:
-      {
-         return Dstring ("\u00b0C");
-      }
-
-      case Product::TD:
-      {
-         return Dstring ("\u00b0C");
-      }
-
-      case Product::RH:
-      {
-         return Dstring ("%%");
-      }
-
-      case Product::THETA:
-      {
-         return Dstring ("\u00b0C");
-      }
-
-      case Product::THETA_V:
-      {
-         return Dstring ("\u00b0C");
-      }
-
-      case Product::THETA_E:
-      {
-         return Dstring ("\u00b0C");
-      }
-
-      case Product::Q:
-      {
-         return Dstring ("gkg\u207b\u00b9");
-      }
-
-      case Product::RHO:
-      {
-         return Dstring ("kgm\u207b\u00b9");
-      }
-
-      case Product::W:
-      {
-         return Dstring ("ms\u207b\u00b9");
-      }
-
-      case Product::W_TRANSLUCENT:
-      {
-         return Dstring ("ms\u207b\u00b9");
-      }
-
-      case Product::SPEED_HIGHER:
-      {
-         return Dstring ("knots");
-      }
-
-      case Product::SPEED:
-      case Product::ALONG_SPEED:
-      case Product::NORMAL_SPEED:
-      {
-         return Dstring ("knots");
-      }
-
-      case Product::VORTICITY:
-      {
-         return Dstring ("10\u207b\u00b3 s\u207b\u00b9");
-      }
-
-      case Product::FFDI:
-      {
-         return Dstring ("");
-      }
-
-      case Product::MSLP:
-      {
-         return Dstring ("hPa");
-      }
-
-      case Product::PRECIP_RATE:
-      {
-         return Dstring ("mm hr\u207b\u00b9");
-      }
-
-      case Product::WIND:
-      {
-         return Dstring ("degree");
-      }
-
-      case Product::TERRAIN:
-      {
-         return Dstring ("m");
-      }
-
-      case Product::BRUNT_VAISALA:
-      {
-         return Dstring ("s\u207b\u00b9");
-      }
-
-      default:
-      {
-         return Dstring ("");
-      }
-
-   }
-
 }
 
 Tuple
@@ -725,7 +653,6 @@ Display::get_tick_tuple (const Product& product)
       }
 
    }
-
 }
 
 Color
@@ -791,8 +718,9 @@ Display::get_color (const Product& product,
 
       case Product::Q:
       {
-         const Real saturation = Domain_1D (0, 10).normalize (datum * 1e3);
-         const Real odd = (Integer (floor (datum * 1e3)) % 2);
+         const Real d = datum * 1e3;
+         const Real saturation = Domain_1D (0, 10).normalize (d);
+         const Real odd = (Integer (floor (d / 0.2)) % 2);
          const Real brightness = (odd ? 0.82 : 0.78);
          return Color::hsb (0.45, saturation, brightness);
       }
@@ -824,6 +752,19 @@ Display::get_color (const Product& product,
          const Real quantized = floor (absolute / 0.1) * 0.1;
          const Real alpha = Domain_1D (0, 3.5).normalize (quantized);
          return Color::hsb (hue, 1.0, 1.0, alpha);
+      }
+
+      case Product::Q_H_ADVECTION:
+      case Product::Q_V_ADVECTION:
+      case Product::Q_S_ADVECTION:
+      case Product::Q_N_ADVECTION:
+      {
+         const Real min = log (1e-7);
+         const Real max = log (1e-5);
+         const Real hue = (datum < 0 ? 0.08 : 0.35);
+         const Real d = log (fabs (datum));
+         const Real saturation = Domain_1D (min, max).normalize (d);
+         return Color::hsb (hue, saturation, 1);
       }
 
       case Product::SPEED_HIGHER:
@@ -999,7 +940,8 @@ Display::get_color (const Product& product,
       return get_color (product, datum * 1.852/3.6);
    }
 
-   if (unit == "g kg\u207b\u00b9")
+   if (unit == "gkg\u207b\u00b9" ||
+       unit == "g kg\u207b\u00b9")
    {
       return get_color (product, datum * 1e-3);
    }
@@ -1087,6 +1029,8 @@ Display::render_product (const RefPtr<Context>& cr,
       case Product::TD:
       case Product::RH:
       case Product::Q:
+      case Product::Q_H_ADVECTION:
+      case Product::Q_V_ADVECTION:
       case Product::THETA:
       case Product::THETA_V:
       case Product::RHO:
@@ -1104,7 +1048,6 @@ Display::render_product (const RefPtr<Context>& cr,
                transform, model, stage, product, dtime);
          }
          else
-         if (level.type == Level::HEIGHT)
          {
             raster_ptr = get_uppers_raster_ptr (size_2d,
                transform, model, stage, product, dtime, level);
@@ -1222,11 +1165,12 @@ Display::render_scale_bar (const RefPtr<Context>& cr,
    cr->set_font_size (font_size);
 
    Color::white (0.7).cairo (cr);
-   Rect (Point_2D (point.x - margin, point.y - bar_height/2 - font_size - margin), 2 * pixels + 2*margin, bar_height + 2 * font_size + 2 * margin).cairo (cr);
+   Rect (point - Point_2D (margin, bar_height/2 + font_size + margin),
+      2 * (pixels + margin), bar_height + 2 * (font_size + margin)).cairo (cr);
    cr->fill ();
 
    Color::black ().cairo (cr);
-   Rect (Point_2D (point.x, point.y - bar_height/2), 2 * pixels, bar_height).cairo (cr);
+   Rect (point - Point_2D (0, bar_height/2), 2 * pixels, bar_height).cairo (cr);
    cr->stroke ();
 
    const Real tick = pixels/5;
@@ -1240,18 +1184,16 @@ Display::render_scale_bar (const RefPtr<Context>& cr,
    for (Integer i = 0; i < 5; i++)
    {
       const Real x = point.x + i * tick;
-      const Point_2D p (x, point.y);
       const Real tick_length = fabs ((bar_length - i * bar_length/5) * 1e-3);
       const Dstring& str = Dstring::render ("%.0f", tick_length);
-      Label (str, p, 'c', 't', bar_height*1.5).cairo (cr);
+      Label (str, Point_2D (x, point.y), 'c', 't', bar_height*1.5).cairo (cr);
    }
 
-   const Real x = point.x + pixels;
-   Label ("0", point + Point_2D (pixels, 0), 'c', 't', bar_height*1.5).cairo (cr);
+   const Point_2D p (point.x + pixels, point.y);
+   Label ("0", p, 'c', 't', bar_height * 1.5).cairo (cr);
    Label (Dstring::render ("%.0f", bar_length*1e-3),
       point + Point_2D (2 * pixels, 0), 'c', 't', bar_height*1.5).cairo (cr);
-
-   Label ("kilometres", point + Point_2D (pixels, 0), 'c', 'b', bar_height*1.5).cairo (cr);
+   Label ("kilometres", p, 'c', 'b', bar_height*1.5).cairo (cr);
 
    cr->restore ();
 
@@ -1263,7 +1205,7 @@ Display::render_color_bar (const RefPtr<Context>& cr,
                            const Product& product)
 {
 
-   const Dstring& unit = Display::get_unit (product);
+   const Dstring& unit = product.get_unit ();
    const Tuple& tick_tuple = Display::get_tick_tuple (product);
    if (tick_tuple.size () < 2) { return; }
 
@@ -1582,9 +1524,9 @@ Display::render_cross_section_arrows (const RefPtr<Context>& cr,
          transform.reverse (x, z, Real (i), Real (j));
          if (z < topography) { continue; }
 
-         Real u = uppers_stage.evaluate (U, lat_long, z, l);
-         Real v = uppers_stage.evaluate (V, lat_long, z, l);
-         Real w = uppers_stage.evaluate (W, lat_long, z, l);
+         const Real u = uppers_stage.evaluate (U, lat_long, level, l);
+         const Real v = uppers_stage.evaluate (V, lat_long, level, l);
+         Real w = uppers_stage.evaluate (W, lat_long, level, l);
          Real uu = u * s + v * c - u_bg;
          transform.transform_uv (uu, w, x, z);
          const Real theta = atan2 (w, uu);
@@ -1619,11 +1561,14 @@ Display::render_cross_section (const RefPtr<Context>& cr,
    Color::white ().cairo (cr);
    cr->paint ();
 
+cout << "a" << endl;
    Raster* raster_ptr = Display::get_cross_section_raster_ptr (box_2d,
       transform, model, stage, product, dtime, journey, u_bg);
+cout << "b" << endl;
    raster_ptr->blit (cr);
    delete raster_ptr;
 
+cout << "c" << endl;
    if (product.enumeration == Product::RHO ||
        product.enumeration == Product::THETA)
    {
@@ -1631,11 +1576,14 @@ Display::render_cross_section (const RefPtr<Context>& cr,
          model, stage, dtime, journey);
    }
 
+cout << "d" << endl;
    render_cross_section_mesh (cr, transform, domain_z, journey);
 
+cout << "e" << endl;
    render_cross_section_arrows (cr, transform, box_2d, model, stage,
       product, dtime, journey, u_bg);
 
+cout << "f" << endl;
    if (u_bg != 0)
    {
       Color::black ().cairo (cr);
@@ -1644,6 +1592,7 @@ Display::render_cross_section (const RefPtr<Context>& cr,
       const Index_2D anchor = box_2d.get_ne ();
       Label (u_bg_string, box_2d.get_ne (), 'r', 't', 10).cairo (cr);
    }
+cout << "g" << endl;
 
    cr->restore ();
 
