@@ -1561,14 +1561,11 @@ Display::render_cross_section (const RefPtr<Context>& cr,
    Color::white ().cairo (cr);
    cr->paint ();
 
-cout << "a" << endl;
    Raster* raster_ptr = Display::get_cross_section_raster_ptr (box_2d,
       transform, model, stage, product, dtime, journey, u_bg);
-cout << "b" << endl;
    raster_ptr->blit (cr);
    delete raster_ptr;
 
-cout << "c" << endl;
    if (product.enumeration == Product::RHO ||
        product.enumeration == Product::THETA)
    {
@@ -1576,14 +1573,11 @@ cout << "c" << endl;
          model, stage, dtime, journey);
    }
 
-cout << "d" << endl;
    render_cross_section_mesh (cr, transform, domain_z, journey);
 
-cout << "e" << endl;
    render_cross_section_arrows (cr, transform, box_2d, model, stage,
       product, dtime, journey, u_bg);
 
-cout << "f" << endl;
    if (u_bg != 0)
    {
       Color::black ().cairo (cr);
@@ -1592,7 +1586,6 @@ cout << "f" << endl;
       const Index_2D anchor = box_2d.get_ne ();
       Label (u_bg_string, box_2d.get_ne (), 'r', 't', 10).cairo (cr);
    }
-cout << "g" << endl;
 
    cr->restore ();
 
