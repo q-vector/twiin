@@ -101,6 +101,9 @@ Display::get_terrain_raster_ptr (const Size_2D& size_2d,
    Real orog, lsm;
    const auto& terrain_stage = model.terrain.get_stage (stage);
 
+   bool oob;
+   Real scale_factor = 0.0025;
+
    for (Integer i = 0; i < size_2d.i; i++)
    {
 
@@ -122,7 +125,36 @@ Display::get_terrain_raster_ptr (const Size_2D& size_2d,
          const Real lsm = terrain_stage.evaluate (Dstring ("lsm"), lat_long);
          const Product product (lsm > 0.5 ?
             Product::TERRAIN : Product::TERRAIN_WATER);
-         const Color& color = Display::get_color (product, orog);
+         Color color = Display::get_color (product, orog);
+
+         if (i != 0 && i != size_2d.i - 1 && j != 0 && i != size_2d.j - 1)
+         {
+
+            transform.reverse (latitude, longitude, Real (i+1), Real (j));
+            oob = terrain_stage.out_of_bounds (lat_long);
+            const Real datum_e = oob ? GSL_NAN : terrain_stage.get_topography (lat_long);
+
+            transform.reverse (latitude, longitude, Real (i-1), Real (j));
+            oob = terrain_stage.out_of_bounds (lat_long);
+            const Real datum_w = oob ? GSL_NAN : terrain_stage.get_topography (lat_long);
+
+            transform.reverse (latitude, longitude, Real (i), Real (j+1));
+            oob = terrain_stage.out_of_bounds (lat_long);
+            const Real datum_n = oob ? GSL_NAN : terrain_stage.get_topography (lat_long);
+
+            transform.reverse (latitude, longitude, Real (i), Real (j-1));
+            oob = terrain_stage.out_of_bounds (lat_long);
+            const Real datum_s = oob ? GSL_NAN : terrain_stage.get_topography (lat_long);
+
+            Real gradient = datum_e - datum_n - datum_w + datum_s;
+            if (!gsl_finite (gradient)) { gradient = 0; }
+
+            Real scale = 1 + gradient * scale_factor;
+            scale = std::max (0.7, std::min (1.3, scale));
+            color.scale_brightness (scale);
+
+         }
+
          raster.set_pixel (i, j, color);
 
       }
@@ -951,18 +983,23 @@ Display::get_color (const Product& product,
 
       case Product::TERRAIN:
       {
-         const Real h = std::min (std::max (datum / 2000.0, 0.0), 1.0);
+         //const Real h = std::min (std::max (datum / 2000.0, 0.0), 1.0);
+         //const Real hue = 0.45 - h * 0.4;
+         //const Real brightness = h * 0.7 + 0.28;
+         //return Color::hsb (hue, 0.34, brightness);
+         const Real h = std::min (std::max (datum / 1200.0, 0.0), 1.0);
          const Real hue = 0.45 - h * 0.4;
-         const Real brightness = h * 0.7 + 0.28;
-         return Color::hsb (hue, 0.34, brightness);
+         const Real brightness = h * 0.3 + 0.2;
+         return Color::hsb (hue, 0.54, brightness);
       }
 
       case Product::TERRAIN_WATER:
       {
-         const Real h = std::min (std::max (datum / 2000.0, 0.0), 1.0);
-         const Real hue = 0.67;
-         const Real brightness = h * 0.7 + 0.28;
-         return Color::hsb (hue, 0.34, brightness);
+         //const Real h = std::min (std::max (datum / 2000.0, 0.0), 1.0);
+         //const Real hue = 0.67;
+         //const Real brightness = h * 0.7 + 0.28;
+         //return Color::hsb (hue, 0.54, brightness);
+         return Color::sea ();
       }
 
       case Product::BRUNT_VAISALA:
