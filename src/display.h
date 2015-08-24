@@ -171,6 +171,13 @@ namespace twiin
 
          static void
          render_color_bar (const RefPtr<Context>& cr,
+                           const Product& product,
+                           const Tuple& tick_tuple,
+                           const Box_2D& box_2d,
+                           const bool negative = false);
+
+         static void
+         render_color_bar (const RefPtr<Context>& cr,
                            const Size_2D& size_2d,
                            const Product& product);
 

@@ -403,6 +403,17 @@ Display::get_cross_section_raster_ptr (const Box_2D& box_2d,
                   break;
                }
 
+               case Product::Q_ADVECTION:
+               {
+                  const Real h = uppers_stage.evaluate_h_advection (
+                     Q, lat_long, level, l);
+                  const Real v = uppers_stage.evaluate_v_advection (
+                     Q, lat_long, level, l);
+                  const Real datum = h + v;
+                  color = Display::get_color (p, datum);
+                  break;
+               }
+
                case Product::Q_H_ADVECTION:
                {
                   const Real datum = uppers_stage.evaluate_h_advection (
@@ -433,6 +444,30 @@ Display::get_cross_section_raster_ptr (const Box_2D& box_2d,
                   const Real azimuth = journey.get_azimuth_forward (x, geodesy);
                   const Real datum = uppers_stage.evaluate_n_advection (
                      Q, azimuth, lat_long, level, l);
+                  color = Display::get_color (p, datum);
+                  break;
+               }
+
+               case Product::Q_SV_ADVECTION:
+               {
+                  const Real azimuth = journey.get_azimuth_forward (x, geodesy);
+                  const Real s = uppers_stage.evaluate_s_advection (
+                     Q, azimuth, lat_long, level, l, u_bg);
+                  const Real v = uppers_stage.evaluate_v_advection (
+                     Q, lat_long, level, l);
+                  const Real datum = s + v;
+                  color = Display::get_color (p, datum);
+                  break;
+               }
+
+               case Product::Q_NV_ADVECTION:
+               {
+                  const Real azimuth = journey.get_azimuth_forward (x, geodesy);
+                  const Real n = uppers_stage.evaluate_n_advection (
+                     Q, azimuth, lat_long, level, l);
+                  const Real v = uppers_stage.evaluate_v_advection (
+                     Q, lat_long, level, l);
+                  const Real datum = n + v;
                   color = Display::get_color (p, datum);
                   break;
                }
@@ -613,6 +648,17 @@ Display::get_tick_tuple (const Product& product)
          return Tuple ("0:1:2:3:4:5:6:7:8:9:10");
       }
 
+      case Product::Q_ADVECTION:
+      case Product::Q_H_ADVECTION:
+      case Product::Q_V_ADVECTION:
+      case Product::Q_S_ADVECTION:
+      case Product::Q_N_ADVECTION:
+      case Product::Q_SV_ADVECTION:
+      case Product::Q_NV_ADVECTION:
+      {
+         return Tuple ("1e-7:3.2e-7:1e-6:3.2e-6:1e-5");
+      }
+
       case Product::RHO:
       {
          return Tuple ("0.0:1.0:2.0;3.0:4.0:5.0:6.0:7.0:8.0:9.0:10.0");
@@ -786,11 +832,15 @@ Display::get_color (const Product& product,
          return Color::hsb (hue, 1.0, 1.0, alpha);
       }
 
+      case Product::Q_ADVECTION:
       case Product::Q_H_ADVECTION:
       case Product::Q_V_ADVECTION:
       case Product::Q_S_ADVECTION:
       case Product::Q_N_ADVECTION:
+      case Product::Q_SV_ADVECTION:
+      case Product::Q_NV_ADVECTION:
       {
+         if (!gsl_finite (datum)) { return Color::gray (0.5); }
          const Real min = log (1e-7);
          const Real max = log (1e-5);
          const Real hue = (datum < 0 ? 0.08 : 0.35);
@@ -1238,6 +1288,74 @@ Display::render_scale_bar (const RefPtr<Context>& cr,
 
 void
 Display::render_color_bar (const RefPtr<Context>& cr,
+                           const Product& product,
+                           const Tuple& tick_tuple,
+                           const Box_2D& box_2d,
+                           const bool negative)
+{
+
+   const Real font_size = 12;
+   const Real sign = (negative ? -1.0 : 1.0);
+   const Dstring& unit = product.get_unit ();
+
+   const Integer bar_x = box_2d.index_2d.i;
+   const Integer bar_y = box_2d.index_2d.j;
+   const Integer bar_width = box_2d.size_2d.i;
+   const Integer bar_height = box_2d.size_2d.j;
+
+   const bool is_log = (product.enumeration == Product::Q_ADVECTION ||
+                        product.enumeration == Product::Q_H_ADVECTION ||
+                        product.enumeration == Product::Q_V_ADVECTION ||
+                        product.enumeration == Product::Q_S_ADVECTION ||
+                        product.enumeration == Product::Q_N_ADVECTION ||
+                        product.enumeration == Product::Q_SV_ADVECTION ||
+                        product.enumeration == Product::Q_NV_ADVECTION ||
+                        product.enumeration == Product::PRECIP_RATE ||
+                        product.enumeration == Product::BRUNT_VAISALA);
+
+   const Real start_value = tick_tuple.front ();
+   const Real end_value = tick_tuple.back ();
+   const Domain_1D value_domain (start_value, end_value);
+
+   const Real start_y = bar_y + (negative ? 0 : bar_height);
+   const Real end_y = bar_y + (negative ? bar_height : 0);
+   const Domain_1D y_domain (start_y, end_y);
+   const Cartesian_Transform_1D transform (value_domain, y_domain, is_log);
+
+   Raster* raster_ptr = new Raster (box_2d);
+   Raster& raster = *raster_ptr;
+
+   for (Integer j = 0; j < bar_height; j++)
+   {
+      const Real y = bar_y + j;
+      const Real value = transform.reverse (y) * sign; 
+      const Color& color = Display::get_color (product, value, unit);
+      for (Integer i = 0; i < bar_width; i++)
+      {
+         raster.set_pixel (i, j, color);
+      }
+   }
+
+   raster_ptr->blit (cr);
+   delete raster_ptr;
+
+   Color::black ().cairo (cr);
+
+   for (auto iterator = tick_tuple.begin ();
+        iterator != tick_tuple.end (); iterator++)
+   {
+      if (negative && iterator == tick_tuple.begin ()) { continue; }
+      const Real tick_value = *(iterator);
+      const Real y = transform.transform (tick_value);
+      const Point_2D point (bar_x, y);
+      const Dstring& str = Dstring::render ("%g", tick_value * sign);
+      Label (str, point, 'r', 'c', font_size/2).cairo (cr);
+   }
+
+}
+
+void
+Display::render_color_bar (const RefPtr<Context>& cr,
                            const Size_2D& size_2d,
                            const Product& product)
 {
@@ -1256,17 +1374,10 @@ Display::render_color_bar (const RefPtr<Context>& cr,
    const Real box_y = title_height + margin;
    const Point_2D box_point (box_x, box_y);
 
-   const Real bar_width = box_width - 5 * margin;
-   const Real bar_height = box_height - 2 * margin - font_size;
-   const Real bar_x = box_x + 4 * margin;
-   const Real bar_y = box_y + margin + font_size;
-   const Point_2D bar_point (bar_x, bar_y);
-
-   const Domain_1D value_domain (tick_tuple.front (), tick_tuple.back ());
-   const Domain_1D y_domain (bar_y + bar_height, bar_y);
-   const bool is_log = (product.enumeration == Product::PRECIP_RATE ||
-                        product.enumeration == Product::BRUNT_VAISALA);
-   Cartesian_Transform_1D transform (value_domain, y_domain, is_log);
+   const Integer bar_width = box_width - 5 * margin;
+   const Integer bar_height = box_height - 2 * margin - font_size;
+   const Integer bar_x = box_x + 4 * margin;
+   const Integer bar_y = box_y + margin + font_size;
 
    cr->save ();
    cr->set_line_width (1);
@@ -1276,43 +1387,34 @@ Display::render_color_bar (const RefPtr<Context>& cr,
    Rect (box_point, box_width, box_height).cairo (cr);
    cr->fill ();
 
-   const Real start_value = tick_tuple.front ();
-   const Real span_value = value_domain.get_span ();
-
-   Raster* raster_ptr = new Raster (Box_2D (Index_2D (bar_x, bar_y),
-      Size_2D (bar_width, bar_height)));
-   Raster& raster = *raster_ptr;
-
-   for (Integer j = 0; j < bar_height; j++)
+   if (product.enumeration == Product::Q_ADVECTION ||
+       product.enumeration == Product::Q_H_ADVECTION ||
+       product.enumeration == Product::Q_V_ADVECTION ||
+       product.enumeration == Product::Q_S_ADVECTION ||
+       product.enumeration == Product::Q_N_ADVECTION ||
+       product.enumeration == Product::Q_SV_ADVECTION ||
+       product.enumeration == Product::Q_NV_ADVECTION)
    {
-      const Real y = bar_y + j;
-      const Real value = transform.reverse (y);
-      const Color& color = Display::get_color (product, value, unit);
-      for (Integer i = 0; i < bar_width; i++)
-      {
-         raster.set_pixel (i, j, color);
-      }
+      const Index_2D p_index_2d (bar_x, bar_y);
+      const Index_2D n_index_2d (bar_x, bar_y + bar_height / 2);
+      const Box_2D p_box_2d (p_index_2d, Size_2D (bar_width, bar_height / 2));
+      const Box_2D n_box_2d (n_index_2d, Size_2D (bar_width, bar_height / 2));
+      render_color_bar (cr, product, tick_tuple, p_box_2d, false);
+      render_color_bar (cr, product, tick_tuple, n_box_2d, true);
    }
-
-   raster_ptr->blit (cr);
-   delete raster_ptr;
+   else
+   {
+      const Index_2D index_2d (bar_x, bar_y);
+      const Box_2D box_2d (index_2d, Size_2D (bar_width, bar_height));
+      render_color_bar (cr, product, tick_tuple, box_2d);
+   }
 
    Color::black ().cairo (cr);
-   Rect (bar_point, bar_width, bar_height).cairo (cr);
+   Rect (Point_2D (bar_x, bar_y), bar_width, bar_height).cairo (cr);
    cr->stroke ();
 
-   for (auto iterator = tick_tuple.begin ();
-        iterator != tick_tuple.end (); iterator++)
-   {
-      const Real tick_value = *(iterator);
-      const Real y = transform.transform (tick_value);
-      const Point_2D point (bar_x, y);
-      const Dstring& str = Dstring::render ("%g", tick_value);
-      Label (str, point, 'r', 'c', font_size/2).cairo (cr);
-   }
-
-   const Real label_x = bar_point.x + bar_width/2;
-   const Real label_y = bar_point.y;
+   const Real label_x = bar_x + bar_width / 2;
+   const Real label_y = bar_y;
    const Point_2D label_point (label_x, label_y);
    Label (unit, label_point, 'c', 'b', font_size/2).cairo (cr);
 

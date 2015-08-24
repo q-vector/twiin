@@ -37,42 +37,45 @@ Product::Product (const Product& product)
 
 Product::Product (const Dstring& str)
 {
-        if (str == "TERRAIN")       { enumeration = Product::TERRAIN; }
-   else if (str == "TERRAIN_WATER") { enumeration = Product::TERRAIN_WATER; }
-   else if (str == "P_THETA")       { enumeration = Product::P_THETA; }
-   else if (str == "P_RHO")         { enumeration = Product::P_RHO; }
-   else if (str == "ALONG_SPEED")   { enumeration = Product::ALONG_SPEED; }
-   else if (str == "NORMAL_SPEED")  { enumeration = Product::NORMAL_SPEED; }
-   else if (str == "BRUNT_VAISALA") { enumeration = Product::BRUNT_VAISALA; }
-   else if (str == "SCORER")        { enumeration = Product::SCORER; }
-   else if (str == "T")             { enumeration = Product::T; }
-   else if (str == "TD")            { enumeration = Product::TD; }
-   else if (str == "RH")            { enumeration = Product::RH; }
-   else if (str == "THETA")         { enumeration = Product::THETA; }
-   else if (str == "Q")             { enumeration = Product::Q; }
-   else if (str == "THETA_E")       { enumeration = Product::THETA_E; }
-   else if (str == "THETA_V")       { enumeration = Product::THETA_V; }
-   else if (str == "RHO")           { enumeration = Product::RHO; }
-   else if (str == "WIND")          { enumeration = Product::WIND; }
-   else if (str == "SPEED")         { enumeration = Product::SPEED; }
-   else if (str == "SPEED_HIGHER")  { enumeration = Product::SPEED_HIGHER; }
-   else if (str == "VORTICITY")     { enumeration = Product::VORTICITY; }
-   else if (str == "W")             { enumeration = Product::W; }
-   else if (str == "W_TRANSLUCENT") { enumeration = Product::W_TRANSLUCENT; }
-   else if (str == "Q_H_ADVECTION") { enumeration = Product::Q_H_ADVECTION; }
-   else if (str == "Q_V_ADVECTION") { enumeration = Product::Q_V_ADVECTION; }
-   else if (str == "Q_S_ADVECTION") { enumeration = Product::Q_S_ADVECTION; }
-   else if (str == "Q_N_ADVECTION") { enumeration = Product::Q_N_ADVECTION; }
-   else if (str == "FFDI")          { enumeration = Product::FFDI; }
-   else if (str == "MSLP")          { enumeration = Product::MSLP; }
-   else if (str == "PRECIP_RATE")   { enumeration = Product::PRECIP_RATE; }
-   else if (str == "IR1")           { enumeration = Product::IR1; }
-   else if (str == "IR2")           { enumeration = Product::IR2; }
-   else if (str == "IR3")           { enumeration = Product::IR3; }
-   else if (str == "IR4")           { enumeration = Product::IR4; }
-   else if (str == "VIS")           { enumeration = Product::VIS; }
-   else if (str == "Pseudo")        { enumeration = Product::Pseudo; }
-   else                             { enumeration = Product::NIL; }
+        if (str == "TERRAIN")        { enumeration = Product::TERRAIN; }
+   else if (str == "TERRAIN_WATER")  { enumeration = Product::TERRAIN_WATER; }
+   else if (str == "P_THETA")        { enumeration = Product::P_THETA; }
+   else if (str == "P_RHO")          { enumeration = Product::P_RHO; }
+   else if (str == "ALONG_SPEED")    { enumeration = Product::ALONG_SPEED; }
+   else if (str == "NORMAL_SPEED")   { enumeration = Product::NORMAL_SPEED; }
+   else if (str == "BRUNT_VAISALA")  { enumeration = Product::BRUNT_VAISALA; }
+   else if (str == "SCORER")         { enumeration = Product::SCORER; }
+   else if (str == "T")              { enumeration = Product::T; }
+   else if (str == "TD")             { enumeration = Product::TD; }
+   else if (str == "RH")             { enumeration = Product::RH; }
+   else if (str == "THETA")          { enumeration = Product::THETA; }
+   else if (str == "Q")              { enumeration = Product::Q; }
+   else if (str == "THETA_E")        { enumeration = Product::THETA_E; }
+   else if (str == "THETA_V")        { enumeration = Product::THETA_V; }
+   else if (str == "RHO")            { enumeration = Product::RHO; }
+   else if (str == "WIND")           { enumeration = Product::WIND; }
+   else if (str == "SPEED")          { enumeration = Product::SPEED; }
+   else if (str == "SPEED_HIGHER")   { enumeration = Product::SPEED_HIGHER; }
+   else if (str == "VORTICITY")      { enumeration = Product::VORTICITY; }
+   else if (str == "W")              { enumeration = Product::W; }
+   else if (str == "W_TRANSLUCENT")  { enumeration = Product::W_TRANSLUCENT; }
+   else if (str == "Q_ADVECTION")    { enumeration = Product::Q_ADVECTION; }
+   else if (str == "Q_H_ADVECTION")  { enumeration = Product::Q_H_ADVECTION; }
+   else if (str == "Q_V_ADVECTION")  { enumeration = Product::Q_V_ADVECTION; }
+   else if (str == "Q_S_ADVECTION")  { enumeration = Product::Q_S_ADVECTION; }
+   else if (str == "Q_N_ADVECTION")  { enumeration = Product::Q_N_ADVECTION; }
+   else if (str == "Q_SV_ADVECTION") { enumeration = Product::Q_SV_ADVECTION; }
+   else if (str == "Q_NV_ADVECTION") { enumeration = Product::Q_NV_ADVECTION; }
+   else if (str == "FFDI")           { enumeration = Product::FFDI; }
+   else if (str == "MSLP")           { enumeration = Product::MSLP; }
+   else if (str == "PRECIP_RATE")    { enumeration = Product::PRECIP_RATE; }
+   else if (str == "IR1")            { enumeration = Product::IR1; }
+   else if (str == "IR2")            { enumeration = Product::IR2; }
+   else if (str == "IR3")            { enumeration = Product::IR3; }
+   else if (str == "IR4")            { enumeration = Product::IR4; }
+   else if (str == "VIS")            { enumeration = Product::VIS; }
+   else if (str == "Pseudo")         { enumeration = Product::Pseudo; }
+   else                              { enumeration = Product::NIL; }
 }
 
 Dstring
@@ -80,42 +83,45 @@ Product::get_string () const
 {
    switch (enumeration)
    {
-      case Product::TERRAIN:       return "TERRAIN";
-      case Product::TERRAIN_WATER: return "TERRAIN_WATER";
-      case Product::P_THETA:       return "P_THETA";
-      case Product::P_RHO:         return "P_RHO";
-      case Product::ALONG_SPEED:   return "ALONG_SPEED";
-      case Product::NORMAL_SPEED:  return "NORMAL_SPEED";
-      case Product::BRUNT_VAISALA: return "BRUNT_VAISALA";
-      case Product::SCORER:        return "SCORER";
-      case Product::T:             return "T";
-      case Product::TD:            return "TD";
-      case Product::RH:            return "RH";
-      case Product::THETA:         return "THETA";
-      case Product::Q:             return "Q";
-      case Product::THETA_E:       return "THETA_E";
-      case Product::THETA_V:       return "THETA_V";
-      case Product::RHO:           return "RHO";
-      case Product::WIND:          return "WIND";
-      case Product::SPEED:         return "SPEED";
-      case Product::SPEED_HIGHER:  return "SPEED_HIGHER";
-      case Product::VORTICITY:     return "VORTICITY";
-      case Product::W:             return "W";
-      case Product::W_TRANSLUCENT: return "W_TRANSLUCENT";
-      case Product::Q_H_ADVECTION: return "Q_H_ADVECTION";
-      case Product::Q_V_ADVECTION: return "Q_V_ADVECTION";
-      case Product::Q_S_ADVECTION: return "Q_S_ADVECTION";
-      case Product::Q_N_ADVECTION: return "Q_N_ADVECTION";
-      case Product::FFDI:          return "FFDI";
-      case Product::MSLP:          return "MSLP";
-      case Product::PRECIP_RATE:   return "PRECIP_RATE";
-      case Product::IR1:           return "IR1";
-      case Product::IR2:           return "IR2";
-      case Product::IR3:           return "IR3";
-      case Product::IR4:           return "IR4";
-      case Product::VIS:           return "VIS";
-      case Product::Pseudo:        return "Pseudo";
-      default:                     return "";
+      case Product::TERRAIN:        return "TERRAIN";
+      case Product::TERRAIN_WATER:  return "TERRAIN_WATER";
+      case Product::P_THETA:        return "P_THETA";
+      case Product::P_RHO:          return "P_RHO";
+      case Product::ALONG_SPEED:    return "ALONG_SPEED";
+      case Product::NORMAL_SPEED:   return "NORMAL_SPEED";
+      case Product::BRUNT_VAISALA:  return "BRUNT_VAISALA";
+      case Product::SCORER:         return "SCORER";
+      case Product::T:              return "T";
+      case Product::TD:             return "TD";
+      case Product::RH:             return "RH";
+      case Product::THETA:          return "THETA";
+      case Product::Q:              return "Q";
+      case Product::THETA_E:        return "THETA_E";
+      case Product::THETA_V:        return "THETA_V";
+      case Product::RHO:            return "RHO";
+      case Product::WIND:           return "WIND";
+      case Product::SPEED:          return "SPEED";
+      case Product::SPEED_HIGHER:   return "SPEED_HIGHER";
+      case Product::VORTICITY:      return "VORTICITY";
+      case Product::W:              return "W";
+      case Product::W_TRANSLUCENT:  return "W_TRANSLUCENT";
+      case Product::Q_ADVECTION:    return "Q_ADVECTION";
+      case Product::Q_H_ADVECTION:  return "Q_H_ADVECTION";
+      case Product::Q_V_ADVECTION:  return "Q_V_ADVECTION";
+      case Product::Q_S_ADVECTION:  return "Q_S_ADVECTION";
+      case Product::Q_N_ADVECTION:  return "Q_N_ADVECTION";
+      case Product::Q_SV_ADVECTION: return "Q_SV_ADVECTION";
+      case Product::Q_NV_ADVECTION: return "Q_NV_ADVECTION";
+      case Product::FFDI:           return "FFDI";
+      case Product::MSLP:           return "MSLP";
+      case Product::PRECIP_RATE:    return "PRECIP_RATE";
+      case Product::IR1:            return "IR1";
+      case Product::IR2:            return "IR2";
+      case Product::IR3:            return "IR3";
+      case Product::IR4:            return "IR4";
+      case Product::VIS:            return "VIS";
+      case Product::Pseudo:         return "Pseudo";
+      default:                      return "";
    }
 }
 
@@ -124,41 +130,44 @@ Product::get_description () const
 {
    switch (enumeration)
    {
-      case Product::TERRAIN:       return "Terrain";
-      case Product::TERRAIN_WATER: return "Terrain Water";
-      case Product::P_THETA:       return "P_\u03b8";
-      case Product::P_RHO:         return "P_\u03c1";
-      case Product::ALONG_SPEED:   return "Along Speed";
-      case Product::NORMAL_SPEED:  return "Normal Speed";
-      case Product::BRUNT_VAISALA: return "Brunt-V\u00e4IS\u00e4L\u00e4";
-      case Product::SCORER:        return "Scorer's Parameter";
-      case Product::T:             return "Temperature";
-      case Product::TD:            return "Dew Point";
-      case Product::RH:            return "Relative Humidity";
-      case Product::THETA:         return "Potential Temperature";
-      case Product::Q:             return "Specific Humidity";
-      case Product::THETA_E:       return "Equivalent Potential Temperature";
-      case Product::THETA_V:       return "Virtual Temperature";
-      case Product::RHO:           return "Density";
-      case Product::WIND:          return "Wind";
-      case Product::SPEED:         return "Speed";
-      case Product::SPEED_HIGHER:  return "Higher Speed";
-      case Product::VORTICITY:     return "Vertical Vorticity";
-      case Product::W:             return "Vertical Velocity";
-      case Product::W_TRANSLUCENT: return "Vertical Velocity";
-      case Product::Q_H_ADVECTION: return "Horizontal Q Advection";
-      case Product::Q_V_ADVECTION: return "Vertical Q Advection";
-      case Product::Q_S_ADVECTION: return "Stream Q Advection";
-      case Product::Q_N_ADVECTION: return "Normal Q Advection";
-      case Product::FFDI:          return "FFDI";
-      case Product::MSLP:          return "MSLP";
-      case Product::PRECIP_RATE:   return "Precipitation Rate";
-      case Product::IR1:           return "IR1";
-      case Product::IR2:           return "IR2";
-      case Product::IR3:           return "IR3";
-      case Product::IR4:           return "IR4";
-      case Product::VIS:           return "VIS";
-      case Product::Pseudo:        return "Pseudo";
+      case Product::TERRAIN:        return "Terrain";
+      case Product::TERRAIN_WATER:  return "Terrain Water";
+      case Product::P_THETA:        return "P_\u03b8";
+      case Product::P_RHO:          return "P_\u03c1";
+      case Product::ALONG_SPEED:    return "Along Speed";
+      case Product::NORMAL_SPEED:   return "Normal Speed";
+      case Product::BRUNT_VAISALA:  return "Brunt-V\u00e4IS\u00e4L\u00e4";
+      case Product::SCORER:         return "Scorer's Parameter";
+      case Product::T:              return "Temperature";
+      case Product::TD:             return "Dew Point";
+      case Product::RH:             return "Relative Humidity";
+      case Product::THETA:          return "Potential Temperature";
+      case Product::Q:              return "Specific Humidity";
+      case Product::THETA_E:        return "Equivalent Potential Temperature";
+      case Product::THETA_V:        return "Virtual Temperature";
+      case Product::RHO:            return "Density";
+      case Product::WIND:           return "Wind";
+      case Product::SPEED:          return "Speed";
+      case Product::SPEED_HIGHER:   return "Higher Speed";
+      case Product::VORTICITY:      return "Vertical Vorticity";
+      case Product::W:              return "Vertical Velocity";
+      case Product::W_TRANSLUCENT:  return "Vertical Velocity";
+      case Product::Q_ADVECTION:    return "Q Advection";
+      case Product::Q_H_ADVECTION:  return "Horizontal Q Advection";
+      case Product::Q_V_ADVECTION:  return "Vertical Q Advection";
+      case Product::Q_S_ADVECTION:  return "Stream Q Advection";
+      case Product::Q_N_ADVECTION:  return "Normal Q Advection";
+      case Product::Q_SV_ADVECTION: return "Stream + Vertical Advection";
+      case Product::Q_NV_ADVECTION: return "Normal + Vertical Advection";
+      case Product::FFDI:           return "FFDI";
+      case Product::MSLP:           return "MSLP";
+      case Product::PRECIP_RATE:    return "Precipitation Rate";
+      case Product::IR1:            return "IR1";
+      case Product::IR2:            return "IR2";
+      case Product::IR3:            return "IR3";
+      case Product::IR4:            return "IR4";
+      case Product::VIS:            return "VIS";
+      case Product::Pseudo:         return "Pseudo";
    }
 }
 
@@ -167,27 +176,30 @@ Product::get_met_element () const
 {
    switch (enumeration)
    {
-      case Product::T:             return denise::T;
-      case Product::TD:            return denise::TD;
-      case Product::RH:            return denise::RH;
-      case Product::THETA:         return denise::THETA;
-      case Product::Q:             return denise::Q;
-      case Product::THETA_E:       return denise::THETA_E;
-      case Product::THETA_V:       return denise::THETA_V;
-      case Product::RHO:           return denise::RHO;
-      case Product::WIND:          return denise::WIND_DIRECTION;
-      case Product::SPEED:         return denise::WIND_SPEED;
-      case Product::SPEED_HIGHER:  return denise::WIND_SPEED;
-      case Product::VORTICITY:     return denise::RELATIVE_VORTICITY;
-      case Product::W:             return denise::W;
-      case Product::W_TRANSLUCENT: return denise::W;
-      case Product::Q_H_ADVECTION: return denise::Q_H_ADVECTION;
-      case Product::Q_V_ADVECTION: return denise::Q_V_ADVECTION;
-      case Product::Q_S_ADVECTION: return denise::Q_S_ADVECTION;
-      case Product::Q_N_ADVECTION: return denise::Q_N_ADVECTION;
-      case Product::FFDI:          return denise::FFDI;
-      case Product::MSLP:          return denise::MSLP;
-      case Product::PRECIP_RATE:   return denise::PRECIP_RATE;
+      case Product::T:              return denise::T;
+      case Product::TD:             return denise::TD;
+      case Product::RH:             return denise::RH;
+      case Product::THETA:          return denise::THETA;
+      case Product::Q:              return denise::Q;
+      case Product::THETA_E:        return denise::THETA_E;
+      case Product::THETA_V:        return denise::THETA_V;
+      case Product::RHO:            return denise::RHO;
+      case Product::WIND:           return denise::WIND_DIRECTION;
+      case Product::SPEED:          return denise::WIND_SPEED;
+      case Product::SPEED_HIGHER:   return denise::WIND_SPEED;
+      case Product::VORTICITY:      return denise::RELATIVE_VORTICITY;
+      case Product::W:              return denise::W;
+      case Product::W_TRANSLUCENT:  return denise::W;
+      case Product::Q_ADVECTION:    return denise::Q_ADVECTION;
+      case Product::Q_H_ADVECTION:  return denise::Q_H_ADVECTION;
+      case Product::Q_V_ADVECTION:  return denise::Q_V_ADVECTION;
+      case Product::Q_S_ADVECTION:  return denise::Q_S_ADVECTION;
+      case Product::Q_N_ADVECTION:  return denise::Q_N_ADVECTION;
+      case Product::Q_SV_ADVECTION: return denise::Q_SV_ADVECTION;
+      case Product::Q_NV_ADVECTION: return denise::Q_NV_ADVECTION;
+      case Product::FFDI:           return denise::FFDI;
+      case Product::MSLP:           return denise::MSLP;
+      case Product::PRECIP_RATE:    return denise::PRECIP_RATE;
    }
 }
 
@@ -196,32 +208,35 @@ Product::get_unit () const
 {
    switch (enumeration)
    {
-      case Product::T:             return "\u00b0C";
-      case Product::TD:            return "\u00b0C";
-      case Product::RH:            return "%%";
-      case Product::THETA:         return "\u00b0C";
-      case Product::THETA_V:       return "\u00b0C";
-      case Product::THETA_E:       return "\u00b0C";
-      case Product::Q:             return "g kg\u207b\u00b9";
-      case Product::RHO:           return "kgm\u207b\u00b9";
-      case Product::W:             return "ms\u207b\u00b9";
-      case Product::W_TRANSLUCENT: return "ms\u207b\u00b9";
-      case Product::Q_H_ADVECTION: return "g kg\u207b\u00b9s\u207b\u00b9";
-      case Product::Q_V_ADVECTION: return "g kg\u207b\u00b9s\u207b\u00b9";
-      case Product::Q_S_ADVECTION: return "g kg\u207b\u00b9s\u207b\u00b9";
-      case Product::Q_N_ADVECTION: return "g kg\u207b\u00b9s\u207b\u00b9";
-      case Product::SPEED_HIGHER:  return "knots";
-      case Product::SPEED:         return "knots";
-      case Product::ALONG_SPEED:   return "knots";
-      case Product::NORMAL_SPEED:  return "knots";
-      case Product::VORTICITY:     return "10\u207b\u00b3 s\u207b\u00b9";
-      case Product::FFDI:          return "";
-      case Product::MSLP:          return "hPa";
-      case Product::PRECIP_RATE:   return "mm hr\u207b\u00b9";
-      case Product::WIND:          return "degree";
-      case Product::TERRAIN:       return "m";
-      case Product::BRUNT_VAISALA: return "s\u207b\u00b9";
-      default:                     return "";
+      case Product::T:              return "\u00b0C";
+      case Product::TD:             return "\u00b0C";
+      case Product::RH:             return "%%";
+      case Product::THETA:          return "\u00b0C";
+      case Product::THETA_V:        return "\u00b0C";
+      case Product::THETA_E:        return "\u00b0C";
+      case Product::Q:              return "g kg\u207b\u00b9";
+      case Product::RHO:            return "kgm\u207b\u00b9";
+      case Product::W:              return "ms\u207b\u00b9";
+      case Product::W_TRANSLUCENT:  return "ms\u207b\u00b9";
+      case Product::Q_ADVECTION:    return "g kg\u207b\u00b9s\u207b\u00b9";
+      case Product::Q_H_ADVECTION:  return "g kg\u207b\u00b9s\u207b\u00b9";
+      case Product::Q_V_ADVECTION:  return "g kg\u207b\u00b9s\u207b\u00b9";
+      case Product::Q_S_ADVECTION:  return "g kg\u207b\u00b9s\u207b\u00b9";
+      case Product::Q_N_ADVECTION:  return "g kg\u207b\u00b9s\u207b\u00b9";
+      case Product::Q_SV_ADVECTION: return "g kg\u207b\u00b9s\u207b\u00b9";
+      case Product::Q_NV_ADVECTION: return "g kg\u207b\u00b9s\u207b\u00b9";
+      case Product::SPEED_HIGHER:   return "knots";
+      case Product::SPEED:          return "knots";
+      case Product::ALONG_SPEED:    return "knots";
+      case Product::NORMAL_SPEED:   return "knots";
+      case Product::VORTICITY:      return "10\u207b\u00b3 s\u207b\u00b9";
+      case Product::FFDI:           return "";
+      case Product::MSLP:           return "hPa";
+      case Product::PRECIP_RATE:    return "mm hr\u207b\u00b9";
+      case Product::WIND:           return "degree";
+      case Product::TERRAIN:        return "m";
+      case Product::BRUNT_VAISALA:  return "s\u207b\u00b9";
+      default:                      return "";
    }
 }
 
@@ -1199,35 +1214,41 @@ Model::Surface::Stage::evaluate (const Met_Element& met_element,
 
       case WIND_SPEED:
       {
-         const Real u = evaluate_raw (Dstring ("xwind"), i, j, l);
-         const Real v = evaluate_raw (Dstring ("ywind"), i, j, l);
+         const Real u = evaluate_raw ("xwind", i, j, l);
+         const Real v = evaluate_raw ("ywind", i, j, l);
          datum = sqrt (u*u + v*v);
          break;
       };
 
       case WIND_DIRECTION:
       {
-         const Real u = evaluate_raw (Dstring ("xwind"), i, j, l);
-         const Real v = evaluate_raw (Dstring ("ywind"), i, j, l);
+         const Real u = evaluate_raw ("xwind", i, j, l);
+         const Real v = evaluate_raw ("ywind", i, j, l);
          datum = Wind (u, v).get_direction ();
+         break;
+      };
+
+      case TD:
+      {
+         const Real q = evaluate_raw ("qsair", i, j, l);
+         const Real mslp = evaluate_raw ("mslp", i, j, l);
+         const Real topography = get_topography (i, j);
+         const Real surface_p = mslp - 11.76 * topography;
+         const Real r = q / (1 - q);
+         datum = Thermo_Point::p_r_s (surface_p, r).get_t () + K;
          break;
       };
 
       case RH:
       {
-         const Real t = evaluate_raw (Dstring ("temp"), i, j, l);
-         const Real t_d = evaluate_raw (Dstring ("dewpt"), i, j, l);
-         datum = Moisture::get_rh (t - K, t_d - K, WATER);
-         break;
-      };
-
-      case Q:
-      {
-         const Real t_d = evaluate_raw (Dstring ("dewpt"), i, j, l);
-         const Real mslp = evaluate_raw (Dstring ("mslp"), i, j, l);
+         const Real t = evaluate_raw ("temp", i, j, l);
+         const Real q = evaluate_raw ("qsair", i, j, l);
+         const Real mslp = evaluate_raw ("mslp", i, j, l);
          const Real topography = get_topography (i, j);
          const Real surface_p = mslp - 11.76 * topography;
-         datum = Moisture::get_q_s (t_d - K, surface_p);
+         const Real r = q / (1 - q);
+         const Real t_d = Thermo_Point::p_r_s (surface_p, r).get_t () + K;
+         datum = Moisture::get_rh (t - K, t_d - K, WATER);
          break;
       };
 
@@ -1253,8 +1274,8 @@ Model::Surface::Stage::evaluate (const Met_Element& met_element,
 
       case THETA:
       {
-         const Real t = evaluate_raw (Dstring ("temp"), i, j, l);
-         const Real mslp = evaluate_raw (Dstring ("mslp"), i, j, l);
+         const Real t = evaluate_raw ("temp", i, j, l);
+         const Real mslp = evaluate_raw ("mslp", i, j, l);
          const Real topography = get_topography (i, j);
          const Real surface_p = mslp - 11.76 * topography;
          datum = Thermo_Point::t_p (t - K, surface_p).get_theta () + K;
@@ -1264,11 +1285,13 @@ Model::Surface::Stage::evaluate (const Met_Element& met_element,
       case THETA_E:
       {
          typedef Thermo_Point Tp;
-         const Real t = evaluate_raw (Dstring ("temp"), i, j, l);
-         const Real t_d = evaluate_raw (Dstring ("dewpt"), i, j, l);
-         const Real mslp = evaluate_raw (Dstring ("mslp"), i, j, l);
+         const Real t = evaluate_raw ("temp", i, j, l);
+         const Real q = evaluate_raw ("qsair", i, j, l);
+         const Real mslp = evaluate_raw ("mslp", i, j, l);
          const Real topography = get_topography (i, j);
          const Real surface_p = mslp - 11.76 * topography;
+         const Real r = q / (1 - q);
+         const Real t_d = Thermo_Point::p_r_s (surface_p, r).get_t () + K;
          datum = Tp::normand (t - K, t_d - K, surface_p).get_theta_e () + K;
          break;
       };
@@ -1276,12 +1299,12 @@ Model::Surface::Stage::evaluate (const Met_Element& met_element,
       case THETA_V:
       {
          typedef Thermo_Point Tp;
-         const Real t = evaluate_raw (Dstring ("temp"), i, j, l);
-         const Real t_d = evaluate_raw (Dstring ("dewpt"), i, j, l);
-         const Real mslp = evaluate_raw (Dstring ("mslp"), i, j, l);
+         const Real t = evaluate_raw ("temp", i, j, l);
+         const Real q = evaluate_raw ("qsair", i, j, l);
+         const Real mslp = evaluate_raw ("mslp", i, j, l);
          const Real topography = get_topography (i, j);
          const Real surface_p = mslp - 11.76 * topography;
-         const Real r = Thermo_Point::t_p (t_d + K, surface_p).get_r_s ();
+         const Real r = q / (1 - q);
          const Real t_v = Moisture::get_t_v (t + K, r) + K;
          datum = Thermo_Point::t_p (t_v - K, surface_p).get_theta () + K;
          break;
@@ -1289,8 +1312,8 @@ Model::Surface::Stage::evaluate (const Met_Element& met_element,
 
       case RHO:
       {
-         const Real t = evaluate_raw (Dstring ("temp"), i, j, l);
-         const Real mslp = evaluate_raw (Dstring ("mslp"), i, j, l);
+         const Real t = evaluate_raw ("temp", i, j, l);
+         const Real mslp = evaluate_raw ("mslp", i, j, l);
          const Real topography = get_topography (i, j);
          const Real surface_p = mslp - 11.76 * topography;
          datum = surface_p / (R_d * t);
@@ -1299,11 +1322,16 @@ Model::Surface::Stage::evaluate (const Met_Element& met_element,
 
       case FFDI:
       {
-         const Real t = evaluate_raw (Dstring ("temp"), i, j, l);
-         const Real t_d = evaluate_raw (Dstring ("dewpt"), i, j, l);
+         const Real t = evaluate_raw ("temp", i, j, l);
+         const Real q = evaluate_raw ("qsair", i, j, l);
+         const Real mslp = evaluate_raw ("mslp", i, j, l);
+         const Real topography = get_topography (i, j);
+         const Real surface_p = mslp - 11.76 * topography;
+         const Real r = q / (1 - q);
+         const Real t_d = Thermo_Point::p_r_s (surface_p, r).get_t () + K;
          const Real rh = Moisture::get_rh (t - K, t_d - K, WATER);
-         const Real u = evaluate_raw (Dstring ("xwind"), i, j, l);
-         const Real v = evaluate_raw (Dstring ("ywind"), i, j, l);
+         const Real u = evaluate_raw ("xwind", i, j, l);
+         const Real v = evaluate_raw ("ywind", i, j, l);
          const Real speed = sqrt (u*u + v*v);
          datum = Fire::get_ffdi (t - K, rh * 100, speed * 3.6);
          break;
@@ -1317,7 +1345,7 @@ Model::Surface::Stage::evaluate (const Met_Element& met_element,
          switch (met_element)
          {
             case T:           { varname = Dstring ("temp"); break;    }
-            case TD:          { varname = Dstring ("dewpt"); break;   }
+            case Q:           { varname = Dstring ("qsair"); break;   }
             case MSLP:        { varname = Dstring ("mslp"); break;    }
             case PRECIP_RATE: { varname = Dstring ("prcp8p5"); break; }
             case U:           { varname = Dstring ("xwind"); break;   }
@@ -1489,6 +1517,7 @@ Model::Surface::Stage::get_color (const Product& product,
          return Color::hsb (hue, 0.8, brightness);
       }
 
+      case Product::Q_ADVECTION:
       case Product::Q_H_ADVECTION:
       {
          const Real datum = evaluate_h_advection (Q, lat_long, l);
@@ -1764,11 +1793,6 @@ Model::Uppers::Stage::evaluate_h_advection (const Met_Element& met_element,
    const Real ddy = evaluate_dy (met_element, lat_long, level, l);
 
    const Real datum = -u * ddx - v * ddy;
-   if (level.value < 500 & datum > 9e-6)
-   {
-      cout << datum << " " << u << " " << v << " " << ddx << " " << ddy << endl;
-   }
-
    return -u * ddx - v * ddy;
 
 }
@@ -2302,6 +2326,14 @@ Model::Uppers::Stage::get_color (const Product& product,
 
       }
 
+      case Product::Q_ADVECTION:
+      {
+         const Real h = evaluate_h_advection (Q, lat_long, level, l);
+         const Real v = evaluate_v_advection (Q, lat_long, level, l);
+         const Real datum = h + v;
+         return Display::get_color (product, datum);
+      }
+
       case Product::Q_H_ADVECTION:
       {
          const Real datum = evaluate_h_advection (Q, lat_long, level, l);
@@ -2467,6 +2499,7 @@ Model::get_nc_varname (const Varname& varname)
    if (varname == "orog") { return "ht"; }
    if (varname == "lsm") { return "lsm"; }
    if (varname == "temp") { return "temp"; }
+   if (varname == "qsair") { return "q"; }
    if (varname == "dewpt") { return "field17"; }
    if (varname == "xwind") { return "x-wind"; }
    if (varname == "ywind") { return "y-wind"; }
@@ -2881,10 +2914,13 @@ Model::get_valid_time_set (const Product& product,
       case Product::P_THETA:
       case Product::P_RHO:
       case Product::Q:
+      case Product::Q_ADVECTION:
       case Product::Q_H_ADVECTION:
       case Product::Q_V_ADVECTION:
       case Product::Q_S_ADVECTION:
       case Product::Q_N_ADVECTION:
+      case Product::Q_SV_ADVECTION:
+      case Product::Q_NV_ADVECTION:
       case Product::TD:
       case Product::RH:
       case Product::RHO:
