@@ -39,6 +39,7 @@ namespace twiin
 
          enum Enumeration
          {
+            NIL,
             TERRAIN,
             TERRAIN_WATER,
             P_THETA,
@@ -61,6 +62,10 @@ namespace twiin
             VORTICITY,
             W,
             W_TRANSLUCENT,
+	    Q_H_ADVECTION,
+            Q_V_ADVECTION,
+            Q_S_ADVECTION,
+            Q_N_ADVECTION,
             FFDI,
             MSLP,
             PRECIP_RATE,
@@ -84,8 +89,14 @@ namespace twiin
          Dstring
          get_string () const;
 
+         Dstring
+         get_description () const;
+
          Met_Element
          get_met_element () const;
+
+         Dstring
+         get_unit () const;
 
          ostream&
          operator<< (ostream& out_file) const;
@@ -475,6 +486,11 @@ namespace twiin
                      get_l (const Dtime& dtime) const;
 
                      Real
+                     evaluate_h_advection (const Met_Element& met_element,
+                                           const Lat_Long& lat_long,
+                                           const size_t l) const;
+
+                     Real
                      evaluate (const Met_Element& met_element,
                                const Lat_Long& lat_long,
                                const size_t l) const;
@@ -484,6 +500,28 @@ namespace twiin
                                const size_t i,
                                const size_t j,
                                const size_t l) const;
+
+                     Real
+                     evaluate_dx (const Met_Element& met_element,
+                                  const Lat_Long& lat_long,
+                                  const size_t l) const;
+
+                     Real
+                     evaluate_dx (const Met_Element& met_element,
+                                  const size_t i,
+                                  const size_t j,
+                                  const size_t l) const;
+
+                     Real
+                     evaluate_dy (const Met_Element& met_element,
+                                  const Lat_Long& lat_long,
+                                  const size_t l) const;
+
+                     Real
+                     evaluate_dy (const Met_Element& met_element,
+                                  const size_t i,
+                                  const size_t j,
+                                  const size_t l) const;
 
                      Real
                      evaluate_raw (const Dstring& varname,
@@ -538,6 +576,16 @@ namespace twiin
                class Stage : public Surface::Stage
                {
 
+                  protected:
+
+                     void
+                     acquire_k (size_t& k,
+                                const Met_Element& met_element,
+                                const size_t i,
+                                const size_t j,
+                                const Level& level) const;
+
+
                   public:
 
                      Stage (const Model& model,
@@ -546,32 +594,59 @@ namespace twiin
                      Real
                      evaluate_normal_speed (const Real azimuth,
                                             const Lat_Long& lat_long,
-                                            const Real z,
+                                            const Level& level,
                                             const size_t l) const;
                                
                      Real
                      evaluate_along_speed (const Real azimuth,
                                            const Lat_Long& lat_long,
-                                           const Real z,
+                                           const Level& level,
                                            const size_t l,
                                            const Real u_bg) const;
                                
                      Real
                      evaluate_scorer (const Real azimuth,
                                       const Lat_Long& lat_long,
-                                      const Real z,
+                                      const Level& level,
                                       const size_t l,
                                       const Real u_bg = 0) const;
 
                      Real
                      evaluate_brunt_vaisala (const Lat_Long& lat_long,
-                                             const Real z,
+                                             const Level& level,
                                              const size_t l) const;
-                               
+
+                     Real
+                     evaluate_h_advection (const Met_Element& met_element,
+                                           const Lat_Long& lat_long,
+                                           const Level& level,
+                                           const size_t l) const;
+
+                     Real
+                     evaluate_v_advection (const Met_Element& met_element,
+                                           const Lat_Long& lat_long,
+                                           const Level& level,
+                                           const size_t l) const;
+
+                     Real
+                     evaluate_s_advection (const Met_Element& met_element,
+                                           const Real azimuth,
+                                           const Lat_Long& lat_long,
+                                           const Level& level,
+                                           const size_t l,
+                                           const Real u_bg = 0) const;
+
+                     Real
+                     evaluate_n_advection (const Met_Element& met_element,
+                                           const Real azimuth,
+                                           const Lat_Long& lat_long,
+                                           const Level& level,
+                                           const size_t l) const;
+
                      Real
                      evaluate (const Met_Element& met_element,
                                const Lat_Long& lat_long,
-                               const Real z,
+                               const Level& level,
                                const size_t l) const;
                                
                      Real
@@ -586,6 +661,63 @@ namespace twiin
                                const size_t j,
                                const size_t k,
                                const size_t l) const;
+
+                     Real
+                     evaluate_dx (const Met_Element& met_element,
+                                  const Lat_Long& lat_long,
+                                  const Level& level,
+                                  const size_t l) const;
+
+                     Real
+                     evaluate_dx (const Met_Element& met_element,
+                                  const Lat_Long& lat_long,
+                                  const size_t k,
+                                  const size_t l) const;
+
+                     Real
+                     evaluate_dx (const Met_Element& met_element,
+                                  const size_t i,
+                                  const size_t j,
+                                  const size_t k,
+                                  const size_t l) const;
+
+                     Real
+                     evaluate_dy (const Met_Element& met_element,
+                                  const Lat_Long& lat_long,
+                                  const Level& level,
+                                  const size_t l) const;
+
+                     Real
+                     evaluate_dy (const Met_Element& met_element,
+                                  const Lat_Long& lat_long,
+                                  const size_t k,
+                                  const size_t l) const;
+
+                     Real
+                     evaluate_dy (const Met_Element& met_element,
+                                  const size_t i,
+                                  const size_t j,
+                                  const size_t k,
+                                  const size_t l) const;
+
+                     Real
+                     evaluate_dz (const Met_Element& met_element,
+                                  const Lat_Long& lat_long,
+                                  const Level& level,
+                                  const size_t l) const;
+
+                     Real
+                     evaluate_dz (const Met_Element& met_element,
+                                  const Lat_Long& lat_long,
+                                  const size_t k,
+                                  const size_t l) const;
+
+                     Real
+                     evaluate_dz (const Met_Element& met_element,
+                                  const size_t i,
+                                  const size_t j,
+                                  const size_t k,
+                                  const size_t l) const;
 
                      Real
                      evaluate_raw (const Dstring& varname,
@@ -668,6 +800,18 @@ namespace twiin
                const Tuple&
                get_B_rho () const;
 
+               const Tuple&
+               get_A (const bool is_theta) const;
+
+               const Tuple&
+               get_B (const bool is_theta) const;
+
+               const Tuple&
+               get_A (const Met_Element& met_element) const;
+
+               const Tuple&
+               get_B (const Met_Element& met_element) const;
+
          };
 
       private:
@@ -687,7 +831,7 @@ namespace twiin
                 const Tuple& A,
                 const Tuple& B) const;
 
-         const Integer
+         const size_t
          get_k (const Real z,
                 const Real topography,
                 const Tuple& A,
@@ -709,6 +853,9 @@ namespace twiin
          Model (const Config_File& config_file);
 
          ~Model ();
+
+         static bool
+         is_theta (const Met_Element& met_element);
 
          const Dtime&
          get_basetime () const;

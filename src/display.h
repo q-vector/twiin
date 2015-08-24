@@ -123,9 +123,6 @@ namespace twiin
                     const Stage& stage,
                     const Location& location);
 
-         static Dstring
-         get_unit (const Product& product);
-
          static Tuple
          get_tick_tuple (const Product& product);
 
