@@ -243,16 +243,15 @@ Twiin::command_line (const Dstring& stage_str,
                (level.value > 1500);
             const Product& p = ((is_speed && is_higher) ?
                Product (Product::SPEED_HIGHER) : product);
-           
-            const auto& valid_time_set = model.get_valid_time_set (
-               product, stage, level);
 
-            for (auto l = valid_time_set.begin ();
-                 l != valid_time_set.end (); l++)
+            const vector<Dtime>& valid_time_vector =
+               model.get_valid_time_vector (product, stage, level, time_set);
+
+            #pragma omp parallel for
+            for (Integer l = 0; l < valid_time_vector.size (); l++)
             {
            
-               const Dtime& dtime = *(l);
-               if (!time_set.match (dtime)) { continue; }
+               const Dtime& dtime = valid_time_vector.at (l);
 
                const Dstring& file_path = (filename == "") ?
                   get_file_path (format, stage, product, level, dtime) :
@@ -328,6 +327,7 @@ Twiin::cross_section (const Dstring& stage_str,
                       const bool is_bludge) const
 {
 
+   const Level level ("100m");
    const Dtime::Set time_set (time_str);
    const Tokens stage_tokens (stage_str, ":");
    const Tokens product_tokens (product_str, ":");
@@ -370,19 +370,19 @@ Twiin::cross_section (const Dstring& stage_str,
       {
 
          const Product product (*j);
-         const auto& valid_time_set = model.get_valid_time_set (
-            product, stage, Level ("100m"));
 
          const bool is_speed = (product.enumeration == Product::SPEED);
          const Product& p = (is_speed ?
             Product (Product::SPEED_HIGHER) : product);
 
-         for (auto iterator = valid_time_set.begin ();
-              iterator != valid_time_set.end (); iterator++)
+         const vector<Dtime>& valid_time_vector =
+            model.get_valid_time_vector (product, stage, level, time_set);
+
+         #pragma omp parallel for
+         for (Integer l = 0; l < valid_time_vector.size (); l++)
          {
 
-            const Dtime& dtime = *(iterator);
-            if (!time_set.match (dtime)) { continue; }
+            const Dtime& dtime = valid_time_vector.at (l);
 
             const Dstring& file_path = (filename == "") ?
                get_file_path (format, stage, product, dtime, journey) :
@@ -457,9 +457,6 @@ Twiin::meteogram (const Dstring& stage_str,
 
       const twiin::Stage stage (*i);
 
-      const auto& valid_time_set = model.get_valid_time_set (
-         Product ("T"), stage, Level ("Surface"));
-
       for (Tokens::const_iterator j = location_tokens.begin ();
            j != location_tokens.end (); j++)
       {
@@ -510,6 +507,8 @@ Twiin::vertical_profile (const Dstring& stage_str,
                          const bool is_bludge) const
 {
 
+   const Product product ("T");
+   const Level level ("100m");
    const Dtime::Set time_set (time_str);
    const Tokens stage_tokens (stage_str, ":");
    const Tokens location_tokens (location_str, ":");
@@ -528,15 +527,14 @@ Twiin::vertical_profile (const Dstring& stage_str,
 
       const twiin::Stage stage (*i);
 
-      const auto& valid_time_set = model.get_valid_time_set (
-         Product ("T"), stage, Level ("100m"));
+      const vector<Dtime>& valid_time_vector =
+         model.get_valid_time_vector (product, stage, level, time_set);
 
-      for (auto iterator = valid_time_set.begin ();
-           iterator != valid_time_set.end (); iterator++)
+      #pragma omp parallel for
+      for (Integer l = 0; l < valid_time_vector.size (); l++)
       {
 
-         const Dtime& dtime = *(iterator);
-         if (!time_set.match (dtime)) { continue; }
+         const Dtime& dtime = valid_time_vector.at (l);
 
          for (Tokens::const_iterator j = location_tokens.begin ();
               j != location_tokens.end (); j++)

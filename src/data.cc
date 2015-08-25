@@ -2963,6 +2963,27 @@ Model::get_valid_time_set (const Product& product,
 
 }
 
+vector<Dtime>
+Model::get_valid_time_vector (const Product& product,
+                              const twiin::Stage& stage,
+                              const Level& level,
+                              const Dtime::Set& time_set) const
+{
+   vector<Dtime> valid_time_vector;
+   auto valid_time_set = get_valid_time_set (product, stage, level);
+
+   for (auto l = valid_time_set.begin ();
+        l != valid_time_set.end (); l++)
+   {
+      const Dtime& dtime = *(l);
+      if (time_set.match (dtime)) { valid_time_vector.push_back (dtime); }
+   }
+
+   return valid_time_vector;
+
+
+}
+
 Tokens
 Model::get_marker_tokens (const Lat_Long& lat_long,
                           const Dtime& dtime,

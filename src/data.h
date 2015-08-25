@@ -913,6 +913,12 @@ namespace twiin
                              const twiin::Stage& stage,
                              const Level& level) const;
 
+         vector<Dtime>
+         get_valid_time_vector (const Product& product,
+                                const twiin::Stage& stage,
+                                const Level& level,
+                                const Dtime::Set& time_set) const;
+
          Tokens
          get_marker_tokens (const Lat_Long& lat_long,
                             const Dtime& dtime,
