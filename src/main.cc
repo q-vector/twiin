@@ -256,7 +256,7 @@ Twiin::command_line (const Dstring& stage_str,
                const Dstring& file_path = (filename == "") ?
                   get_file_path (format, stage, product, level, dtime) :
                   output_dir + "/" + filename;
-               cout << "Rendering " << file_path << endl;
+               cout << file_path << endl;
                if (is_bludge) { continue; }
 
                RefPtr<Surface> surface = denise::get_surface (
@@ -387,7 +387,7 @@ Twiin::cross_section (const Dstring& stage_str,
             const Dstring& file_path = (filename == "") ?
                get_file_path (format, stage, product, dtime, journey) :
                output_dir + "/" + filename;
-            cout << "Rendering " << file_path << endl;
+            cout << file_path << endl;
             if (is_bludge) { continue; }
 
             RefPtr<Surface> surface = denise::get_surface (
@@ -466,7 +466,7 @@ Twiin::meteogram (const Dstring& stage_str,
          const Dstring& file_path = (filename == "") ?
             get_file_path (format, stage, location) :
             output_dir + "/" + filename;
-         cout << "Rendering " << file_path << endl;
+         cout << file_path << endl;
          if (is_bludge) { continue; }
 
          RefPtr<Surface> surface = denise::get_surface (
@@ -565,7 +565,7 @@ Twiin::vertical_profile (const Dstring& stage_str,
                      get_file_path (format, stage, dtime, sole_location) :
                      get_file_path (format, stage, dtime, location_name)) :
                   output_dir + "/" + filename;
-            cout << "Rendering " << file_path << endl;
+            cout << file_path << endl;
             if (is_bludge) { continue; }
 
             if (format == "snd")
