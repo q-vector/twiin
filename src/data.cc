@@ -273,7 +273,7 @@ Station::Map::ingest (const Dstring& file_path)
 {
 
    string is;
-   ifstream file (file_path.get_string ().c_str ());
+   ifstream file (file_path);
 
    while (getline (file, is))
    {
@@ -2424,7 +2424,7 @@ Model::Vertical_Coefficients::init (const Dstring& file_path)
 {
 
    string is;
-   ifstream file (file_path.get_string ().c_str ());
+   ifstream file (file_path);
 
    while (getline (file, is))
    {
