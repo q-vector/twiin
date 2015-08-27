@@ -2786,6 +2786,44 @@ Model::evaluate (const Met_Element& met_element,
    }
 }
 
+Track
+Model::get_trajectory (const Lat_Long& lat_long,
+                       const Level& level,
+                       const Dtime& dtime,
+                       const twiin::Stage& stage,
+                       const Real finish_tau) const
+{
+
+   size_t i, j, k_u, k_w;
+   acquire_ij (i, j, lat_long);
+   acquire_k (k_u, U, i, j, level);
+   if (k_u < 0) { // stuck to surface; }
+   if (k_u > 69) { // finish return; }
+
+   acquire_k (k_w, W, i, j, level);
+   if (k_w < 0) { // stuck to surface; }
+   if (k_w > 69) { // finish return; }
+
+   const Tuple& A_rho = vertical_coefficients.get_A_rho ();
+   const Tuple& B_rho = vertical_coefficients.get_B_rho ();
+   const Tuple& A_theta = vertical_coefficients.get_A_theta ();
+   const Tuple& B_theta = vertical_coefficients.get_B_theta ();
+
+   const Real z_rho   = get_z (k_1, topography, A_rho, B_rho);
+   const Real z_theta = get_z (k_1, topography, A_theta, B_theta);
+
+   const Real u = evaluate (U, lat_long, level, dtime, stage);
+   const Real v = evaluate (V, lat_long, level, dtime, stage);
+   const Real w = evaluate (W, lat_long, level, dtime, stage);
+
+   const Real dt_x = 0.7 * h / u;
+   const Real dt_y = 0.7 * h / v;
+   const Real dt = std::min (dt_x, dt_y);
+
+   const Dtime dtime_ (dtime.t + dt);
+
+}
+
 Aws::Obs
 Model::get_aws_obs (const Lat_Long& lat_long,
                     const Dtime& dtime,

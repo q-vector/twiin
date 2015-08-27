@@ -888,6 +888,13 @@ namespace twiin
                    const Dtime& dtime,
                    const twiin::Stage& stage) const;
 
+         Track
+         get_trajectory (const Lat_Long& lat_long,
+                         const Level& level,
+                         const Dtime& dtime,
+                         const twiin::Stage& stage,
+                         const Real finish_tau) const;
+
          Aws::Obs
          get_aws_obs (const Lat_Long& lat_long,
                       const Dtime& dtime,
