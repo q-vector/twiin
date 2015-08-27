@@ -414,6 +414,13 @@ namespace twiin
                      bool
                      out_of_bounds (const Lat_Long& lat_long) const;
 
+                     pair<Real, Real>
+                     get_grid_size (const size_t& i,
+                                    const size_t& j) const;
+
+                     pair<Real, Real>
+                     get_grid_size (const Lat_Long& lat_long) const;
+
                      Real
                      evaluate (const Varname& varname,
                                const size_t& i,
@@ -888,10 +895,17 @@ namespace twiin
                    const Dtime& dtime,
                    const twiin::Stage& stage) const;
 
+         bool
+         grow_trajectory (Lat_Long& lat_long,
+                          Level& level,
+                          Dtime& dtime,
+                          const twiin::Stage& stage,
+                          const Real finish_tau) const;
+
          Track
-         get_trajectory (const Lat_Long& lat_long,
-                         const Level& level,
-                         const Dtime& dtime,
+         get_trajectory (Lat_Long lat_long,
+                         Level level,
+                         Dtime dtime,
                          const twiin::Stage& stage,
                          const Real finish_tau) const;
 

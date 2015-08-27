@@ -9,8 +9,8 @@
 #endif /* ENABLE_GTKMM */
 
 using namespace std;
-using namespace denise;
 using namespace Cairo;
+using namespace denise;
 using namespace twiin;
 
 Twiin::Transform_Ptr_Map::Transform_Ptr_Map (const Size_2D& size_2d,
@@ -127,7 +127,8 @@ Twiin::get_file_path (const Dstring& format,
 Twiin::Twiin (const Size_2D& size_2d,
               const Config_File& config_file,
               const Dstring& output_dir)
-   : size_2d (size_2d),
+   : andrea::Andrea (""),
+     size_2d (size_2d),
      config_file (config_file),
      output_dir (output_dir)
 {
@@ -136,10 +137,10 @@ Twiin::Twiin (const Size_2D& size_2d,
 #ifndef ENABLE_GTKMM
 #else /* ENABLE_GTKMM */
 void
-Twiin::interactive (const Dstring& stage_str,
-                    const Dstring& product_str,
-                    const Dstring& level_str,
-                    const Dstring& time_str) const
+Twiin::gui (const Dstring& stage_str,
+            const Dstring& product_str,
+            const Dstring& level_str,
+            const Dstring& time_str) const
 {
 
    const Tokens stage_tokens (stage_str, ":");
@@ -166,18 +167,18 @@ Twiin::interactive (const Dstring& stage_str,
 #endif /* ENABLE_GTKMM */
 
 void
-Twiin::command_line (const Dstring& stage_str,
-                     const Dstring& product_str,
-                     const Dstring& level_str,
-                     const Dstring& time_str,
-                     const Dstring& zoom_str,
-                     const Tokens& annotation_tokens,
-                     const Dstring& format,
-                     const Tokens& title_tokens,
-                     const Dstring& filename,
-                     const bool no_stage,
-                     const bool no_wind_barb,
-                     const bool is_bludge) const
+Twiin::plan (const Dstring& stage_str,
+             const Dstring& product_str,
+             const Dstring& level_str,
+             const Dstring& time_str,
+             const Dstring& zoom_str,
+             const Tokens& annotation_tokens,
+             const Dstring& format,
+             const Tokens& title_tokens,
+             const Dstring& filename,
+             const bool no_stage,
+             const bool no_wind_barb,
+             const bool is_bludge) const
 {
 
    Gshhs* gshhs_ptr = NULL;
@@ -641,6 +642,7 @@ main (int argc,
       { "filename",         1, 0, 'F' },
       { "format",           1, 0, 'f' },
       { "geometry",         1, 0, 'g' },
+      { "gui",              0, 0, 'G' },
       { "interactive",      0, 0, 'i' },
       { "level",            1, 0, 'l' },
       { "meteogram",        1, 0, 'm' },
@@ -673,6 +675,7 @@ main (int argc,
    Tokens title_tokens;
    bool is_bludge = false;
    bool is_cross_section = false;
+   bool is_gui = false;
    bool is_interactive = false;
    bool is_meteogram = false;
    bool ignore_pressure = false;
@@ -686,7 +689,7 @@ main (int argc,
 
    int c;
    int option_index = 0;
-   while ((c = getopt_long (argc, argv, "a:bc:F:f:g:il:m:o:Pp:Ss:T:t:x:u:v:Wz:",
+   while ((c = getopt_long (argc, argv, "a:bc:F:f:Gg:il:m:o:Pp:Ss:T:t:x:u:v:Wz:",
           long_options, &option_index)) != -1)
    {
 
@@ -723,6 +726,12 @@ main (int argc,
             break;
          }
 
+         case 'G':
+         {
+            is_gui = true;
+            break;
+         }
+
          case 'g':
          {
             const Tokens tokens (Dstring (optarg), "x");
@@ -745,6 +754,7 @@ main (int argc,
 
          case 'm':
          {
+            is_gui = false;
             is_interactive = false;
             is_meteogram = true;
             location_str = (Dstring (optarg));
@@ -801,6 +811,7 @@ main (int argc,
 
          case 'v':
          {
+            is_gui = false;
             is_interactive = false;
             is_vertical_profile = true;
             location_str = (Dstring (optarg));
@@ -815,6 +826,7 @@ main (int argc,
 
          case 'x':
          {
+            is_gui = false;
             is_interactive = false;
             is_cross_section = true;
             journey = Journey (Dstring (optarg));
@@ -841,15 +853,20 @@ main (int argc,
    {
 
       const Config_File config_file (config_file_path);
-      const Twiin twiin (size_2d, config_file, output_dir);
+      Twiin twiin (size_2d, config_file, output_dir);
 
       if (is_interactive)
+      {
+         twiin.loop ();
+      }
+      else
+      if (is_gui)
       {
 #ifndef ENABLE_GTKMM
          cerr << "Interactive mode not available" << endl;
 #else /* ENABLE_GTKMM */
          Gtk::Main gtk_main (argc, argv);
-         twiin.interactive (stage_str, product_str, level_str, time_str);
+         twiin.gui (stage_str, product_str, level_str, time_str);
 #endif /* ENABLE_GTKMM */
       }
       else
@@ -874,7 +891,7 @@ main (int argc,
          }
          else
          {
-            twiin.command_line (stage_str, product_str, level_str,
+            twiin.plan (stage_str, product_str, level_str,
                time_str, zoom_str, annotation_tokens, format,
                title_tokens, filename, no_stage, no_wind_barb, is_bludge);
          }
@@ -889,6 +906,116 @@ main (int argc,
    {
       cerr << "std::exception " << se.what () << endl;
    }
+
+}
+
+void
+Twiin::twiin_surface_plan (const Dstring& surface_identifier,
+                           const Dstring& geodetic_transform_identifier,
+                           const twiin::Stage& stage,
+                           const Product& product,
+                           const Level& level,
+                           const Dtime& dtime,
+                           const Tokens& arguments)
+{
+
+   const RefPtr<Surface>& surface = Surface_Package::get_surface (surface_identifier);
+   const RefPtr<Context> cr = Surface_Package::get_cr (surface_identifier);
+   const Size_2D& size_2d = Surface_Package::get_size_2d (surface_identifier);
+   const Point_2D centre (Real (size_2d.i) / 2, Real (size_2d.j) / 2);
+
+   const Geodetic_Transform* geodetic_transform_ptr =
+      Geodetic_Transform_Package::get_geodetic_transform_ptr (geodetic_transform_identifier, centre);
+   const Geodetic_Transform& geodetic_transform = *geodetic_transform_ptr;
+
+   bool no_color_bar = true;
+   bool no_scale_bar = true;
+   bool no_stage = true;
+   bool no_wind_barb = true;
+
+   for (auto iterator = arguments.begin ();
+        iterator != arguments.end (); iterator++)
+   {
+      const Tokens tokens (iterator->get_lower_case (), "=");
+      const Dstring& option = tokens[0];
+      const Dstring& value = tokens[1];
+      const bool is_yes = (value == "yes" || value == "y" || value == "true");
+      if (option == "color_bar") { no_color_bar = !is_yes; }
+      if (option == "scale_bar") { no_scale_bar = !is_yes; }
+      if (option == "stage")     { no_stage = !is_yes; }
+      if (option == "wind_barb") { no_wind_barb = !is_yes; }
+   }
+
+   Color::white ().cairo (cr);
+   cr->paint ();
+
+   const Data data (config_file);
+   const Model& model = data.get_model ();
+   const Dtime& basetime = model.get_basetime ();
+   const Hrit& hrit = data.get_hrit ();
+   const Station::Map& station_map = data.get_station_map ();
+   Display::render (cr, geodetic_transform, size_2d, model, hrit,
+      station_map, dtime, level, stage, product, no_stage, no_wind_barb);
+
+   if (!no_scale_bar) { Display::render_scale_bar (cr, geodetic_transform, size_2d); }
+   if (!no_color_bar) { Display::render_color_bar (cr, size_2d, product); }
+
+   delete geodetic_transform_ptr;
+
+}
+
+void
+Twiin::twiin_surface (const Tokens& tokens)
+{
+
+   const Dstring& surface_identifier = tokens[0];
+   const Dstring& geodetic_transform_identifier = tokens[1];
+   const twiin::Stage stage (tokens[2]);
+   const Product product (tokens[3]);
+   const Level level (tokens[4]);
+   const Dtime dtime (tokens[5]);
+
+   twiin_surface_plan (surface_identifier, geodetic_transform_identifier,
+      stage, product, level, dtime, tokens.subtokens (6));
+
+}
+
+void
+Twiin::twiin_parse (const Tokens& tokens)
+{
+
+   const Dstring& action = tokens[0].get_lower_case ();
+   const Integer n = tokens.size ();
+
+   if (action == "trajectory")
+   {
+      cout << "trajectory " << tokens << endl;
+   }
+   else
+   if (action == "surface")
+   {
+      twiin_surface (tokens.subtokens (1));
+   }
+   else
+   {
+      throw Exception ("twiin_parse");
+   }
+
+}
+
+void
+Twiin::parse (const Tokens& tokens)
+{
+
+   const Dstring& action = tokens[0].get_lower_case ();
+
+   if (action == "twiin")
+   {
+      twiin_parse (tokens.subtokens (1));
+      return;
+   }
+
+   andrea::Andrea::parse (tokens);
 
 }
 

@@ -17,10 +17,10 @@ AC_CHECK_LIBM
 
 # Checks for libraries.
 PKG_CHECK_MODULES([DENISE], [denise])
-PKG_CHECK_MODULES([CAIROMM_1_0], [cairomm-1.0])
-TWIIN_REQUIRES="$TWIIN_REQUIRES denise cairomm-1.0"
-TWIIN_CFLAGS="$TWIIN_CFLAGS $DENISE_CFLAGS $CAIROMM_1_0_CFLAGS"
-TWIIN_LIBS="$TWIIN_LIBS $DENISE_LIBS $CAIROMM_1_0_LIBS"
+PKG_CHECK_MODULES([ANDREA], [andrea])
+TWIIN_REQUIRES="$TWIIN_REQUIRES denise andrea"
+TWIIN_CFLAGS="$TWIIN_CFLAGS $DENISE_CFLAGS $ANDREA_CFLAGS"
+TWIIN_LIBS="$TWIIN_LIBS $DENISE_LIBS $ANDREA_LIBS"
 
 if test x"$enable_gtkmm" = xyes
 then
@@ -31,8 +31,6 @@ then
 fi
 
 # Checks for header files.
-AC_CHECK_HEADERS(ieeefp.h)
-AC_CHECK_HEADERS(cstdint)
 AC_CHECK_HEADERS(getopt.h)
 
 # Checks for typedefs, structures, and compiler characteristics.

@@ -6,16 +6,18 @@
 #include <cairomm/context.h>
 #include <cairomm/surface.h>
 #include <denise/geodesy.h>
+#include <andrea/andrea.h>
 #include "display.h"
 
 using namespace std;
 using namespace denise;
+using namespace andrea;
 using namespace Cairo;
 
 namespace twiin
 {
 
-   class Twiin
+   class Twiin : public Andrea
    {
 
       private:
@@ -81,25 +83,25 @@ namespace twiin
 #ifndef ENABLE_GTKMM
 #else /* ENABLE_GTKMM */
          void
-         interactive (const Dstring& stage_str,
-                      const Dstring& product_str,
-                      const Dstring& level_str,
-                      const Dstring& time_str) const;
+         gui (const Dstring& stage_str,
+              const Dstring& product_str,
+              const Dstring& level_str,
+              const Dstring& time_str) const;
 #endif /* ENABLE_GTKMM */
 
          void
-         command_line (const Dstring& stage_str,
-                       const Dstring& product_str,
-                       const Dstring& level_str,
-                       const Dstring& time_str,
-                       const Dstring& zoom_str,
-                       const Tokens& annotation_tokens,
-                       const Dstring& format,
-                       const Tokens& title_tokens,
-                       const Dstring& filename,
-                       const bool no_stage,
-                       const bool no_wind_barb,
-                       const bool is_bludge) const;
+         plan (const Dstring& stage_str,
+               const Dstring& product_str,
+               const Dstring& level_str,
+               const Dstring& time_str,
+               const Dstring& zoom_str,
+               const Tokens& annotation_tokens,
+               const Dstring& format,
+               const Tokens& title_tokens,
+               const Dstring& filename,
+               const bool no_stage,
+               const bool no_wind_barb,
+               const bool is_bludge) const;
 
          void
          cross_section (const Dstring& stage_str,
@@ -130,6 +132,24 @@ namespace twiin
                            const Tokens& title_tokens,
                            const Dstring& filename,
                            const bool is_bludge) const;
+
+         void
+         twiin_surface_plan (const Dstring& surface_identifier,
+                             const Dstring& geodetic_transform_identifier,
+                             const twiin::Stage& stage,
+                             const Product& product,
+                             const Level& level,
+                             const Dtime& dtime,
+                             const Tokens& arguments);
+
+         void
+         twiin_surface (const Tokens& tokens);
+
+         void
+         twiin_parse (const Tokens& tokens);
+
+         void
+         parse (const Tokens& tokens);
 
    };
 

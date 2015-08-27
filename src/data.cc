@@ -1004,6 +1004,38 @@ Model::Terrain::Stage::out_of_bounds (const Lat_Long& lat_long) const
           lat_long.longitude > tuple_longitude.back ();
 }
 
+pair<Real, Real>
+Model::Terrain::Stage::get_grid_size (const size_t& i,
+                                      const size_t& j) const
+{
+
+   const Integer n = tuple_latitude.size ();
+   const Integer m = tuple_longitude.size ();
+   const Real inf = GSL_POSINF;
+
+   const Tuple& tuple_lat = tuple_latitude;
+   const Tuple& tuple_long = tuple_longitude;
+
+   const Real p_dlat  = i <= 0   ? inf : tuple_lat [i]    - tuple_lat[i-1];
+   const Real n_dlat  = i >= n-1 ? inf : tuple_lat [i+1]  - tuple_lat[i];
+   const Real p_dlong = j <= 0   ? inf : tuple_long [j]   - tuple_long[j-1];
+   const Real n_dlong = j >= m-1 ? inf : tuple_long [j+1] - tuple_long[j];
+
+   const Real d_lat = std::min (p_dlat, n_dlat);
+   const Real d_long = std::min (p_dlong, n_dlong);
+
+   return make_pair (d_lat, d_long);
+
+}
+
+pair<Real, Real>
+Model::Terrain::Stage::get_grid_size (const Lat_Long& lat_long) const
+{
+   size_t i, j;
+   acquire_ij (i, j, lat_long);
+   return get_grid_size (i, j);
+}
+
 Real
 Model::Terrain::Stage::evaluate (const Varname& varname,
                                  const size_t& i,
@@ -2786,41 +2818,82 @@ Model::evaluate (const Met_Element& met_element,
    }
 }
 
-Track
-Model::get_trajectory (const Lat_Long& lat_long,
-                       const Level& level,
-                       const Dtime& dtime,
-                       const twiin::Stage& stage,
-                       const Real finish_tau) const
+bool
+Model::grow_trajectory (Lat_Long& lat_long,
+                        Level& level,
+                        Dtime& dtime,
+                        const twiin::Stage& stage,
+                        const Real finish_tau) const
 {
 
-   size_t i, j, k_u, k_w;
-   acquire_ij (i, j, lat_long);
-   acquire_k (k_u, U, i, j, level);
-   if (k_u < 0) { // stuck to surface; }
-   if (k_u > 69) { // finish return; }
+   if (out_of_bounds (lat_long, stage)) { return false; }
+   const Real topography = get_topography (lat_long, stage);
 
-   acquire_k (k_w, W, i, j, level);
-   if (k_w < 0) { // stuck to surface; }
-   if (k_w > 69) { // finish return; }
+   if (level.type == Level::HEIGHT)
+   {
+      if (level.value > 38000) { return false; }
+      else
+      if (level.value < topography)
+      {
+         level.value = topography;
+         level.type = Level::SURFACE;
+      }
+   }
 
-   const Tuple& A_rho = vertical_coefficients.get_A_rho ();
-   const Tuple& B_rho = vertical_coefficients.get_B_rho ();
-   const Tuple& A_theta = vertical_coefficients.get_A_theta ();
-   const Tuple& B_theta = vertical_coefficients.get_B_theta ();
-
-   const Real z_rho   = get_z (k_1, topography, A_rho, B_rho);
-   const Real z_theta = get_z (k_1, topography, A_theta, B_theta);
+   const bool is_surface = (level.type == Level::SURFACE);
+   const Real z = (is_surface ? topography : level.value);
 
    const Real u = evaluate (U, lat_long, level, dtime, stage);
    const Real v = evaluate (V, lat_long, level, dtime, stage);
    const Real w = evaluate (W, lat_long, level, dtime, stage);
 
-   const Real dt_x = 0.7 * h / u;
-   const Real dt_y = 0.7 * h / v;
+   const auto grid_size = terrain.get_stage (stage).get_grid_size (lat_long);
+   const Real h_lat = grid_size.first;
+   const Real h_long = grid_size.second;
+
+   const Real dt_x = 0.7 * h_long / u;
+   const Real dt_y = 0.7 * h_lat / v;
    const Real dt = std::min (dt_x, dt_y);
 
+   const Wind wind_ (u, v);
    const Dtime dtime_ (dtime.t + dt);
+   const Lat_Long& lat_long_ = Geodesy::get_destination (lat_long,
+      wind_.get_speed () * dt, wind_.get_direction () + 180);
+   const Real z_ = (is_surface ? topography: level.value + w * dt);
+   const Level& level_ = (is_surface ? level : Level::z_level (z_));
+
+   const Real u_ = evaluate (U, lat_long_, level, dtime_, stage);
+   const Real v_ = evaluate (V, lat_long_, level, dtime_, stage);
+   const Real w_ = evaluate (W, lat_long_, level, dtime_, stage);
+
+   const Wind wind ((u + u_) / 2.0, (v + v_) / 2.0);
+   lat_long = Geodesy::get_destination (lat_long,
+      wind.get_speed () * dt, wind.get_direction () + 180);
+   level = (is_surface ? level : Level::z_level (z + (w + w_)/2.0 * dt));
+   dtime.t += dt;
+
+   return true;
+
+}
+
+Track
+Model::get_trajectory (Lat_Long lat_long,
+                       Level level,
+                       Dtime dtime,
+                       const twiin::Stage& stage,
+                       const Real finish_tau) const
+{
+
+   Track trajectory (dtime);
+
+   while (grow_trajectory (lat_long, level, dtime, stage, finish_tau))
+   {
+      trajectory.add (dtime, lat_long);
+      trajectory.add ("z", dtime, level.value);
+   }
+
+   trajectory.okay ();
+   return trajectory;
 
 }
 
