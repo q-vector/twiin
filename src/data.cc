@@ -59,7 +59,7 @@ Product::Product (const Dstring& str)
    else if (str == "VORTICITY")      { enumeration = Product::VORTICITY; }
    else if (str == "W")              { enumeration = Product::W; }
    else if (str == "W_TRANSLUCENT")  { enumeration = Product::W_TRANSLUCENT; }
-   else if (str == "Q_LOCAL_CHANGE") { enumeration = Product::Q_LOCAL_CHANGE; }
+   else if (str == "Q_TENDENCY")     { enumeration = Product::Q_TENDENCY; }
    else if (str == "Q_ADVECTION")    { enumeration = Product::Q_ADVECTION; }
    else if (str == "Q_H_ADVECTION")  { enumeration = Product::Q_H_ADVECTION; }
    else if (str == "Q_V_ADVECTION")  { enumeration = Product::Q_V_ADVECTION; }
@@ -106,7 +106,7 @@ Product::get_string () const
       case Product::VORTICITY:      return "VORTICITY";
       case Product::W:              return "W";
       case Product::W_TRANSLUCENT:  return "W_TRANSLUCENT";
-      case Product::Q_LOCAL_CHANGE: return "Q_LOCAL_CHANGE";
+      case Product::Q_TENDENCY:     return "Q_TENDENCY";
       case Product::Q_ADVECTION:    return "Q_ADVECTION";
       case Product::Q_H_ADVECTION:  return "Q_H_ADVECTION";
       case Product::Q_V_ADVECTION:  return "Q_V_ADVECTION";
@@ -154,7 +154,7 @@ Product::get_description () const
       case Product::VORTICITY:      return "Vertical Vorticity";
       case Product::W:              return "Vertical Velocity";
       case Product::W_TRANSLUCENT:  return "Vertical Velocity";
-      case Product::Q_LOCAL_CHANGE: return "Q Local Change";
+      case Product::Q_TENDENCY:     return "Q Tendency";
       case Product::Q_ADVECTION:    return "Q Advection";
       case Product::Q_H_ADVECTION:  return "Horizontal Q Advection";
       case Product::Q_V_ADVECTION:  return "Vertical Q Advection";
@@ -193,7 +193,7 @@ Product::get_met_element () const
       case Product::VORTICITY:      return denise::RELATIVE_VORTICITY;
       case Product::W:              return denise::W;
       case Product::W_TRANSLUCENT:  return denise::W;
-      case Product::Q_LOCAL_CHANGE: return denise::Q_LOCAL_CHANGE;
+      case Product::Q_TENDENCY:     return denise::Q_TENDENCY;
       case Product::Q_ADVECTION:    return denise::Q_ADVECTION;
       case Product::Q_H_ADVECTION:  return denise::Q_H_ADVECTION;
       case Product::Q_V_ADVECTION:  return denise::Q_V_ADVECTION;
@@ -222,7 +222,7 @@ Product::get_unit () const
       case Product::RHO:            return "kgm\u207b\u00b9";
       case Product::W:              return "ms\u207b\u00b9";
       case Product::W_TRANSLUCENT:  return "ms\u207b\u00b9";
-      case Product::Q_LCAL_CHANGE:  return "g kg\u207b\u00b9s\u207b\u00b9";
+      case Product::Q_TENDENCY:     return "g kg\u207b\u00b9s\u207b\u00b9";
       case Product::Q_ADVECTION:    return "g kg\u207b\u00b9s\u207b\u00b9";
       case Product::Q_H_ADVECTION:  return "g kg\u207b\u00b9s\u207b\u00b9";
       case Product::Q_V_ADVECTION:  return "g kg\u207b\u00b9s\u207b\u00b9";
@@ -1224,9 +1224,52 @@ Model::Surface::Stage::get_l (const Dtime& dtime) const
 }
 
 Real
+Model::Surface::Stage::evaluate_tendency (const Met_Element& met_element,
+                                          const Lat_Long& lat_long,
+                                          const size_t l) const
+{
+   return evaluate_dt (met_element, lat_long, l);
+}
+
+Real
+Model::Surface::Stage::evaluate_tendency (const Met_Element& met_element,
+                                          const Lat_Long& lat_long,
+                                          const size_t l,
+                                          const Wind& wind_bg) const
+{
+
+   const Met_Element& me = met_element;
+   const Lat_Long& ll = lat_long;
+
+   const Real t = evaluate_dt (me, ll, l);
+   const Real a = evaluate_wind_advection (me, ll, l, wind_bg);
+
+   return t + a;
+
+}
+
+Real
+Model::Surface::Stage::evaluate_wind_advection (const Met_Element& met_element,
+                                                const Lat_Long& lat_long,
+                                                const size_t l,
+                                                const Wind& wind) const
+{
+
+   size_t i, j;
+   acquire_ij (i, j, lat_long);
+
+   const Real ddx = evaluate_dx (met_element, lat_long, l);
+   const Real ddy = evaluate_dy (met_element, lat_long, l);
+
+   return -wind.u * ddx - wind.v * ddy;
+
+}
+
+Real
 Model::Surface::Stage::evaluate_h_advection (const Met_Element& met_element,
                                              const Lat_Long& lat_long,
-                                             const size_t l) const
+                                             const size_t l,
+                                             const Wind& wind_bg) const
 {
 
    size_t i, j;
@@ -1237,7 +1280,7 @@ Model::Surface::Stage::evaluate_h_advection (const Met_Element& met_element,
    const Real ddx = evaluate_dx (met_element, i, j, l);
    const Real ddy = evaluate_dy (met_element, i, j, l);
 
-   return -u * ddx - v * ddy;
+   return -(u - wind_bg.u) * ddx - (v - wind_bg.v) * ddy;
 
 }
 
@@ -1607,7 +1650,12 @@ Model::Surface::Stage::get_color (const Product& product,
          return Color::hsb (hue, 0.8, brightness);
       }
 
-      case Product::Q_LOCAL_CHANGE:
+      case Product::Q_TENDENCY:
+      {
+         const Real datum = evaluate_tendency (Q, lat_long, l);
+         return Display::get_color (product, datum);
+      }
+
       case Product::Q_ADVECTION:
       case Product::Q_H_ADVECTION:
       {
@@ -1864,10 +1912,61 @@ Model::Uppers::Stage::evaluate_brunt_vaisala (const Lat_Long& lat_long,
 }
 
 Real
+Model::Uppers::Stage::evaluate_tendency (const Met_Element& met_element,
+                                         const Lat_Long& lat_long,
+                                         const Level& level,
+                                         const size_t l) const
+{
+   return evaluate_dt (met_element, lat_long, level, l);
+}
+
+Real
+Model::Uppers::Stage::evaluate_tendency (const Met_Element& met_element,
+                                         const Lat_Long& lat_long,
+                                         const Level& level,
+                                         const size_t l,
+                                         const Wind& wind_bg) const
+{
+
+   const Met_Element& me = met_element;
+   const Lat_Long& ll = lat_long;
+
+   const Real t = evaluate_dt (me, ll, level, l);
+   const Real a = evaluate_wind_advection (me, ll, level, l, wind_bg);
+
+   return t + a;
+
+}
+
+Real
+Model::Uppers::Stage::evaluate_wind_advection (const Met_Element& met_element,
+                                               const Lat_Long& lat_long,
+                                               const Level& level,
+                                               const size_t l,
+                                               const Wind& wind) const
+{
+
+   size_t i, j;
+   acquire_ij (i, j, lat_long);
+
+   size_t k, k_rho;
+   acquire_k (k_rho, U, i, j, level);
+   acquire_k (k, met_element, i, j, level);
+   if (k < 0 || k > 69) { return GSL_NAN; }
+
+   const Real ddx = evaluate_dx (met_element, lat_long, level, l);
+   const Real ddy = evaluate_dy (met_element, lat_long, level, l);
+
+   return -wind.u * ddx - wind.v * ddy;
+
+}
+
+Real
 Model::Uppers::Stage::evaluate_h_advection (const Met_Element& met_element,
                                             const Lat_Long& lat_long,
                                             const Level& level,
-                                            const size_t l) const
+                                            const size_t l,
+                                            const Wind& wind_bg) const
 {
 
    size_t i, j;
@@ -1883,8 +1982,7 @@ Model::Uppers::Stage::evaluate_h_advection (const Met_Element& met_element,
    const Real ddx = evaluate_dx (met_element, lat_long, level, l);
    const Real ddy = evaluate_dy (met_element, lat_long, level, l);
 
-   const Real datum = -u * ddx - v * ddy;
-   return -u * ddx - v * ddy;
+   return -(u - wind_bg.u) * ddx - (v - wind_bg.v) * ddy;
 
 }
 
@@ -1908,6 +2006,26 @@ Model::Uppers::Stage::evaluate_v_advection (const Met_Element& met_element,
    const Real ddz = evaluate_dz (met_element, i, j, k, l);
 
    return -w * ddz;
+
+}
+
+Real
+Model::Uppers::Stage::evaluate_s_tendency (const Met_Element& met_element,
+                                           const Real azimuth,
+                                           const Lat_Long& lat_long,
+                                           const Level& level,
+                                           const size_t l,
+                                           const Real u_bg) const
+{
+
+
+   const Met_Element& me = met_element;
+   const Lat_Long& ll = lat_long;
+
+   const Real t = evaluate_dt (me, ll, level, l);
+   const Real a = evaluate_s_advection (me, azimuth, ll, level, l, u_bg);
+
+   return t + a;
 
 }
 
@@ -2477,9 +2595,9 @@ Model::Uppers::Stage::get_color (const Product& product,
 
       }
 
-      case Product::Q_LOCAL_CHANGE:
+      case Product::Q_TENDENCY:
       {
-         const Real datum = evaluate_dt (Q, lat_long, level, l);
+         const Real datum = evaluate_tendency (Q, lat_long, level, l);
          return Display::get_color (product, datum);
       }
 
@@ -3156,7 +3274,7 @@ Model::get_valid_time_set (const Product& product,
       case Product::P_THETA:
       case Product::P_RHO:
       case Product::Q:
-      case Product::Q_LOCAL_CHANGE:
+      case Product::Q_TENDENCY:
       case Product::Q_ADVECTION:
       case Product::Q_H_ADVECTION:
       case Product::Q_V_ADVECTION:

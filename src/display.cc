@@ -403,6 +403,15 @@ Display::get_cross_section_raster_ptr (const Box_2D& box_2d,
                   break;
                }
 
+               case Product::Q_TENDENCY:
+               {
+                  const Real azimuth = journey.get_azimuth_forward (x, geodesy);
+                  const Real datum = uppers_stage.evaluate_s_tendency (
+                     Q, azimuth, lat_long, level, l, u_bg);
+                  color = Display::get_color (p, datum);
+                  break;
+               }
+
                case Product::Q_ADVECTION:
                {
                   const Real h = uppers_stage.evaluate_h_advection (
@@ -648,6 +657,7 @@ Display::get_tick_tuple (const Product& product)
          return Tuple ("0:1:2:3:4:5:6:7:8:9:10");
       }
 
+      case Product::Q_TENDENCY:
       case Product::Q_ADVECTION:
       case Product::Q_H_ADVECTION:
       case Product::Q_V_ADVECTION:
@@ -832,6 +842,7 @@ Display::get_color (const Product& product,
          return Color::hsb (hue, 1.0, 1.0, alpha);
       }
 
+      case Product::Q_TENDENCY:
       case Product::Q_ADVECTION:
       case Product::Q_H_ADVECTION:
       case Product::Q_V_ADVECTION:
@@ -1303,7 +1314,8 @@ Display::render_color_bar (const RefPtr<Context>& cr,
    const Integer bar_width = box_2d.size_2d.i;
    const Integer bar_height = box_2d.size_2d.j;
 
-   const bool is_log = (product.enumeration == Product::Q_ADVECTION ||
+   const bool is_log = (product.enumeration == Product::Q_TENDENCY ||
+                        product.enumeration == Product::Q_ADVECTION ||
                         product.enumeration == Product::Q_H_ADVECTION ||
                         product.enumeration == Product::Q_V_ADVECTION ||
                         product.enumeration == Product::Q_S_ADVECTION ||
@@ -1387,7 +1399,8 @@ Display::render_color_bar (const RefPtr<Context>& cr,
    Rect (box_point, box_width, box_height).cairo (cr);
    cr->fill ();
 
-   if (product.enumeration == Product::Q_ADVECTION ||
+   if (product.enumeration == Product::Q_TENDENCY ||
+       product.enumeration == Product::Q_ADVECTION ||
        product.enumeration == Product::Q_H_ADVECTION ||
        product.enumeration == Product::Q_V_ADVECTION ||
        product.enumeration == Product::Q_S_ADVECTION ||
