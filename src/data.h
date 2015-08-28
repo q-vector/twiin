@@ -478,6 +478,9 @@ namespace twiin
                      set<Dtime>
                      valid_time_set;
 
+                     vector<Dtime>
+                     valid_time_vector;
+
                      void
                      fill_valid_time_set ();
 
@@ -491,6 +494,9 @@ namespace twiin
 
                      const set<Dtime>&
                      get_valid_time_set () const;
+
+                     const vector<Dtime>&
+                     get_valid_time_vector () const;
 
                      size_t
                      get_l (const Dtime& dtime) const;
@@ -510,6 +516,17 @@ namespace twiin
                                const size_t i,
                                const size_t j,
                                const size_t l) const;
+
+                     Real
+                     evaluate_dt (const Met_Element& met_element,
+                                  const Lat_Long& lat_long,
+                                  const size_t l) const;
+
+                     Real
+                     evaluate_dt (const Met_Element& met_element,
+                                  const size_t i,
+                                  const size_t j,
+                                  const size_t l) const;
 
                      Real
                      evaluate_dx (const Met_Element& met_element,
@@ -671,6 +688,25 @@ namespace twiin
                                const size_t j,
                                const size_t k,
                                const size_t l) const;
+
+                     Real
+                     evaluate_dt (const Met_Element& met_element,
+                                  const Lat_Long& lat_long,
+                                  const Level& level,
+                                  const size_t l) const;
+
+                     Real
+                     evaluate_dt (const Met_Element& met_element,
+                                  const Lat_Long& lat_long,
+                                  const size_t k,
+                                  const size_t l) const;
+
+                     Real
+                     evaluate_dt (const Met_Element& met_element,
+                                  const size_t i,
+                                  const size_t j,
+                                  const size_t k,
+                                  const size_t l) const;
 
                      Real
                      evaluate_dx (const Met_Element& met_element,
@@ -895,19 +931,13 @@ namespace twiin
                    const Dtime& dtime,
                    const twiin::Stage& stage) const;
 
-         bool
-         grow_trajectory (Lat_Long& lat_long,
-                          Level& level,
-                          Dtime& dtime,
-                          const twiin::Stage& stage,
-                          const Real finish_tau) const;
-
          Track
          get_trajectory (Lat_Long lat_long,
                          Level level,
                          Dtime dtime,
                          const twiin::Stage& stage,
-                         const Real finish_tau) const;
+                         const Real finish_tau,
+                         const vector<Product>& product_vector = vector<Product> ()) const;
 
          Aws::Obs
          get_aws_obs (const Lat_Long& lat_long,

@@ -910,6 +910,51 @@ main (int argc,
 }
 
 void
+Twiin::twiin_trajectory (const Tokens& tokens)
+{
+
+   const twiin::Stage stage (tokens[0]);
+   const Lat_Long lat_long (tokens[1]);
+   const Level level (tokens[2]);
+   const Dtime dtime (tokens[3]);
+   const Real finish_tau = stof (tokens[4]);
+
+   vector<Product> product_vector;
+   product_vector.push_back (Product ("Q"));
+   product_vector.push_back (Product ("THETA"));
+
+   const Data data (config_file);
+   const Model& model = data.get_model ();
+   const Track& trajectory = model.get_trajectory (lat_long,
+      level, dtime, stage, finish_tau, product_vector);
+
+   const set<Dtime>& dtime_set = trajectory.get_dtime_set ();
+   for (auto iterator = dtime_set.begin ();
+        iterator != dtime_set.end (); iterator++)
+   {
+      const Dtime& dtime = *(iterator);
+      const Dstring& time_str = dtime.get_string ("%Y%m%d%H%M%S");
+      const Lat_Long& ll = trajectory.get_lat_long (dtime);
+      const Real z = trajectory.get_datum ("z", dtime);
+
+      cout << time_str << " " << ll << " " << z << " ";
+
+      for (auto iterator_e = trajectory.begin ();
+           iterator_e != trajectory.end (); iterator_e++)
+      {
+         const Dstring& e = iterator_e->first;
+         if (e == "latitude" || e == "longitude" || e == "z") { continue; }
+         const Real datum = trajectory.get_datum (e, dtime);
+         cout << e << ":" << datum << " ";
+      }
+
+      cout << endl;
+
+   }
+
+}
+
+void
 Twiin::twiin_surface_plan (const Dstring& surface_identifier,
                            const Dstring& geodetic_transform_identifier,
                            const twiin::Stage& stage,
@@ -919,13 +964,17 @@ Twiin::twiin_surface_plan (const Dstring& surface_identifier,
                            const Tokens& arguments)
 {
 
-   const RefPtr<Surface>& surface = Surface_Package::get_surface (surface_identifier);
-   const RefPtr<Context> cr = Surface_Package::get_cr (surface_identifier);
-   const Size_2D& size_2d = Surface_Package::get_size_2d (surface_identifier);
+   typedef Display D;
+   typedef Surface_Package Sp;
+   typedef Geodetic_Transform_Package Gtp;
+
+   const RefPtr<Surface>& surface = Sp::get_surface (surface_identifier);
+   const RefPtr<Context> cr = Sp::get_cr (surface_identifier);
+   const Size_2D& size_2d = Sp::get_size_2d (surface_identifier);
    const Point_2D centre (Real (size_2d.i) / 2, Real (size_2d.j) / 2);
 
    const Geodetic_Transform* geodetic_transform_ptr =
-      Geodetic_Transform_Package::get_geodetic_transform_ptr (geodetic_transform_identifier, centre);
+      Gtp::get_geodetic_transform_ptr (geodetic_transform_identifier, centre);
    const Geodetic_Transform& geodetic_transform = *geodetic_transform_ptr;
 
    bool no_color_bar = true;
@@ -957,8 +1006,8 @@ Twiin::twiin_surface_plan (const Dstring& surface_identifier,
    Display::render (cr, geodetic_transform, size_2d, model, hrit,
       station_map, dtime, level, stage, product, no_stage, no_wind_barb);
 
-   if (!no_scale_bar) { Display::render_scale_bar (cr, geodetic_transform, size_2d); }
-   if (!no_color_bar) { Display::render_color_bar (cr, size_2d, product); }
+   if (!no_scale_bar) { D::render_scale_bar (cr, geodetic_transform, size_2d); }
+   if (!no_color_bar) { D::render_color_bar (cr, size_2d, product); }
 
    delete geodetic_transform_ptr;
 
@@ -989,7 +1038,7 @@ Twiin::twiin_parse (const Tokens& tokens)
 
    if (action == "trajectory")
    {
-      cout << "trajectory " << tokens << endl;
+      twiin_trajectory (tokens.subtokens (1));
    }
    else
    if (action == "surface")

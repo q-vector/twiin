@@ -134,6 +134,9 @@ namespace twiin
                            const bool is_bludge) const;
 
          void
+         twiin_trajectory (const Tokens& tokens);
+
+         void
          twiin_surface_plan (const Dstring& surface_identifier,
                              const Dstring& geodetic_transform_identifier,
                              const twiin::Stage& stage,
