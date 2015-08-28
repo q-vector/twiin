@@ -222,7 +222,7 @@ Product::get_unit () const
       case Product::RHO:            return "kgm\u207b\u00b9";
       case Product::W:              return "ms\u207b\u00b9";
       case Product::W_TRANSLUCENT:  return "ms\u207b\u00b9";
-      case Product::Q_LCAL_CHANGE:  return "g kg\u207b\u00b9s\u207b\u00b9";
+      case Product::Q_LOCAL_CHANGE: return "g kg\u207b\u00b9s\u207b\u00b9";
       case Product::Q_ADVECTION:    return "g kg\u207b\u00b9s\u207b\u00b9";
       case Product::Q_H_ADVECTION:  return "g kg\u207b\u00b9s\u207b\u00b9";
       case Product::Q_V_ADVECTION:  return "g kg\u207b\u00b9s\u207b\u00b9";

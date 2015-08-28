@@ -62,6 +62,7 @@ namespace twiin
             VORTICITY,
             W,
             W_TRANSLUCENT,
+	    Q_LOCAL_CHANGE,
 	    Q_ADVECTION,
 	    Q_H_ADVECTION,
             Q_V_ADVECTION,
