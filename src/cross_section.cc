@@ -1,5 +1,6 @@
 #include <denise/dstring.h>
 #include "cross_section.h"
+#include "model.h"
 
 using namespace std;
 using namespace denise;
@@ -7,7 +8,7 @@ using namespace Cairo;
 using namespace twiin;
 
 void
-Cross_Section::Product_Panel::emit (const Product& product)
+Cross_Section::Product_Panel::emit (const Model::Product& product)
 {
    signal.emit (product);
 }
@@ -21,7 +22,7 @@ Cross_Section::Product_Panel::Product_Panel (Cross_Section& cross_section,
 
 void
 Cross_Section::Product_Panel::add_product (const Dstring& drawer_str,
-                                           const Product& product)
+                                           const Model::Product& product)
 {
    Button* pb_ptr = new Button (cross_section, product, font_size);
    pb_ptr->set_hidable (true);
@@ -57,8 +58,8 @@ Cross_Section::get_tokens (const Marker& marker) const
    const Level level (Level::HEIGHT, marker.y);
    const Dtime& dtime = get_time_chooser ().get_time ();
 
-   tokens = model.get_marker_tokens (
-      lat_long, dtime, product, stage, level);
+   const Model::Stage& stage = model.get_stage (stage_str);
+   tokens = stage.get_marker_tokens (lat_long, dtime, product, level);
 
    const Dstring& ll_str = lat_long.get_string (false, Dstring ("%.4f\u00b0"));
    const Dstring& height_str = level.get_string ();
@@ -120,15 +121,15 @@ Cross_Section::Cross_Section (Gtk::Window& gtk_window,
                               const Size_2D& size_2d,
                               const Model& model,
                               const Route& route,
-                              const Stage& stage,
-                              const Product& product,
+                              const Dstring& stage_str,
+                              const Model::Product& product,
                               const Dtime& dtime)
    : Console_2D (gtk_window, size_2d),
      Time_Canvas (*this, 12),
      product_panel (*this, 12),
      model (model),
      journey (route),
-     stage (stage),
+     stage_str (stage_str),
      product (product),
      domain_z (0, 8000)
 {
@@ -147,24 +148,32 @@ Cross_Section::Cross_Section (Gtk::Window& gtk_window,
    register_widget (time_chooser);
    register_widget (product_panel);
 
-   product_panel.add_product ("Thermo", Product ("T"));
-   product_panel.add_product ("Thermo", Product ("THETA"));
-   product_panel.add_product ("Thermo", Product ("THETA_V"));
-   product_panel.add_product ("Thermo", Product ("Q"));
-   product_panel.add_product ("Thermo", Product ("TD"));
-   product_panel.add_product ("Thermo", Product ("RH"));
-   product_panel.add_product ("Thermo", Product ("THETA_E"));
-   product_panel.add_product ("Thermo", Product ("RHO"));
-   product_panel.add_product ("Dynamic", Product ("WIND"));
-   product_panel.add_product ("Dynamic", Product ("SPEED"));
-   product_panel.add_product ("Dynamic", Product ("W"));
-   product_panel.add_product ("Dynamic", Product ("VORTICITY"));
-   product_panel.add_product ("Fire", Product ("FFDI"));
-   product_panel.add_product ("Misc", Product ("MSLP"));
-   product_panel.add_product ("Misc", Product ("TERRAIN"));
+   product_panel.add_product ("Thermo", Model::Product ("T"));
+   product_panel.add_product ("Thermo", Model::Product ("THETA"));
+   product_panel.add_product ("Thermo", Model::Product ("THETA_V"));
+   product_panel.add_product ("Thermo", Model::Product ("Q"));
+   product_panel.add_product ("Thermo", Model::Product ("Q_TENDENCY"));
+   product_panel.add_product ("Thermo", Model::Product ("Q_ADVECTION"));
+   product_panel.add_product ("Thermo", Model::Product ("Q_H_ADVECTION"));
+   product_panel.add_product ("Thermo", Model::Product ("Q_V_ADVECTION"));
+   product_panel.add_product ("Thermo", Model::Product ("Q_S_ADVECTION"));
+   product_panel.add_product ("Thermo", Model::Product ("Q_N_ADVECTION"));
+   product_panel.add_product ("Thermo", Model::Product ("Q_SV_ADVECTION"));
+   product_panel.add_product ("Thermo", Model::Product ("Q_NV_ADVECTION"));
+   product_panel.add_product ("Thermo", Model::Product ("TD"));
+   product_panel.add_product ("Thermo", Model::Product ("RH"));
+   product_panel.add_product ("Thermo", Model::Product ("THETA_E"));
+   product_panel.add_product ("Thermo", Model::Product ("RHO"));
+   product_panel.add_product ("Dynamic", Model::Product ("WIND"));
+   product_panel.add_product ("Dynamic", Model::Product ("SPEED"));
+   product_panel.add_product ("Dynamic", Model::Product ("W"));
+   product_panel.add_product ("Dynamic", Model::Product ("VORTICITY"));
+   product_panel.add_product ("Fire", Model::Product ("FFDI"));
+   product_panel.add_product ("Misc", Model::Product ("MSLP"));
+   product_panel.add_product ("Misc", Model::Product ("TERRAIN"));
 
-   const set<Dtime>& time_set =
-      model.get_valid_time_set (product, stage, level);
+   const Model::Stage& stage = model.get_stage (stage_str);
+   const set<Dtime>& time_set = stage.get_valid_time_set (product, level);
    time_chooser.set_shape (Time_Chooser::Shape (time_set));
    time_chooser.set_leap (1);
    time_chooser.set_data (Time_Chooser::Data (dtime));
@@ -240,7 +249,7 @@ Cross_Section::reset_transform ()
 }
 
 void
-Cross_Section::set_product (const Product& product)
+Cross_Section::set_product (const Model::Product& product)
 {
    this->product = product;
    render_queue_draw ();
@@ -252,7 +261,7 @@ Cross_Section::render_queue_draw ()
 
    const Dtime& basetime = model.get_basetime ();
    const Dtime& dtime = get_time_chooser ().get_time ();
-   Display::set_title (title, basetime, stage, product, dtime, journey);
+   Display::set_title (title, basetime, stage_str, product, dtime, journey);
 
    set_foreground_ready (false);
    Console_2D::render_queue_draw ();
@@ -275,7 +284,7 @@ Cross_Section::render_image_buffer (const RefPtr<Context>& cr)
    if (s2d.i < 0 || s2d.j < 0) { return; }
 
    Display::render_cross_section (cr, transform, box_2d,
-      domain_z, model, stage, product, dtime, journey);
+      domain_z, model, stage_str, product, dtime, journey);
 
 }
 

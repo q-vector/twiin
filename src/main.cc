@@ -51,8 +51,8 @@ Twiin::Transform_Ptr_Map::~Transform_Ptr_Map ()
 
 Dstring
 Twiin::get_file_path (const Dstring& format,
-                      const Stage& stage,
-                      const Product& product,
+                      const Dstring& stage,
+                      const Model::Product& product,
                       const Level& level,
                       const Dtime& dtime) const
 {
@@ -64,8 +64,8 @@ Twiin::get_file_path (const Dstring& format,
 
 Dstring
 Twiin::get_file_path (const Dstring& format,
-                      const Stage& stage,
-                      const Product& product,
+                      const Dstring& stage,
+                      const Model::Product& product,
                       const Dtime& dtime,
                       const Journey& journey) const
 {
@@ -91,7 +91,7 @@ Twiin::get_file_path (const Dstring& format,
 
 Dstring
 Twiin::get_file_path (const Dstring& format,
-                      const Stage& stage,
+                      const Dstring& stage,
                       const Dtime& dtime,
                       const Location& location) const
 {
@@ -104,7 +104,7 @@ Twiin::get_file_path (const Dstring& format,
 
 Dstring
 Twiin::get_file_path (const Dstring& format,
-                      const Stage& stage,
+                      const Dstring& stage,
                       const Dtime& dtime,
                       const Dstring& location_name) const
 {
@@ -116,7 +116,7 @@ Twiin::get_file_path (const Dstring& format,
 
 Dstring
 Twiin::get_file_path (const Dstring& format,
-                      const Stage& stage,
+                      const Dstring& stage,
                       const Location& location) const
 {
    const Dstring& location_str = location.get_str ();
@@ -147,8 +147,8 @@ Twiin::gui (const Dstring& stage_str,
    const Tokens product_tokens (product_str, ":");
    const Tokens level_tokens (level_str, ":");
 
-   const Stage stage (stage_tokens[0]);
-   const Product product (product_tokens[0]);
+   const Dstring stage (stage_tokens[0]);
+   const Model::Product product (product_tokens[0]);
    const Level level (level_tokens[0]);
 
    const Data data (config_file);
@@ -222,9 +222,10 @@ Twiin::plan (const Dstring& stage_str,
         i != stage_tokens.end (); i++)
    {
 
-      const twiin::Stage stage (*i);
+      const Dstring s (*i);
+      const Model::Stage& stage = model.get_stage (s);
       const Geodetic_Transform& transform = gt_ptr == NULL ?
-         *(transform_ptr_map[stage]) : *gt_ptr;
+         *(transform_ptr_map[s]) : *gt_ptr;
 
       const Geodetic_Mesh& mesh = transform.get_mesh (size_2d);
 
@@ -232,8 +233,8 @@ Twiin::plan (const Dstring& stage_str,
            j != product_tokens.end (); j++)
       {
 
-         const Product product (*j);
-         const bool is_speed = (product.enumeration == Product::SPEED);
+         const Model::Product product (*j);
+         const bool is_speed = (product.enumeration == Model::Product::SPEED);
 
          for (auto k = level_tokens.begin ();
               k != level_tokens.end (); k++)
@@ -242,11 +243,11 @@ Twiin::plan (const Dstring& stage_str,
             const Level level (*k);
             const bool is_higher = (level.type == Level::HEIGHT) &&
                (level.value > 1500);
-            const Product& p = ((is_speed && is_higher) ?
-               Product (Product::SPEED_HIGHER) : product);
+            const Model::Product& p = ((is_speed && is_higher) ?
+               Model::Product (Model::Product::SPEED_HIGHER) : product);
 
             const vector<Dtime>& valid_time_vector =
-               model.get_valid_time_vector (product, stage, level, time_set);
+               stage.get_valid_time_vector (product, level, time_set);
 
             #pragma omp parallel for
             for (Integer l = 0; l < valid_time_vector.size (); l++)
@@ -255,7 +256,7 @@ Twiin::plan (const Dstring& stage_str,
                const Dtime& dtime = valid_time_vector.at (l);
 
                const Dstring& file_path = (filename == "") ?
-                  get_file_path (format, stage, product, level, dtime) :
+                  get_file_path (format, s, product, level, dtime) :
                   output_dir + "/" + filename;
                cout << file_path << endl;
                if (is_bludge) { continue; }
@@ -265,7 +266,7 @@ Twiin::plan (const Dstring& stage_str,
                RefPtr<Context> cr = denise::get_cr (surface);
 
                Display::render (cr, transform, size_2d, model, hrit,
-                  station_map, dtime, level, stage, p, no_stage,
+                  station_map, dtime, level, s, p, no_stage,
                   no_wind_barb);
 
                if (gshhs_ptr != NULL)
@@ -287,7 +288,7 @@ Twiin::plan (const Dstring& stage_str,
                if (title_tokens.size () == 0)
                {
                   Display::set_title (title, basetime,
-                     stage, product, dtime, level);
+                     s, product, dtime, level);
                }
                else
                {
@@ -364,20 +365,21 @@ Twiin::cross_section (const Dstring& stage_str,
         i != stage_tokens.end (); i++)
    {
 
-      const twiin::Stage stage (*i);
+      const Dstring s (*i);
+      const Model::Stage& stage = model.get_stage (s);
 
       for (Tokens::const_iterator j = product_tokens.begin ();
            j != product_tokens.end (); j++)
       {
 
-         const Product product (*j);
+         const Model::Product product (*j);
 
-         const bool is_speed = (product.enumeration == Product::SPEED);
-         const Product& p = (is_speed ?
-            Product (Product::SPEED_HIGHER) : product);
+         const bool is_speed = (product.enumeration == Model::Product::SPEED);
+         const Model::Product& p = (is_speed ?
+            Model::Product (Model::Product::SPEED_HIGHER) : product);
 
          const vector<Dtime>& valid_time_vector =
-            model.get_valid_time_vector (product, stage, level, time_set);
+            stage.get_valid_time_vector (product, level, time_set);
 
          #pragma omp parallel for
          for (Integer l = 0; l < valid_time_vector.size (); l++)
@@ -386,7 +388,7 @@ Twiin::cross_section (const Dstring& stage_str,
             const Dtime& dtime = valid_time_vector.at (l);
 
             const Dstring& file_path = (filename == "") ?
-               get_file_path (format, stage, product, dtime, journey) :
+               get_file_path (format, s, product, dtime, journey) :
                output_dir + "/" + filename;
             cout << file_path << endl;
             if (is_bludge) { continue; }
@@ -402,15 +404,14 @@ Twiin::cross_section (const Dstring& stage_str,
 
             if (s2d.i < 0 || s2d.j < 0) { continue; }
 
-            Display::render_cross_section (cr, transform, box_2d, domain_z,
-               model, stage, product, dtime, journey, u_bg);
+            Display::render_cross_section (cr, transform, box_2d,
+               domain_z, model, s, product, dtime, journey, u_bg);
 
             Display::render_color_bar (cr, size_2d, p);
 
             if (title_tokens.size () == 0)
             {
-               Display::set_title (title, basetime, stage,
-                  product, dtime, journey);
+               Display::set_title (title, basetime, s, product, dtime, journey);
             }
             else
             {
@@ -456,7 +457,7 @@ Twiin::meteogram (const Dstring& stage_str,
         i != stage_tokens.end (); i++)
    {
 
-      const twiin::Stage stage (*i);
+      const Dstring stage (*i);
 
       for (Tokens::const_iterator j = location_tokens.begin ();
            j != location_tokens.end (); j++)
@@ -508,7 +509,7 @@ Twiin::vertical_profile (const Dstring& stage_str,
                          const bool is_bludge) const
 {
 
-   const Product product ("T");
+   const Model::Product product ("T");
    const Level level ("100m");
    const Dtime::Set time_set (time_str);
    const Tokens stage_tokens (stage_str, ":");
@@ -526,10 +527,11 @@ Twiin::vertical_profile (const Dstring& stage_str,
         i != stage_tokens.end (); i++)
    {
 
-      const twiin::Stage stage (*i);
+      const Dstring s (*i);
+      const Model::Stage& stage = model.get_stage (s);
 
       const vector<Dtime>& valid_time_vector =
-         model.get_valid_time_vector (product, stage, level, time_set);
+         stage.get_valid_time_vector (product, level, time_set);
 
       #pragma omp parallel for
       for (Integer l = 0; l < valid_time_vector.size (); l++)
@@ -563,8 +565,8 @@ Twiin::vertical_profile (const Dstring& stage_str,
             const Dstring& file_path =
                (filename == "") ?
                   ((location_name == "") ?
-                     get_file_path (format, stage, dtime, sole_location) :
-                     get_file_path (format, stage, dtime, location_name)) :
+                     get_file_path (format, s, dtime, sole_location) :
+                     get_file_path (format, s, dtime, location_name)) :
                   output_dir + "/" + filename;
             cout << file_path << endl;
             if (is_bludge) { continue; }
@@ -572,8 +574,9 @@ Twiin::vertical_profile (const Dstring& stage_str,
             if (format == "snd")
             {
 
-               Sounding* sounding_ptr = model.get_sounding_ptr (
-                  lat_long_list, dtime, stage, tephigram);
+               const Model::Stage stage = model.get_stage (s);
+               Sounding* sounding_ptr = stage.get_sounding_ptr (
+                  lat_long_list, dtime, tephigram);
                sounding_ptr->save (file_path);
                delete sounding_ptr;
             }
@@ -587,12 +590,12 @@ Twiin::vertical_profile (const Dstring& stage_str,
                if (location_name == "")
                {
                   Display::render_vertical_profile (cr, tephigram,
-                     model, stage, dtime, sole_location);
+                     model, s, dtime, sole_location);
                }
                else
                {
                   Display::render_vertical_profile (cr, tephigram,
-                     model, stage, dtime, lat_long_list);
+                     model, s, dtime, lat_long_list);
                }
 
                if (title_tokens.size () == 0)
@@ -600,12 +603,12 @@ Twiin::vertical_profile (const Dstring& stage_str,
                   if (location_name == "")
                   {
                      Display::set_title (title, basetime,
-                        stage, dtime, sole_location);
+                        s, dtime, sole_location);
                   }
                   else
                   {
                      Display::set_title (title, basetime,
-                        stage, dtime, location_name);
+                        s, dtime, location_name);
                   }
                }
                else
@@ -913,20 +916,20 @@ void
 Twiin::twiin_trajectory (const Tokens& tokens)
 {
 
-   const twiin::Stage stage (tokens[0]);
+   const Dstring stage_str (tokens[0]);
    const Lat_Long lat_long (tokens[1]);
    const Level level (tokens[2]);
    const Dtime dtime (tokens[3]);
    const Real finish_tau = stof (tokens[4]);
 
-   vector<Product> product_vector;
-   product_vector.push_back (Product ("Q"));
-   product_vector.push_back (Product ("THETA"));
+   vector<Model::Product> product_vector;
+   product_vector.push_back (Model::Product ("Q"));
+   product_vector.push_back (Model::Product ("THETA"));
 
    const Data data (config_file);
    const Model& model = data.get_model ();
-   const Track& trajectory = model.get_trajectory (lat_long,
-      level, dtime, stage, finish_tau, product_vector);
+   const Track& trajectory = model.get_stage (stage_str).get_trajectory (
+      lat_long, level, dtime, finish_tau, product_vector);
 
    const set<Dtime>& dtime_set = trajectory.get_dtime_set ();
    for (auto iterator = dtime_set.begin ();
@@ -957,8 +960,8 @@ Twiin::twiin_trajectory (const Tokens& tokens)
 void
 Twiin::twiin_surface_plan (const Dstring& surface_identifier,
                            const Dstring& geodetic_transform_identifier,
-                           const twiin::Stage& stage,
-                           const Product& product,
+                           const Dstring& stage,
+                           const Model::Product& product,
                            const Level& level,
                            const Dtime& dtime,
                            const Tokens& arguments)
@@ -1019,8 +1022,8 @@ Twiin::twiin_surface (const Tokens& tokens)
 
    const Dstring& surface_identifier = tokens[0];
    const Dstring& geodetic_transform_identifier = tokens[1];
-   const twiin::Stage stage (tokens[2]);
-   const Product product (tokens[3]);
+   const Dstring stage (tokens[2]);
+   const Model::Product product (tokens[3]);
    const Level level (tokens[4]);
    const Dtime dtime (tokens[5]);
 

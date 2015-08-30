@@ -1,5 +1,7 @@
 #include "display.h"
 #include "hrit.h"
+#include "model.h"
+#include "obs.h"
 
 using namespace std;
 using namespace denise;
@@ -88,7 +90,7 @@ Raster*
 Display::get_terrain_raster_ptr (const Size_2D& size_2d,
                                  const Transform_2D& transform,
                                  const Model& model,
-                                 const Stage& stage)
+                                 const Dstring& stage_str)
 {
 
    Raster* raster_ptr = new Raster (size_2d);
@@ -99,7 +101,7 @@ Display::get_terrain_raster_ptr (const Size_2D& size_2d,
    Real& longitude = lat_long.longitude;
 
    Real orog, lsm;
-   const auto& terrain_stage = model.terrain.get_stage (stage);
+   const Model::Stage& stage = model.get_stage (stage_str);
 
    bool oob;
    Real scale_factor = 0.0025;
@@ -115,36 +117,37 @@ Display::get_terrain_raster_ptr (const Size_2D& size_2d,
          const Real y = Real (j);
          transform.reverse (latitude, longitude, x, y);
 
-         if (terrain_stage.out_of_bounds (lat_long))
+         if (stage.out_of_bounds (lat_long))
          {
             raster.set_pixel (i, j, Color::transparent ());
             continue;
          }
 
-         const Real orog = terrain_stage.get_topography (lat_long);
-         const Real lsm = terrain_stage.evaluate (Dstring ("lsm"), lat_long);
-         const Product product (lsm > 0.5 ?
-            Product::TERRAIN : Product::TERRAIN_WATER);
+         const Real orog = stage.get_topography (lat_long);
+         //const Real lsm = stage.evaluate (Dstring ("lsm"), lat_long);
+         //const Model::Product product (lsm > 0.5 ?
+         const Model::Product product (true ?
+            Model::Product::TERRAIN : Model::Product::TERRAIN_WATER);
          Color color = Display::get_color (product, orog);
 
          if (i != 0 && i != size_2d.i - 1 && j != 0 && i != size_2d.j - 1)
          {
 
             transform.reverse (latitude, longitude, Real (i+1), Real (j));
-            oob = terrain_stage.out_of_bounds (lat_long);
-            const Real datum_e = oob ? GSL_NAN : terrain_stage.get_topography (lat_long);
+            oob = stage.out_of_bounds (lat_long);
+            const Real datum_e = oob ? GSL_NAN : stage.get_topography (lat_long);
 
             transform.reverse (latitude, longitude, Real (i-1), Real (j));
-            oob = terrain_stage.out_of_bounds (lat_long);
-            const Real datum_w = oob ? GSL_NAN : terrain_stage.get_topography (lat_long);
+            oob = stage.out_of_bounds (lat_long);
+            const Real datum_w = oob ? GSL_NAN : stage.get_topography (lat_long);
 
             transform.reverse (latitude, longitude, Real (i), Real (j+1));
-            oob = terrain_stage.out_of_bounds (lat_long);
-            const Real datum_n = oob ? GSL_NAN : terrain_stage.get_topography (lat_long);
+            oob = stage.out_of_bounds (lat_long);
+            const Real datum_n = oob ? GSL_NAN : stage.get_topography (lat_long);
 
             transform.reverse (latitude, longitude, Real (i), Real (j-1));
-            oob = terrain_stage.out_of_bounds (lat_long);
-            const Real datum_s = oob ? GSL_NAN : terrain_stage.get_topography (lat_long);
+            oob = stage.out_of_bounds (lat_long);
+            const Real datum_s = oob ? GSL_NAN : stage.get_topography (lat_long);
 
             Real gradient = datum_e - datum_n - datum_w + datum_s;
             if (!gsl_finite (gradient)) { gradient = 0; }
@@ -169,8 +172,8 @@ Raster*
 Display::get_surface_raster_ptr (const Size_2D& size_2d,
                                  const Transform_2D& transform,
                                  const Model& model,
-                                 const Stage& stage,
-                                 const Product& product,
+                                 const Dstring& stage_str,
+                                 const Model::Product& product,
                                  const Dtime& dtime)
 {
 
@@ -181,8 +184,8 @@ Display::get_surface_raster_ptr (const Size_2D& size_2d,
    Real& latitude = lat_long.latitude;
    Real& longitude = lat_long.longitude;
 
-   const auto& surface_stage = model.surface.get_stage (stage);
-   const size_t l = surface_stage.get_l (dtime);
+   const Model::Stage& stage = model.get_stage (stage_str);
+   const size_t l = stage.get_surface_l (dtime);
 
    for (Integer i = 0; i < size_2d.i; i++)
    {
@@ -195,13 +198,13 @@ Display::get_surface_raster_ptr (const Size_2D& size_2d,
          const Real y = Real (j);
          transform.reverse (latitude, longitude, x, y);
 
-         if (surface_stage.out_of_bounds (lat_long))
+         if (stage.out_of_bounds (lat_long))
          {
             raster.set_pixel (i, j, Color::transparent ());
             continue;
          }
 
-         const Color& color = surface_stage.get_color (product, lat_long, l);
+         const Color& color = stage.get_color (product, lat_long, l);
          raster.set_pixel (i, j, color);
 
       }
@@ -216,8 +219,8 @@ Raster*
 Display::get_uppers_raster_ptr (const Size_2D& size_2d,
                                 const Transform_2D& transform,
                                 const Model& model,
-                                const Stage& stage,
-                                const Product& product,
+                                const Dstring& stage_str,
+                                const Model::Product& product,
                                 const Dtime& dtime,
                                 const Level& level)
 {
@@ -229,8 +232,8 @@ Display::get_uppers_raster_ptr (const Size_2D& size_2d,
    Real& latitude = lat_long.latitude;
    Real& longitude = lat_long.longitude;
 
-   const auto& uppers_stage = model.uppers.get_stage (stage);
-   const size_t l = uppers_stage.get_l (dtime);
+   const Model::Stage& stage = model.get_stage (stage_str);
+   const size_t l = stage.get_uppers_l (dtime);
 
    for (Integer i = 0; i < size_2d.i; i++)
    {
@@ -243,14 +246,13 @@ Display::get_uppers_raster_ptr (const Size_2D& size_2d,
          const Real y = Real (j);
          transform.reverse (latitude, longitude, x, y);
 
-         if (uppers_stage.out_of_bounds (lat_long))
+         if (stage.out_of_bounds (lat_long))
          {
             raster.set_pixel (i, j, Color::transparent ());
             continue;
          }
 
-         const Color& color = uppers_stage.get_color (
-            product, lat_long, level, l);
+         const Color& color = stage.get_color (product, lat_long, level, l);
          raster.set_pixel (i, j, color);
 
       }
@@ -265,7 +267,7 @@ Raster*
 Display::get_hrit_raster_ptr (const Size_2D& size_2d,
                               const Transform_2D& transform,
                               const Hrit& hrit,
-                              const Product& product,
+                              const Model::Product& product,
                               const Dtime& dtime)
 {
 
@@ -310,8 +312,8 @@ Raster*
 Display::get_cross_section_raster_ptr (const Box_2D& box_2d,
                                        const Transform_2D& transform,
                                        const Model& model,
-                                       const Stage& stage,
-                                       const Product& product,
+                                       const Dstring& stage_str,
+                                       const Model::Product& product,
                                        const Dtime& dtime,
                                        const Journey& journey,
                                        const Real u_bg)
@@ -320,12 +322,12 @@ Display::get_cross_section_raster_ptr (const Box_2D& box_2d,
    Raster* raster_ptr = new Raster (box_2d);
 
    Color color;
-   const auto& terrain_stage = model.terrain.get_stage (stage);
-   const auto& uppers_stage = model.uppers.get_stage (stage);
-   const size_t l = uppers_stage.get_l (dtime);
+   const auto& stage = model.get_stage (stage_str);
+   const size_t l = stage.get_uppers_l (dtime);
 
-   const bool is_speed = (product.enumeration == Product::SPEED);
-   const Product& p = (is_speed ? Product (Product::SPEED_HIGHER) : product);
+   const bool is_speed = (product.enumeration == Model::Product::SPEED);
+   const Model::Product& p = (is_speed ?
+      Model::Product ("SPEED_HIGHER") : product);
 
    Real x;
    Level level (Level::HEIGHT, GSL_NAN);
@@ -343,9 +345,9 @@ Display::get_cross_section_raster_ptr (const Box_2D& box_2d,
       if (x < 0 || x > distance) { continue; }
       const Lat_Long& lat_long = journey.get_lat_long (x, geodesy);
       const Lat_Long& ll = lat_long;
-      if (model.out_of_bounds (lat_long, stage)) { continue; }
+      if (stage.out_of_bounds (ll)) { continue; }
 
-      const Real topography = terrain_stage.get_topography (lat_long);
+      const Real topography = stage.get_topography (ll);
 
       for (Integer j = index_2d.j; j < index_2d.j + size_2d.j; j++)
       {
@@ -357,10 +359,10 @@ Display::get_cross_section_raster_ptr (const Box_2D& box_2d,
             switch (product.enumeration)
             {
 
-               case Product::WIND:
+               case Model::Product::WIND:
                {
-                  const Real u = uppers_stage.evaluate (U, lat_long, level, l);
-                  const Real v = uppers_stage.evaluate (V, lat_long, level, l);
+                  const Real u = stage.evaluate (U, ll, level, l);
+                  const Real v = stage.evaluate (V, ll, level, l);
                   const Wind wind (u, v);
                   const Real direction = wind.get_direction ();
                   const Real speed = wind.get_speed ();
@@ -368,114 +370,103 @@ Display::get_cross_section_raster_ptr (const Box_2D& box_2d,
                   break;
                }
 
-               case Product::BRUNT_VAISALA:
+               case Model::Product::BRUNT_VAISALA:
                {
-                  const Real datum =
-                     uppers_stage.evaluate_brunt_vaisala (lat_long, level, l);
+                  const Real datum = stage.evaluate_brunt_vaisala (ll, level, l);
                   color = Display::get_color (p, datum);
                   break;
                }
 
-               case Product::SCORER:
+               case Model::Product::SCORER:
                {
                   const Real azimuth = journey.get_azimuth_forward (x, geodesy);
-                  const Real datum = uppers_stage.evaluate_scorer (
-                     azimuth, lat_long, level, l, u_bg);
+                  const Real datum = stage.evaluate_scorer (
+                     azimuth, ll, level, l, u_bg);
                   color = Display::get_color (p, datum);
                   break;
                }
 
-               case Product::ALONG_SPEED:
+               case Model::Product::ALONG_SPEED:
                {
                   const Real azimuth = journey.get_azimuth_forward (x, geodesy);
-                  const Real datum = uppers_stage.evaluate_along_speed (
-                     azimuth, lat_long, level, l, u_bg);
+                  const Real datum = stage.evaluate_along_speed (
+                     azimuth, ll, level, l, u_bg);
                   color = Display::get_color (p, datum);
                   break;
                }
 
-               case Product::NORMAL_SPEED:
+               case Model::Product::NORMAL_SPEED:
                {
                   const Real azimuth = journey.get_azimuth_forward (x, geodesy);
-                  const Real datum = uppers_stage.evaluate_normal_speed (
+                  const Real datum = stage.evaluate_normal_speed (
                      azimuth, lat_long, level, l);
                   color = Display::get_color (p, datum);
                   break;
                }
 
-               case Product::Q_TENDENCY:
+               case Model::Product::Q_TENDENCY:
                {
                   const Real azimuth = journey.get_azimuth_forward (x, geodesy);
-                  const Real datum = uppers_stage.evaluate_s_tendency (
+                  const Real datum = stage.evaluate_s_tendency (
                      Q, azimuth, lat_long, level, l, u_bg);
                   color = Display::get_color (p, datum);
                   break;
                }
 
-               case Product::Q_ADVECTION:
+               case Model::Product::Q_ADVECTION:
                {
-                  const Real h = uppers_stage.evaluate_h_advection (
-                     Q, lat_long, level, l);
-                  const Real v = uppers_stage.evaluate_v_advection (
-                     Q, lat_long, level, l);
+                  const Real h = stage.evaluate_h_advection (Q, ll, level, l);
+                  const Real v = stage.evaluate_v_advection (Q, ll, level, l);
                   const Real datum = h + v;
                   color = Display::get_color (p, datum);
                   break;
                }
 
-               case Product::Q_H_ADVECTION:
+               case Model::Product::Q_H_ADVECTION:
                {
-                  const Real datum = uppers_stage.evaluate_h_advection (
-                     Q, lat_long, level, l);
+                  const Real datum = stage.evaluate_h_advection (Q, ll, level, l);
                   color = Display::get_color (p, datum);
                   break;
                }
 
-               case Product::Q_V_ADVECTION:
+               case Model::Product::Q_V_ADVECTION:
                {
-                  const Real datum = uppers_stage.evaluate_v_advection (
-                     Q, lat_long, level, l);
+                  const Real datum = stage.evaluate_v_advection (Q, ll, level, l);
                   color = Display::get_color (p, datum);
                   break;
                }
 
-               case Product::Q_S_ADVECTION:
+               case Model::Product::Q_S_ADVECTION:
                {
                   const Real azimuth = journey.get_azimuth_forward (x, geodesy);
-                  const Real datum = uppers_stage.evaluate_s_advection (
-                     Q, azimuth, lat_long, level, l, u_bg);
+                  const Real datum = stage.evaluate_s_advection (Q, azimuth, ll, level, l, u_bg);
                   color = Display::get_color (p, datum);
                   break;
                }
 
-               case Product::Q_N_ADVECTION:
+               case Model::Product::Q_N_ADVECTION:
                {
                   const Real azimuth = journey.get_azimuth_forward (x, geodesy);
-                  const Real datum = uppers_stage.evaluate_n_advection (
-                     Q, azimuth, lat_long, level, l);
+                  const Real datum = stage.evaluate_n_advection (Q, azimuth, ll, level, l);
                   color = Display::get_color (p, datum);
                   break;
                }
 
-               case Product::Q_SV_ADVECTION:
+               case Model::Product::Q_SV_ADVECTION:
                {
                   const Real azimuth = journey.get_azimuth_forward (x, geodesy);
-                  const Real s = uppers_stage.evaluate_s_advection (
-                     Q, azimuth, lat_long, level, l, u_bg);
-                  const Real v = uppers_stage.evaluate_v_advection (
-                     Q, lat_long, level, l);
+                  const Real s = stage.evaluate_s_advection (Q, azimuth, ll, level, l, u_bg);
+                  const Real v = stage.evaluate_v_advection (Q, ll, level, l);
                   const Real datum = s + v;
                   color = Display::get_color (p, datum);
                   break;
                }
 
-               case Product::Q_NV_ADVECTION:
+               case Model::Product::Q_NV_ADVECTION:
                {
                   const Real azimuth = journey.get_azimuth_forward (x, geodesy);
-                  const Real n = uppers_stage.evaluate_n_advection (
-                     Q, azimuth, lat_long, level, l);
-                  const Real v = uppers_stage.evaluate_v_advection (
-                     Q, lat_long, level, l);
+                  const Real n = stage.evaluate_n_advection (Q, azimuth, ll, level, l);
+                  const Real v = stage.evaluate_v_advection (Q, ll, level, l);
                   const Real datum = n + v;
                   color = Display::get_color (p, datum);
                   break;
@@ -484,7 +475,7 @@ Display::get_cross_section_raster_ptr (const Box_2D& box_2d,
                default:
                {
                   const Met_Element met_element = product.get_met_element ();
-                  const Real datum = uppers_stage.evaluate (met_element, ll, level, l);
+                  const Real datum = stage.evaluate (met_element, ll, level, l);
                   color = Display::get_color (p, datum);
                   break;
                }
@@ -506,8 +497,8 @@ Display::get_cross_section_raster_ptr (const Box_2D& box_2d,
 void
 Display::set_title (Title& title,
                     const Dtime& basetime,
-                    const Stage& stage,
-                    const Product& product,
+                    const Dstring& stage,
+                    const Model::Product& product,
                     const Dtime& dtime,
                     const Level& level)
 {
@@ -530,8 +521,8 @@ Display::set_title (Title& title,
 void
 Display::set_title (Title& title,
                     const Dtime& basetime,
-                    const Stage& stage,
-                    const Product& product,
+                    const Dstring& stage,
+                    const Model::Product& product,
                     const Dtime& dtime,
                     const Journey& journey)
 {
@@ -563,7 +554,7 @@ Display::set_title (Title& title,
 void
 Display::set_title (Title& title,
                     const Dtime& basetime,
-                    const Stage& stage,
+                    const Dstring& stage,
                     const Dtime& dtime,
                     const Location& location)
 {
@@ -588,7 +579,7 @@ Display::set_title (Title& title,
 void
 Display::set_title (Title& title,
                     const Dtime& basetime,
-                    const Stage& stage,
+                    const Dstring& stage,
                     const Dtime& dtime,
                     const Dstring& location_name)
 {
@@ -610,7 +601,7 @@ Display::set_title (Title& title,
 void
 Display::set_title (Title& title,
                     const Dtime& basetime,
-                    const Stage& stage,
+                    const Dstring& stage,
                     const Location& location)
 {
    const Dstring& basetime_str = basetime.get_string ();
@@ -620,117 +611,117 @@ Display::set_title (Title& title,
 }
 
 Tuple
-Display::get_tick_tuple (const Product& product)
+Display::get_tick_tuple (const Model::Product& product)
 {
 
    switch (product.enumeration)
    {
 
-      case Product::T:
+      case Model::Product::T:
       {
          return Tuple ("10:15:20:25:30:35");
       }
 
-      case Product::TD:
+      case Model::Product::TD:
       {
          return Tuple ("-10:-5:0:5:10:15:20");
       }
 
-      case Product::RH:
+      case Model::Product::RH:
       {
          return Tuple ("0:20:40:60:80:100");
       }
 
-      case Product::THETA:
-      case Product::THETA_V:
+      case Model::Product::THETA:
+      case Model::Product::THETA_V:
       {
          return Tuple ("0:10:20:30:40:50:60");
       }
 
-      case Product::THETA_E:
+      case Model::Product::THETA_E:
       {
          return Tuple ("5:15:25:35:45:55:65");
       }
 
-      case Product::Q:
+      case Model::Product::Q:
       {
          return Tuple ("0:1:2:3:4:5:6:7:8:9:10");
       }
 
-      case Product::Q_TENDENCY:
-      case Product::Q_ADVECTION:
-      case Product::Q_H_ADVECTION:
-      case Product::Q_V_ADVECTION:
-      case Product::Q_S_ADVECTION:
-      case Product::Q_N_ADVECTION:
-      case Product::Q_SV_ADVECTION:
-      case Product::Q_NV_ADVECTION:
+      case Model::Product::Q_TENDENCY:
+      case Model::Product::Q_ADVECTION:
+      case Model::Product::Q_H_ADVECTION:
+      case Model::Product::Q_V_ADVECTION:
+      case Model::Product::Q_S_ADVECTION:
+      case Model::Product::Q_N_ADVECTION:
+      case Model::Product::Q_SV_ADVECTION:
+      case Model::Product::Q_NV_ADVECTION:
       {
          return Tuple ("1e-7:3.2e-7:1e-6:3.2e-6:1e-5");
       }
 
-      case Product::RHO:
+      case Model::Product::RHO:
       {
          return Tuple ("0.0:1.0:2.0;3.0:4.0:5.0:6.0:7.0:8.0:9.0:10.0");
       }
 
-      case Product::W:
+      case Model::Product::W:
       {
          return Tuple ("-4:-3:-2:-1:0:1:2:3:4");
       }
 
-      case Product::W_TRANSLUCENT:
+      case Model::Product::W_TRANSLUCENT:
       {
          return Tuple ("-4:-3:-2:-1:0:1:2:3:4");
       }
 
-      case Product::SPEED_HIGHER:
+      case Model::Product::SPEED_HIGHER:
       {
          return Tuple ("0:5:15:25:35:45:55:65:75:85:95:105:115:125");
       }
 
-      case Product::SPEED:
+      case Model::Product::SPEED:
       {
          return Tuple ("0:5:10:15:20:25:30:35:40:45:50:55:60:65");
       }
 
-      case Product::ALONG_SPEED:
-      case Product::NORMAL_SPEED:
+      case Model::Product::ALONG_SPEED:
+      case Model::Product::NORMAL_SPEED:
       {
          return Tuple (26, -125.0, 125.0);
       }
 
-      case Product::VORTICITY:
+      case Model::Product::VORTICITY:
       {
          return Tuple ("-5:-4:-3:-2:-1:0:1:2:3:4:5");
       }
 
-      case Product::FFDI:
+      case Model::Product::FFDI:
       {
          return Tuple ("1:12:25:50:75:100:150");
       }
 
-      case Product::MSLP:
+      case Model::Product::MSLP:
       {
          return Tuple ("980:990:1000:1010:1020:1030");
       }
 
-      case Product::PRECIP_RATE:
+      case Model::Product::PRECIP_RATE:
       {
          return Tuple ("0.05:0.1:1:2:5:10:20:30:50:75:100:150");
       }
 
-      case Product::WIND:
+      case Model::Product::WIND:
       {
          return Tuple ("0:30:60:90:120:150:180:210:240:270:300:330:360");
       }
 
-      case Product::TERRAIN:
+      case Model::Product::TERRAIN:
       {
          return Tuple ("0:200:400:600:800:1000:1200:1400:1600:1800:2000");
       }
 
-      case Product::BRUNT_VAISALA:
+      case Model::Product::BRUNT_VAISALA:
       {
          return Tuple ("1e-3:3.2e-3:1e-2:3.2e-2:1e-1");
       }
@@ -753,28 +744,28 @@ Display::get_wind_color (const Real direction,
 }
 
 Color
-Display::get_color (const Product& product,
+Display::get_color (const Model::Product& product,
                     const Real datum)
 {
 
    switch (product.enumeration)
    {
 
-      case Product::T:
+      case Model::Product::T:
       {
          const Real hue = Domain_1D (35 + K, 10 + K).normalize (datum) * 0.833;
          const Real brightness = (Integer (floor (datum)) % 2) ? 0.83:0.77;
          return Color::hsb (hue, 0.8, brightness);
       }
 
-      case Product::TD:
+      case Model::Product::TD:
       {
          const Real saturation = Domain_1D (-10+K, 20+K).normalize (datum);
          const Real brightness = (Integer (floor (datum)) % 2) ? 0.82:0.78;
          return Color::hsb (0.25, saturation, brightness);
       }
 
-      case Product::RH:
+      case Model::Product::RH:
       {
          const Real hue = (datum < 0.5 ? 0.08 : 0.35);
          //const Real saturation = std::min ((fabs (datum - 0.5) * 2), 1.0);
@@ -783,8 +774,8 @@ Display::get_color (const Product& product,
          return Color::hsb (hue, saturation, 1);
       }
 
-      case Product::THETA:
-      case Product::THETA_V:
+      case Model::Product::THETA:
+      case Model::Product::THETA_V:
       {
          const Real jump = 28+K;
          const Real deviate = datum - jump;
@@ -796,7 +787,7 @@ Display::get_color (const Product& product,
          return Color::hsb (0.0, 0.0, brightness + fluctuation);
       }
 
-      case Product::THETA_E:
+      case Model::Product::THETA_E:
       {
          const Real saturation = Domain_1D (5+K, 65+K).normalize (datum);
          const Real odd = (Integer (floor ((datum-K) / 4)) % 2);
@@ -804,7 +795,7 @@ Display::get_color (const Product& product,
          return Color::hsb (0.35, saturation, brightness);
       }
 
-      case Product::Q:
+      case Model::Product::Q:
       {
          const Real d = datum * 1e3;
          const Real saturation = Domain_1D (0, 10).normalize (d);
@@ -813,7 +804,7 @@ Display::get_color (const Product& product,
          return Color::hsb (0.45, saturation, brightness);
       }
 
-      case Product::RHO:
+      case Model::Product::RHO:
       {
          const Real jump = 1.10;
          const Real deviate = datum - jump;
@@ -824,7 +815,7 @@ Display::get_color (const Product& product,
          return Color::hsb (0.800, s, b);
       }
 
-      case Product::W:
+      case Model::Product::W:
       {
          const Real hue = (datum < 0 ? 0.667 : 0.000);
          const Real absolute = fabs (datum);
@@ -833,7 +824,7 @@ Display::get_color (const Product& product,
          return Color::hsb (hue, saturation, 1.0);
       }
 
-      case Product::W_TRANSLUCENT:
+      case Model::Product::W_TRANSLUCENT:
       {
          const Real hue = (datum < 0 ? 0.667 : 0.000);
          const Real absolute = fabs (datum);
@@ -842,14 +833,14 @@ Display::get_color (const Product& product,
          return Color::hsb (hue, 1.0, 1.0, alpha);
       }
 
-      case Product::Q_TENDENCY:
-      case Product::Q_ADVECTION:
-      case Product::Q_H_ADVECTION:
-      case Product::Q_V_ADVECTION:
-      case Product::Q_S_ADVECTION:
-      case Product::Q_N_ADVECTION:
-      case Product::Q_SV_ADVECTION:
-      case Product::Q_NV_ADVECTION:
+      case Model::Product::Q_TENDENCY:
+      case Model::Product::Q_ADVECTION:
+      case Model::Product::Q_H_ADVECTION:
+      case Model::Product::Q_V_ADVECTION:
+      case Model::Product::Q_S_ADVECTION:
+      case Model::Product::Q_N_ADVECTION:
+      case Model::Product::Q_SV_ADVECTION:
+      case Model::Product::Q_NV_ADVECTION:
       {
          if (!gsl_finite (datum)) { return Color::gray (0.5); }
          const Real min = log (1e-7);
@@ -860,7 +851,7 @@ Display::get_color (const Product& product,
          return Color::hsb (hue, saturation, 1);
       }
 
-      case Product::SPEED_HIGHER:
+      case Model::Product::SPEED_HIGHER:
       {
          const Real knots = datum * 3.6/1.852;
          const Real m0 = modulo (knots, 5.0) / 5.0 * 0.15 + 0.85;
@@ -881,7 +872,7 @@ Display::get_color (const Product& product,
          else                  { return Color (1.000, 1.000, 1.000); }
       }
 
-      case Product::SPEED:
+      case Model::Product::SPEED:
       {
          const Real knots = datum * 3.6/1.852;
          const Real m = modulo (knots, 5.0) / 5.0 * 0.15 + 0.85;
@@ -901,8 +892,8 @@ Display::get_color (const Product& product,
          else                 { return Color (1.000, 1.000, 1.000); }
       }
 
-      case Product::ALONG_SPEED:
-      case Product::NORMAL_SPEED:
+      case Model::Product::ALONG_SPEED:
+      case Model::Product::NORMAL_SPEED:
       {
          const bool negative = (datum < 0);
          const Real knots = fabs (datum * 3.6/1.852);
@@ -944,7 +935,7 @@ Display::get_color (const Product& product,
          }
       }
 
-      case Product::VORTICITY:
+      case Model::Product::VORTICITY:
       {
          const Real hue = (datum < 0 ? 0.667 : 0.000);
          const Real modified_datum = (log10 (fabs (datum)) + 4) / 3;
@@ -953,20 +944,20 @@ Display::get_color (const Product& product,
          return Color::hsb (hue, saturation, 1, 1);
       }
 
-      case Product::FFDI:
+      case Model::Product::FFDI:
       {
          const Ffdi_Color_Chooser ffdi_color_chooser (1.0);
          return ffdi_color_chooser.get_color (datum);
       }
 
-      case Product::MSLP:
+      case Model::Product::MSLP:
       {
          //const Real hue = Domain_1D (990e2, 1025e2).normalize (datum) * 0.833;
          const Real brightness = (Integer (floor (datum/200)) % 2) ? 0.82:0.78;
          return Color::hsb (0, 0, brightness);
       }
 
-      case Product::PRECIP_RATE:
+      case Model::Product::PRECIP_RATE:
       {
          const Real mmhr = datum * 3600;
               if (mmhr < 0.1) { return Color::hsb (0.000, 0.00, 1.0); }
@@ -983,7 +974,7 @@ Display::get_color (const Product& product,
          else                 { return Color::hsb (0.000, 0.60, 1.0); }
       }
 
-      case Product::TERRAIN:
+      case Model::Product::TERRAIN:
       {
          //const Real h = std::min (std::max (datum / 2000.0, 0.0), 1.0);
          //const Real hue = 0.45 - h * 0.4;
@@ -995,7 +986,7 @@ Display::get_color (const Product& product,
          return Color::hsb (hue, 0.54, brightness);
       }
 
-      case Product::TERRAIN_WATER:
+      case Model::Product::TERRAIN_WATER:
       {
          //const Real h = std::min (std::max (datum / 2000.0, 0.0), 1.0);
          //const Real hue = 0.67;
@@ -1004,7 +995,7 @@ Display::get_color (const Product& product,
          return Color::sea ();
       }
 
-      case Product::BRUNT_VAISALA:
+      case Model::Product::BRUNT_VAISALA:
       {
          if (!gsl_finite (datum)) { return Color::white (); }
          const Real e = log10 (datum) - (-3.0);
@@ -1023,7 +1014,7 @@ Display::get_color (const Product& product,
 }
 
 Color
-Display::get_color (const Product& product,
+Display::get_color (const Model::Product& product,
                     const Real datum,
                     const Dstring& unit)
 {
@@ -1088,8 +1079,9 @@ Display::render_stages (const RefPtr<Context>& cr,
    for (auto iterator = stage_tokens.begin ();
         iterator != stage_tokens.end (); iterator++)
    {
-      const Stage& stage = *(iterator);
-      const Domain_2D& domain_2d = model.get_domain_2d (stage);
+      const Dstring& stage_str = *(iterator);
+      const Model::Stage& stage = model.get_stage (stage_str);
+      const Domain_2D& domain_2d = stage.get_domain_2d ();
       Polygon (domain_2d).cairo (cr, transform);
       cr->stroke ();
    }
@@ -1104,10 +1096,10 @@ Display::render_product (const RefPtr<Context>& cr,
                          const Size_2D& size_2d,
                          const Model& model,
                          const Hrit& hrit,
-                         const Product& product,
+                         const Model::Product& product,
                          const Dtime& dtime,
                          const Level& level,
-                         const twiin::Stage& stage)
+                         const Dstring& stage)
 {
 
    Raster* raster_ptr = NULL;
@@ -1115,30 +1107,32 @@ Display::render_product (const RefPtr<Context>& cr,
    switch (product.enumeration)
    {
 
-      case Product::TERRAIN:
+      case Model::Product::TERRAIN:
       {
          raster_ptr = get_terrain_raster_ptr (size_2d, transform, model, stage);
          break;
       }
 
-      case Product::T:
-      case Product::P_THETA:
-      case Product::P_RHO:
-      case Product::TD:
-      case Product::RH:
-      case Product::Q:
-      case Product::Q_H_ADVECTION:
-      case Product::Q_V_ADVECTION:
-      case Product::THETA:
-      case Product::THETA_V:
-      case Product::RHO:
-      case Product::WIND:
-      case Product::SPEED:
-      case Product::SPEED_HIGHER:
-      case Product::W:
-      case Product::W_TRANSLUCENT:
-      case Product::VORTICITY:
-      case Product::THETA_E:
+      case Model::Product::T:
+      case Model::Product::P_THETA:
+      case Model::Product::P_RHO:
+      case Model::Product::TD:
+      case Model::Product::RH:
+      case Model::Product::Q:
+      case Model::Product::Q_TENDENCY:
+      case Model::Product::Q_ADVECTION:
+      case Model::Product::Q_H_ADVECTION:
+      case Model::Product::Q_V_ADVECTION:
+      case Model::Product::THETA:
+      case Model::Product::THETA_V:
+      case Model::Product::RHO:
+      case Model::Product::WIND:
+      case Model::Product::SPEED:
+      case Model::Product::SPEED_HIGHER:
+      case Model::Product::W:
+      case Model::Product::W_TRANSLUCENT:
+      case Model::Product::VORTICITY:
+      case Model::Product::THETA_E:
       {
          if (level.type == Level::SURFACE)
          {
@@ -1153,21 +1147,21 @@ Display::render_product (const RefPtr<Context>& cr,
          break;
       }
 
-      case Product::FFDI:
-      case Product::MSLP:
-      case Product::PRECIP_RATE:
+      case Model::Product::FFDI:
+      case Model::Product::MSLP:
+      case Model::Product::PRECIP_RATE:
       {
          raster_ptr = get_surface_raster_ptr (
             size_2d, transform, model, stage, product, dtime);
          break;
       }
 
-      case Product::IR1:
-      case Product::IR2:
-      case Product::IR3:
-      case Product::IR4:
-      case Product::VIS:
-      case Product::Pseudo:
+      case Model::Product::IR1:
+      case Model::Product::IR2:
+      case Model::Product::IR3:
+      case Model::Product::IR4:
+      case Model::Product::VIS:
+      case Model::Product::Pseudo:
       {
          raster_ptr = get_hrit_raster_ptr (
             size_2d, transform, hrit, product, dtime);
@@ -1188,7 +1182,7 @@ Display::render_wind_barbs (const RefPtr<Context>& cr,
                             const Model& model,
                             const Dtime& dtime,
                             const Level& level,
-                            const Stage& stage)
+                            const Dstring& stage_str)
 {
 
    Point_2D point;
@@ -1213,16 +1207,18 @@ Display::render_wind_barbs (const RefPtr<Context>& cr,
    const Color wind_barb_color = Color::black (0.5);
    wind_barb_color.cairo (cr);
 
+   const Model::Stage& stage = model.get_stage (stage_str);
+
    for (point.x = start_x; point.x < width; point.x += h)
    {
       for (point.y = start_y; point.y < height; point.y += h)
       {
 
          transform.reverse (latitude, longitude, point.x, point.y);
-         if (model.out_of_bounds (lat_long, stage)) { continue; }
+         if (stage.out_of_bounds (lat_long)) { continue; }
 
-         Real u = model.evaluate (U, ll, level, dtime, stage);
-         Real v = model.evaluate (V, ll, level, dtime, stage);
+         Real u = stage.evaluate (U, ll, level, dtime);
+         Real v = stage.evaluate (V, ll, level, dtime);
          transform.transform_uv (u, v, latitude, longitude);
          if (gsl_isnan (u) || gsl_isnan (v)) { continue; }
 
@@ -1299,7 +1295,7 @@ Display::render_scale_bar (const RefPtr<Context>& cr,
 
 void
 Display::render_color_bar (const RefPtr<Context>& cr,
-                           const Product& product,
+                           const Model::Product& product,
                            const Tuple& tick_tuple,
                            const Box_2D& box_2d,
                            const bool negative)
@@ -1314,16 +1310,16 @@ Display::render_color_bar (const RefPtr<Context>& cr,
    const Integer bar_width = box_2d.size_2d.i;
    const Integer bar_height = box_2d.size_2d.j;
 
-   const bool is_log = (product.enumeration == Product::Q_TENDENCY ||
-                        product.enumeration == Product::Q_ADVECTION ||
-                        product.enumeration == Product::Q_H_ADVECTION ||
-                        product.enumeration == Product::Q_V_ADVECTION ||
-                        product.enumeration == Product::Q_S_ADVECTION ||
-                        product.enumeration == Product::Q_N_ADVECTION ||
-                        product.enumeration == Product::Q_SV_ADVECTION ||
-                        product.enumeration == Product::Q_NV_ADVECTION ||
-                        product.enumeration == Product::PRECIP_RATE ||
-                        product.enumeration == Product::BRUNT_VAISALA);
+   const bool is_log = (product.enumeration == Model::Product::Q_TENDENCY ||
+                        product.enumeration == Model::Product::Q_ADVECTION ||
+                        product.enumeration == Model::Product::Q_H_ADVECTION ||
+                        product.enumeration == Model::Product::Q_V_ADVECTION ||
+                        product.enumeration == Model::Product::Q_S_ADVECTION ||
+                        product.enumeration == Model::Product::Q_N_ADVECTION ||
+                        product.enumeration == Model::Product::Q_SV_ADVECTION ||
+                        product.enumeration == Model::Product::Q_NV_ADVECTION ||
+                        product.enumeration == Model::Product::PRECIP_RATE ||
+                        product.enumeration == Model::Product::BRUNT_VAISALA);
 
    const Real start_value = tick_tuple.front ();
    const Real end_value = tick_tuple.back ();
@@ -1369,7 +1365,7 @@ Display::render_color_bar (const RefPtr<Context>& cr,
 void
 Display::render_color_bar (const RefPtr<Context>& cr,
                            const Size_2D& size_2d,
-                           const Product& product)
+                           const Model::Product& product)
 {
 
    const Dstring& unit = product.get_unit ();
@@ -1399,14 +1395,14 @@ Display::render_color_bar (const RefPtr<Context>& cr,
    Rect (box_point, box_width, box_height).cairo (cr);
    cr->fill ();
 
-   if (product.enumeration == Product::Q_TENDENCY ||
-       product.enumeration == Product::Q_ADVECTION ||
-       product.enumeration == Product::Q_H_ADVECTION ||
-       product.enumeration == Product::Q_V_ADVECTION ||
-       product.enumeration == Product::Q_S_ADVECTION ||
-       product.enumeration == Product::Q_N_ADVECTION ||
-       product.enumeration == Product::Q_SV_ADVECTION ||
-       product.enumeration == Product::Q_NV_ADVECTION)
+   if (product.enumeration == Model::Product::Q_TENDENCY ||
+       product.enumeration == Model::Product::Q_ADVECTION ||
+       product.enumeration == Model::Product::Q_H_ADVECTION ||
+       product.enumeration == Model::Product::Q_V_ADVECTION ||
+       product.enumeration == Model::Product::Q_S_ADVECTION ||
+       product.enumeration == Model::Product::Q_N_ADVECTION ||
+       product.enumeration == Model::Product::Q_SV_ADVECTION ||
+       product.enumeration == Model::Product::Q_NV_ADVECTION)
    {
       const Index_2D p_index_2d (bar_x, bar_y);
       const Index_2D n_index_2d (bar_x, bar_y + bar_height / 2);
@@ -1528,8 +1524,8 @@ Display::render (const RefPtr<Context>& cr,
                  const Station::Map& station_map,
                  const Dtime& dtime,
                  const Level& level,
-                 const Stage& stage,
-                 const Product product,
+                 const Dstring& stage,
+                 const Model::Product product,
                  const bool no_stage,
                  const bool no_wind_barb)
 {
@@ -1551,7 +1547,7 @@ Display::render (const RefPtr<Context>& cr,
    // Stage 3/4/5 Frames
    if (!no_stage)
    {
-      render_stages (cr, transform, model);
+//      render_stages (cr, transform, model);
    }    
 
    // All Stations
@@ -1566,12 +1562,12 @@ Display::render_cross_section_w (const RefPtr<Context>& cr,
                                  const Transform_2D& transform,
                                  const Box_2D& box_2d,
                                  const Model& model,
-                                 const Stage& stage,
+                                 const Dstring& stage,
                                  const Dtime& dtime,
                                  const Journey& journey)
 {
    Raster* raster_ptr = Display::get_cross_section_raster_ptr (box_2d,
-      transform, model, stage, Product ("W_TRANSLUCENT"), dtime, journey);
+      transform, model, stage, Model::Product ("W_TRANSLUCENT"), dtime, journey);
    raster_ptr->blit (cr);
    delete raster_ptr;
 }
@@ -1629,8 +1625,8 @@ Display::render_cross_section_arrows (const RefPtr<Context>& cr,
                                       const Transform_2D& transform,
                                       const Box_2D& box_2d,
                                       const Model& model,
-                                      const Stage& stage,
-                                      const Product& product,
+                                      const Dstring& stage_str,
+                                      const Model::Product& product,
                                       const Dtime& dtime,
                                       const Journey& journey,
                                       const Real u_bg)
@@ -1644,9 +1640,8 @@ Display::render_cross_section_arrows (const RefPtr<Context>& cr,
    const Real h = arrow_size * 1.5;
 
    Color::black (0.2).cairo (cr);
-   const auto& terrain_stage = model.terrain.get_stage (stage);
-   const auto& uppers_stage = model.uppers.get_stage (stage);
-   const size_t l = uppers_stage.get_l (dtime);
+   const Model::Stage& stage = model.get_stage (stage_str);
+   const size_t l = stage.get_uppers_l (dtime);
 
    const Geodesy geodesy;
    const Index_2D& index_2d = box_2d.index_2d;
@@ -1662,9 +1657,9 @@ Display::render_cross_section_arrows (const RefPtr<Context>& cr,
       if (x < 0 || x > distance) { continue; }
 
       const Lat_Long lat_long = journey.get_lat_long (x, geodesy);
-      if (model.out_of_bounds (lat_long, stage)) { continue; }
+      if (stage.out_of_bounds (lat_long)) { continue; }
 
-      const Real topography = terrain_stage.get_topography (lat_long);
+      const Real topography = stage.get_topography (lat_long);
       const Real azimuth = journey.get_azimuth_forward (x, geodesy);
       const Real theta = azimuth * DEGREE_TO_RADIAN;
       const Real c = cos (theta);
@@ -1676,9 +1671,9 @@ Display::render_cross_section_arrows (const RefPtr<Context>& cr,
          transform.reverse (x, z, Real (i), Real (j));
          if (z < topography) { continue; }
 
-         const Real u = uppers_stage.evaluate (U, lat_long, level, l);
-         const Real v = uppers_stage.evaluate (V, lat_long, level, l);
-         Real w = uppers_stage.evaluate (W, lat_long, level, l);
+         const Real u = stage.evaluate (U, lat_long, level, l);
+         const Real v = stage.evaluate (V, lat_long, level, l);
+         Real w = stage.evaluate (W, lat_long, level, l);
          Real uu = u * s + v * c - u_bg;
          transform.transform_uv (uu, w, x, z);
          const Real theta = atan2 (w, uu);
@@ -1701,8 +1696,8 @@ Display::render_cross_section (const RefPtr<Context>& cr,
                                const Box_2D& box_2d,
                                const Domain_1D& domain_z,
                                const Model& model,
-                               const Stage& stage,
-                               const Product& product,
+                               const Dstring& stage,
+                               const Model::Product& product,
                                const Dtime& dtime,
                                const Journey& journey,
                                const Real u_bg)
@@ -1718,8 +1713,8 @@ Display::render_cross_section (const RefPtr<Context>& cr,
    raster_ptr->blit (cr);
    delete raster_ptr;
 
-   if (product.enumeration == Product::RHO ||
-       product.enumeration == Product::THETA)
+   if (product.enumeration == Model::Product::RHO ||
+       product.enumeration == Model::Product::THETA)
    {
       render_cross_section_w (cr, transform, box_2d,
          model, stage, dtime, journey);
@@ -1954,7 +1949,7 @@ Display::render_meteogram (const RefPtr<Context>& cr,
                            const Size_2D& size_2d,
                            const Model& model, 
                            const Aws::Repository& aws_repository,
-                           const Stage& stage, 
+                           const Dstring& stage_str, 
                            const Location& location,
                            const bool ignore_pressure)
 {
@@ -1964,7 +1959,7 @@ Display::render_meteogram (const RefPtr<Context>& cr,
    cr->paint ();
 
    const Aws::Repository* model_aws_repository_ptr =
-      model.get_aws_repository_ptr (location, stage);
+      model.get_stage (stage_str).get_aws_repository_ptr (location);
    const Aws::Repository& model_aws_repository = *model_aws_repository_ptr;
 
    const Dtime& start_time = model.get_basetime ();
@@ -2077,7 +2072,7 @@ void
 Display::render_vertical_profile (const RefPtr<Context>& cr,
                                   const Thermo_Diagram& thermo_diagram,
                                   const Model& model,
-                                  const Stage& stage,
+                                  const Dstring& stage_str,
                                   const Dtime& dtime,
                                   const Lat_Long& lat_long)
 {
@@ -2087,8 +2082,8 @@ Display::render_vertical_profile (const RefPtr<Context>& cr,
    Color::white ().cairo (cr);
    cr->paint ();
 
-   const Sounding* sounding_ptr =
-      model.get_sounding_ptr (lat_long, dtime, stage);
+   const Model::Stage& stage = model.get_stage (stage_str);
+   const Sounding* sounding_ptr = stage.get_sounding_ptr (lat_long, dtime);
    const Sounding& sounding = *sounding_ptr;
 
    cr->set_line_width (1);
@@ -2106,7 +2101,7 @@ void
 Display::render_vertical_profile (const RefPtr<Context>& cr,
                                   const Thermo_Diagram& thermo_diagram,
                                   const Model& model,
-                                  const Stage& stage,
+                                  const Dstring& stage_str,
                                   const Dtime& dtime,
                                   const Lat_Long::List& lat_long_list)
 {
@@ -2116,8 +2111,9 @@ Display::render_vertical_profile (const RefPtr<Context>& cr,
    Color::white ().cairo (cr);
    cr->paint ();
 
-   const Sounding* sounding_ptr = model.get_sounding_ptr (
-      lat_long_list, dtime, stage, thermo_diagram);
+   const Model::Stage& stage = model.get_stage (stage_str);
+   const Sounding* sounding_ptr = stage.get_sounding_ptr (
+      lat_long_list, dtime, thermo_diagram);
    const Sounding& sounding = *sounding_ptr;
 
    cr->set_line_width (1);

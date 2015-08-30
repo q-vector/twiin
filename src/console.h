@@ -28,10 +28,10 @@ namespace twiin
 
             public:
 
-               typedef sigc::signal<void, const Product&>
+               typedef sigc::signal<void, const Model::Product&>
                Signal;
 
-               typedef Template_Button<Product>
+               typedef Template_Button<Model::Product>
                Button;
 
             private:
@@ -43,7 +43,7 @@ namespace twiin
                signal;
 
                void
-               emit (const Product& product);
+               emit (const Model::Product& product);
 
             public:
 
@@ -52,7 +52,7 @@ namespace twiin
 
                void
                add_product (const Dstring& drawer_str,
-                            const Product& product);
+                            const Model::Product& product);
 
                Signal&
                get_signal ();
@@ -68,10 +68,10 @@ namespace twiin
          //const Station::Map
          //station_map;
 
-         Stage
-         stage;
+         Dstring
+         stage_str;
 
-         Product
+         Model::Product
          product;
 
          Level
@@ -104,8 +104,8 @@ namespace twiin
                   const Size_2D& size_2d,
                   const Config_File& config_file,
                   const Data& data,
-                  const Stage& stage,
-                  const Product& product,
+                  const Dstring& stage_str,
+                  const Model::Product& product,
                   const Level& level);
 
          ~Console ();
@@ -114,7 +114,7 @@ namespace twiin
          pack ();
 
          void
-         set_product (const Product& product);
+         set_product (const Model::Product& product);
 
          void
          set_level (const Level& level);

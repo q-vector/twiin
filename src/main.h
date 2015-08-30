@@ -45,33 +45,33 @@ namespace twiin
 
          Dstring
          get_file_path (const Dstring& format,
-                        const Stage& stage,
-                        const Product& product,
+                        const Dstring& stage,
+                        const Model::Product& product,
                         const Level& level,
                         const Dtime& dtime) const;
 
          Dstring
          get_file_path (const Dstring& format,
-                        const Stage& stage,
-                        const Product& product,
+                        const Dstring& stage,
+                        const Model::Product& product,
                         const Dtime& dtime,
                         const Journey& journey) const;
 
          Dstring
          get_file_path (const Dstring& format,
-                        const Stage& stage,
+                        const Dstring& stage,
                         const Dtime& dtime,
                         const Location& location) const;
 
          Dstring
          get_file_path (const Dstring& format,
-                        const Stage& stage,
+                        const Dstring& stage,
                         const Dtime& dtime,
                         const Dstring& location_name) const;
 
          Dstring
          get_file_path (const Dstring& format,
-                        const Stage& stage,
+                        const Dstring& stage,
                         const Location& location) const;
 
       public:
@@ -139,8 +139,8 @@ namespace twiin
          void
          twiin_surface_plan (const Dstring& surface_identifier,
                              const Dstring& geodetic_transform_identifier,
-                             const twiin::Stage& stage,
-                             const Product& product,
+                             const Dstring& stage,
+                             const Model::Product& product,
                              const Level& level,
                              const Dtime& dtime,
                              const Tokens& arguments);

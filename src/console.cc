@@ -9,7 +9,7 @@ using namespace Cairo;
 using namespace twiin;
 
 void
-Console::Product_Panel::emit (const Product& product)
+Console::Product_Panel::emit (const Model::Product& product)
 {
    signal.emit (product);
 }
@@ -23,7 +23,7 @@ Console::Product_Panel::Product_Panel (Console& console,
 
 void
 Console::Product_Panel::add_product (const Dstring& drawer_str,
-                                     const Product& product)
+                                     const Model::Product& product)
 {
    Button* pb_ptr = new Button (console, product, font_size);
    Button::T_Signal& signal = pb_ptr->get_t_signal ();
@@ -45,18 +45,16 @@ Console::get_tokens (const Marker& marker) const
    const Real latitude = marker.x;
    const Real longitude = marker.y;
    const Model& model = data.get_model ();
+   const Model::Stage& stage = model.get_stage (stage_str);
 
-   if (model.out_of_bounds (lat_long, stage))
+   if (stage.out_of_bounds (lat_long))
    {
       return Map_Console::get_tokens (marker);
    }
 
    const Dtime& dtime = get_time_chooser ().get_time ();
-
-   Tokens tokens = model.get_marker_tokens (lat_long,
-      dtime, product, stage, level);
-
    const Dstring& ll_str = lat_long.get_string (false, Dstring ("%.4f\u00b0"));
+   Tokens tokens = stage.get_marker_tokens (lat_long, dtime, product, level);
    tokens.insert (tokens.begin (), ll_str);
 
    return tokens;
@@ -119,7 +117,8 @@ Console::process_tephigram (const Integer marker_id)
    const Dtime& dtime = get_time_chooser ().get_time ();
 
    const Model& model = data.get_model ();
-   Sounding* sounding_ptr = model.get_sounding_ptr (lat_long, dtime, stage);
+   const Model::Stage& stage = model.get_stage (stage_str);
+   Sounding* sounding_ptr = stage.get_sounding_ptr (lat_long, dtime);
    const Sounding& sounding = *sounding_ptr;
 
    const Tuple tuple_p ("1000e2:925e2:850e2:700e2:500e2:300e2:200e2", ":");
@@ -179,7 +178,7 @@ Console::process_cross_section (const Integer route_id)
    const Model& model = data.get_model ();
 
    Cross_Section* cross_section_ptr = new Cross_Section (
-      gtk_window, size_2d, model, route, stage, product, dtime);
+      gtk_window, size_2d, model, route, stage_str, product, dtime);
 
    Gtk::Window* gtk_window_ptr = new Gtk::Window ();
    gtk_window_ptr->add (*cross_section_ptr);
@@ -194,15 +193,15 @@ Console::Console (Gtk::Window& gtk_window,
                   const Size_2D& size_2d,
                   const Config_File& config_file,
                   const Data& data,
-                  const Stage& stage,
-                  const Product& product,
+                  const Dstring& stage_str,
+                  const Model::Product& product,
                   const Level& level)
    : Map_Console (gtk_window, size_2d, config_file),
      Time_Canvas (*this, 12),
      Level_Canvas (*this, 12),
      product_panel (*this, 12),
      data (data),
-     stage (stage),
+     stage_str (stage_str),
      product (product),
      level (level)
 {
@@ -227,35 +226,40 @@ Console::Console (Gtk::Window& gtk_window,
    register_widget (level_panel);
    register_widget (product_panel);
 
-   product_panel.add_product ("Thermo", Product ("P_THETA"));
-   product_panel.add_product ("Thermo", Product ("T"));
-   product_panel.add_product ("Thermo", Product ("THETA"));
-   product_panel.add_product ("Thermo", Product ("THETA_V"));
-   product_panel.add_product ("Thermo", Product ("Q"));
-   product_panel.add_product ("Thermo", Product ("TD"));
-   product_panel.add_product ("Thermo", Product ("RH"));
-   product_panel.add_product ("Thermo", Product ("THETA_E"));
-   product_panel.add_product ("Thermo", Product ("RHO"));
-   product_panel.add_product ("Dynamic", Product ("P_RHO"));
-   product_panel.add_product ("Dynamic", Product ("WIND"));
-   product_panel.add_product ("Dynamic", Product ("SPEED"));
-   product_panel.add_product ("Dynamic", Product ("SPEED_HIGHER"));
-   product_panel.add_product ("Dynamic", Product ("W"));
-   //product_panel.add_product ("Dynamic", Product ("W_TRANSLUCENT"));
-   product_panel.add_product ("Dynamic", Product ("VORTICITY"));
-   product_panel.add_product ("Fire", Product ("FFDI"));
-   product_panel.add_product ("Misc", Product ("PRECIP_RATE"));
-   product_panel.add_product ("Misc", Product ("MSLP"));
-   product_panel.add_product ("Misc", Product ("TERRAIN"));
-   product_panel.add_product ("Misc", Product ("IR1"));
-   product_panel.add_product ("Misc", Product ("IR2"));
-   product_panel.add_product ("Misc", Product ("IR3"));
-   product_panel.add_product ("Misc", Product ("IR4"));
-   product_panel.add_product ("Misc", Product ("VIS"));
-   product_panel.add_product ("Misc", Product ("Pseudo"));
+   product_panel.add_product ("Thermo", Model::Product ("P_THETA"));
+   product_panel.add_product ("Thermo", Model::Product ("T"));
+   product_panel.add_product ("Thermo", Model::Product ("THETA"));
+   product_panel.add_product ("Thermo", Model::Product ("THETA_V"));
+   product_panel.add_product ("Thermo", Model::Product ("Q"));
+   product_panel.add_product ("Thermo", Model::Product ("Q_TENDENCY"));
+   product_panel.add_product ("Thermo", Model::Product ("Q_ADVECTION"));
+   product_panel.add_product ("Thermo", Model::Product ("Q_H_ADVECTION"));
+   product_panel.add_product ("Thermo", Model::Product ("Q_V_ADVECTION"));
+   product_panel.add_product ("Thermo", Model::Product ("TD"));
+   product_panel.add_product ("Thermo", Model::Product ("RH"));
+   product_panel.add_product ("Thermo", Model::Product ("THETA_E"));
+   product_panel.add_product ("Thermo", Model::Product ("RHO"));
+   product_panel.add_product ("Dynamic", Model::Product ("P_RHO"));
+   product_panel.add_product ("Dynamic", Model::Product ("WIND"));
+   product_panel.add_product ("Dynamic", Model::Product ("SPEED"));
+   product_panel.add_product ("Dynamic", Model::Product ("SPEED_HIGHER"));
+   product_panel.add_product ("Dynamic", Model::Product ("W"));
+   //product_panel.add_product ("Dynamic", Model::Product ("W_TRANSLUCENT"));
+   product_panel.add_product ("Dynamic", Model::Product ("VORTICITY"));
+   product_panel.add_product ("Fire", Model::Product ("FFDI"));
+   product_panel.add_product ("Misc", Model::Product ("PRECIP_RATE"));
+   product_panel.add_product ("Misc", Model::Product ("MSLP"));
+   product_panel.add_product ("Misc", Model::Product ("TERRAIN"));
+   product_panel.add_product ("Misc", Model::Product ("IR1"));
+   product_panel.add_product ("Misc", Model::Product ("IR2"));
+   product_panel.add_product ("Misc", Model::Product ("IR3"));
+   product_panel.add_product ("Misc", Model::Product ("IR4"));
+   product_panel.add_product ("Misc", Model::Product ("VIS"));
+   product_panel.add_product ("Misc", Model::Product ("Pseudo"));
 
    const Model& model = data.get_model ();
-   const set<Dtime>& ts = model.get_valid_time_set (product, stage, level);
+   const Model::Stage& stage = model.get_stage (stage_str);
+   const set<Dtime>& ts = stage.get_valid_time_set (product, level);
    time_chooser.set_shape (Time_Chooser::Shape (ts));
    time_chooser.set_leap (1);
 
@@ -367,7 +371,7 @@ Console::set_level (const Level& level)
 }
 
 void
-Console::set_product (const Product& product)
+Console::set_product (const Model::Product& product)
 {
    this->product = product;
    render_queue_draw ();
@@ -379,7 +383,7 @@ Console::render_queue_draw ()
    const Model& model = data.get_model ();
    const Dtime& basetime = model.get_basetime ();
    const Dtime& dtime = get_time_chooser ().get_time ();
-   Display::set_title (title, basetime, stage, product, dtime, level);
+   Display::set_title (title, basetime, stage_str, product, dtime, level);
    set_foreground_ready (false);
    Map_Console::render_queue_draw ();
 }
@@ -399,7 +403,7 @@ Console::render_image_buffer (const RefPtr<Context>& cr)
    const Level& level = get_level_panel ().get_level ();
 
    Display::render (cr, transform, size_2d, model, hrit,
-      station_map, dtime, level, stage, product, false, false);
+      station_map, dtime, level, stage_str, product, false, false);
    render_mesh (cr);
    render_overlays (cr);
 

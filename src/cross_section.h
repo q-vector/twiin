@@ -28,10 +28,10 @@ namespace twiin
 
             public:
 
-               typedef sigc::signal<void, const Product&>
+               typedef sigc::signal<void, const Model::Product&>
                Signal;
 
-               typedef Template_Button<Product>
+               typedef Template_Button<Model::Product>
                Button;
 
             private:
@@ -43,7 +43,7 @@ namespace twiin
                signal;
 
                void
-               emit (const Product& product);
+               emit (const Model::Product& product);
 
             public:
 
@@ -52,7 +52,7 @@ namespace twiin
 
                void
                add_product (const Dstring& drawer_str,
-                            const Product& product);
+                            const Model::Product& product);
 
                Signal&
                get_signal ();
@@ -71,10 +71,10 @@ namespace twiin
          Product_Panel
          product_panel;
 
-         Stage
-         stage;
+         Dstring
+         stage_str;
 
-         Product
+         Model::Product
          product;
 
          Real
@@ -107,8 +107,8 @@ namespace twiin
                         const Size_2D& size_2d,
                         const Model& model,
                         const Route& route,
-                        const Stage& stage,
-                        const Product& product,
+                        const Dstring& stage_str,
+                        const Model::Product& product,
                         const Dtime& dtime);
 
          ~Cross_Section ();
@@ -120,7 +120,7 @@ namespace twiin
          reset_transform ();
 
          void
-         set_product (const Product& product);
+         set_product (const Model::Product& product);
 
          virtual void
          render_queue_draw ();
