@@ -173,6 +173,12 @@ class Hrit
                  const map<Dstring, Geos_Transform>& navigation_map,
                  const Lat_Long& lat_long);
 
+      Raster*
+      get_raster_ptr (const Size_2D& size_2d,
+                      const Transform_2D& transform,
+                      const Dstring& channel_str,
+                      const Dtime& dtime) const;
+
 };
 
 #endif /* HRIT_H */

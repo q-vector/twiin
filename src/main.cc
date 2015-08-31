@@ -261,49 +261,52 @@ Twiin::plan (const Dstring& stage_str,
                cout << file_path << endl;
                if (is_bludge) { continue; }
 
-               RefPtr<Surface> surface = denise::get_surface (
-                  size_2d, format, file_path);
-               RefPtr<Context> cr = denise::get_cr (surface);
-
-               Display::render (cr, transform, size_2d, model, hrit,
-                  station_map, dtime, level, s, p, no_stage,
-                  no_wind_barb);
-
-               if (gshhs_ptr != NULL)
+               try
                {
-                  cr->save ();
 
-                  cr->set_line_width (2);
-                  Color::black (0.6).cairo (cr);
-                  gshhs_ptr->cairo (cr, transform);
-                  cr->stroke ();
+                  RefPtr<Surface> surface = denise::get_surface (
+                     size_2d, format, file_path);
+                  RefPtr<Context> cr = denise::get_cr (surface);
 
-                  cr->save ();
-                  mesh.cairo (cr, transform);
+                  Display::render (cr, transform, size_2d, model, hrit,
+                     station_map, dtime, level, s, p, no_stage,
+                     no_wind_barb);
 
-                  cr->restore ();
+                  if (gshhs_ptr != NULL)
+                  {
+                     cr->save ();
+
+                     cr->set_line_width (2);
+                     Color::black (0.6).cairo (cr);
+                     gshhs_ptr->cairo (cr, transform);
+                     cr->stroke ();
+
+                     cr->save ();
+                     mesh.cairo (cr, transform);
+
+                     cr->restore ();
+
+                  }
+
+                  if (title_tokens.size () == 0)
+                  {
+                     Display::set_title (title, basetime,
+                        s, product, dtime, level);
+                  }
+                  else
+                  {
+                     title.set (title_tokens);
+                  }
+                  title.cairo (cr);
+
+                  Display::render_annotations (cr, transform, annotation_tokens);
+                  Display::render_scale_bar (cr, transform, size_2d);
+                  Display::render_color_bar (cr, size_2d, p);
+
+                  if (format == "png") { surface->write_to_png (file_path); }
 
                }
-
-               if (title_tokens.size () == 0)
-               {
-                  Display::set_title (title, basetime,
-                     s, product, dtime, level);
-               }
-               else
-               {
-                  title.set (title_tokens);
-               }
-               title.cairo (cr);
-
-               Display::render_annotations (cr, transform, annotation_tokens);
-               Display::render_scale_bar (cr, transform, size_2d);
-               Display::render_color_bar (cr, size_2d, p);
-
-               if (format == "png")
-               {
-                  surface->write_to_png (file_path.get_string ());
-               }
+               catch (...) { cout << "failed" << endl; }
 
             }
 
@@ -393,36 +396,39 @@ Twiin::cross_section (const Dstring& stage_str,
             cout << file_path << endl;
             if (is_bludge) { continue; }
 
-            RefPtr<Surface> surface = denise::get_surface (
-               size_2d, format, file_path);
-            RefPtr<Context> cr = denise::get_cr (surface);
-
-            const Index_2D i2d (margin_l, margin_t);
-            const Size_2D s2d (size_2d.i - margin_l - margin_r,
-                               size_2d.j - margin_t - margin_b);
-            const Box_2D box_2d (i2d, s2d);
-
-            if (s2d.i < 0 || s2d.j < 0) { continue; }
-
-            Display::render_cross_section (cr, transform, box_2d,
-               domain_z, model, s, product, dtime, journey, u_bg);
-
-            Display::render_color_bar (cr, size_2d, p);
-
-            if (title_tokens.size () == 0)
+            try
             {
-               Display::set_title (title, basetime, s, product, dtime, journey);
-            }
-            else
-            {
-               title.set (title_tokens);
-            }
-            title.cairo (cr);
 
-            if (format == "png")
-            {
-               surface->write_to_png (file_path.get_string ());
+               RefPtr<Surface> surface = denise::get_surface (
+                  size_2d, format, file_path);
+               RefPtr<Context> cr = denise::get_cr (surface);
+
+               const Index_2D i2d (margin_l, margin_t);
+               const Size_2D s2d (size_2d.i - margin_l - margin_r,
+                                  size_2d.j - margin_t - margin_b);
+               const Box_2D box_2d (i2d, s2d);
+
+               if (s2d.i < 0 || s2d.j < 0) { continue; }
+
+               Display::render_cross_section (cr, transform, box_2d,
+                  domain_z, stage, product, dtime, journey, u_bg);
+
+               Display::render_color_bar (cr, size_2d, p);
+
+               if (title_tokens.size () == 0)
+               {
+                  Display::set_title (title, basetime, s, product, dtime, journey);
+               }
+               else
+               {
+                  title.set (title_tokens);
+               }
+               title.cairo (cr);
+
+               if (format == "png") { surface->write_to_png (file_path); }
+
             }
+            catch (...) { cout << "failed" << endl; }
 
          }
 
@@ -457,7 +463,8 @@ Twiin::meteogram (const Dstring& stage_str,
         i != stage_tokens.end (); i++)
    {
 
-      const Dstring stage (*i);
+      const Dstring s (*i);
+      const Model::Stage& stage = model.get_stage (s);
 
       for (Tokens::const_iterator j = location_tokens.begin ();
            j != location_tokens.end (); j++)
@@ -466,32 +473,35 @@ Twiin::meteogram (const Dstring& stage_str,
          const Location location (*j, station_map);
 
          const Dstring& file_path = (filename == "") ?
-            get_file_path (format, stage, location) :
+            get_file_path (format, s, location) :
             output_dir + "/" + filename;
          cout << file_path << endl;
          if (is_bludge) { continue; }
 
-         RefPtr<Surface> surface = denise::get_surface (
-            size_2d, format, file_path);
-         RefPtr<Context> cr = denise::get_cr (surface);
-
-         Display::render_meteogram (cr, size_2d, model,
-            aws_repository, stage, location, ignore_pressure);
-
-         if (title_tokens.size () == 0)
+         try
          {
-            Display::set_title (title, basetime, stage, location);
-         }
-         else
-         {
-            title.set (title_tokens);
-         }
-         title.cairo (cr);
 
-         if (format == "png")
-         {
-            surface->write_to_png (file_path.get_string ());
+            RefPtr<Surface> surface = denise::get_surface (
+               size_2d, format, file_path);
+            RefPtr<Context> cr = denise::get_cr (surface);
+
+            Display::render_meteogram (cr, size_2d, stage,
+               aws_repository, location, ignore_pressure);
+
+            if (title_tokens.size () == 0)
+            {
+               Display::set_title (title, basetime, s, location);
+            }
+            else
+            {
+               title.set (title_tokens);
+            }
+            title.cairo (cr);
+
+            if (format == "png") { surface->write_to_png (file_path); }
+
          }
+         catch (...) { cout << "failed" << endl; }
 
       }
 
@@ -571,58 +581,60 @@ Twiin::vertical_profile (const Dstring& stage_str,
             cout << file_path << endl;
             if (is_bludge) { continue; }
 
-            if (format == "snd")
+            try
             {
 
-               const Model::Stage stage = model.get_stage (s);
-               Sounding* sounding_ptr = stage.get_sounding_ptr (
-                  lat_long_list, dtime, tephigram);
-               sounding_ptr->save (file_path);
-               delete sounding_ptr;
-            }
-            else
-            {
-
-               RefPtr<Surface> surface = denise::get_surface (
-                  size_2d, format, file_path);
-               RefPtr<Context> cr = denise::get_cr (surface);
-
-               if (location_name == "")
+               if (format == "snd")
                {
-                  Display::render_vertical_profile (cr, tephigram,
-                     model, s, dtime, sole_location);
+
+                  Sounding* sounding_ptr = stage.get_sounding_ptr (
+                     lat_long_list, dtime, tephigram);
+                  sounding_ptr->save (file_path);
+                  delete sounding_ptr;
                }
                else
                {
-                  Display::render_vertical_profile (cr, tephigram,
-                     model, s, dtime, lat_long_list);
-               }
 
-               if (title_tokens.size () == 0)
-               {
+                  RefPtr<Surface> surface = denise::get_surface (
+                     size_2d, format, file_path);
+                  RefPtr<Context> cr = denise::get_cr (surface);
+
                   if (location_name == "")
                   {
-                     Display::set_title (title, basetime,
-                        s, dtime, sole_location);
+                     Display::render_vertical_profile (cr, tephigram,
+                        stage, dtime, sole_location);
                   }
                   else
                   {
-                     Display::set_title (title, basetime,
-                        s, dtime, location_name);
+                     Display::render_vertical_profile (cr, tephigram,
+                        stage, dtime, lat_long_list);
                   }
-               }
-               else
-               {
-                  title.set (title_tokens);
-               }
-               title.cairo (cr);
 
-               if (format == "png")
-               {
-                  surface->write_to_png (file_path.get_string ());
+                  if (title_tokens.size () == 0)
+                  {
+                     if (location_name == "")
+                     {
+                        Display::set_title (title, basetime,
+                           s, dtime, sole_location);
+                     }
+                     else
+                     {
+                        Display::set_title (title, basetime,
+                           s, dtime, location_name);
+                     }
+                  }
+                  else
+                  {
+                     title.set (title_tokens);
+                  }
+                  title.cairo (cr);
+
+                  if (format == "png") { surface->write_to_png (file_path); }
+
                }
 
             }
+            catch (...) { cout << "failed" << endl; }
 
          }
 

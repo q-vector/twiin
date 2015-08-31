@@ -283,8 +283,9 @@ Cross_Section::render_image_buffer (const RefPtr<Context>& cr)
 
    if (s2d.i < 0 || s2d.j < 0) { return; }
 
+   const Model::Stage& stage = model.get_stage (stage_str);
    Display::render_cross_section (cr, transform, box_2d,
-      domain_z, model, stage_str, product, dtime, journey);
+      domain_z, stage, product, dtime, journey);
 
 }
 

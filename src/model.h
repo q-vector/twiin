@@ -9,7 +9,6 @@
 #include <denise/geodesy.h>
 #include <denise/nwp.h>
 #include "nc_file.h"
-#include "hrit.h"
 #include "obs.h"
 
 using namespace std;
@@ -93,6 +92,9 @@ namespace twiin
 
                Dstring
                get_unit () const;
+
+               Tuple
+               get_tick_tuple () const;
 
                ostream&
                operator<< (ostream& out_file) const;
@@ -224,12 +226,15 @@ namespace twiin
             public:
 
                Stage (const Model& model,
-                      const Dstring& twiin_stage,
+                      const Dstring& stage_str,
                       const Config_File& config_file);
 
                virtual void
                ingest (const Dstring& varname,
                        const Dstring& file_path);
+
+               const Dtime&
+               get_basetime () const;
 
                Domain_2D
                get_domain_2d () const;
@@ -530,6 +535,19 @@ namespace twiin
                get_topography (const size_t i,
                                const size_t j) const;
 
+               static Color
+               get_wind_color (const Real direction,
+                               const Real speed);
+
+               static Color
+               get_color (const Model::Product& product,
+                          const Real datum);
+
+               static Color
+               get_color (const Model::Product& product,
+                          const Real datum,
+                          const Dstring& unit);
+
                Color
                get_color (const Product& product,
                           const Lat_Long& lat_long,
@@ -540,6 +558,31 @@ namespace twiin
                           const Lat_Long& lat_long,
                           const Level& level,
                           const size_t l) const;
+
+               Raster*
+               get_terrain_raster_ptr (const Size_2D& size_2d,
+                                       const Transform_2D& transform) const;
+
+	       Raster*
+               get_surface_raster_ptr (const Size_2D& size_2d,
+                                       const Transform_2D& transform,
+                                       const Model::Product& product,
+                                       const Dtime& dtime) const;
+
+               Raster*
+               get_uppers_raster_ptr (const Size_2D& size_2d,
+                                      const Transform_2D& transform,
+                                      const Model::Product& product,
+                                      const Dtime& dtime,
+                                      const Level& level) const;
+
+               Raster*
+               get_cross_section_raster_ptr (const Box_2D& box_2d,
+                                             const Transform_2D& transform,
+                                             const Model::Product& product,
+                                             const Dtime& dtime,
+                                             const Journey& journey,
+                                             const Real u_bg = 0) const;
 
                size_t
                get_surface_l (const Dtime& dtime) const;
@@ -576,6 +619,16 @@ namespace twiin
                                   const Product& product,
                                   const Level& level) const;
 
+               class Map : public map<Dstring, Model::Stage>
+               {
+
+                  public:
+
+                     Map (const Model& model,
+                          const Config_File& config_file);
+
+               };
+
          };
 
       private:
@@ -583,7 +636,7 @@ namespace twiin
          Dtime
          basetime;
 
-         map<Dstring, Model::Stage>
+         Stage::Map
          stage_map;
 
          Vertical_Coefficients

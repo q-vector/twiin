@@ -465,3 +465,45 @@ Hrit::get_color (const Dstring& hrit_product,
 
 }
 
+Raster*
+Hrit::get_raster_ptr (const Size_2D& size_2d,
+                      const Transform_2D& transform,
+                      const Dstring& channel_str,
+                      const Dtime& dtime) const
+{
+   const Integer max_index = (channel_str == "VIS" ? 1024 : 1024);
+
+   auto* raster_ptr = new Raster (size_2d);
+   auto& raster = *raster_ptr;
+
+   const auto& navigation_map = get_navigation_map (dtime);
+   auto disk_ptr_map = get_disk_ptr_map (dtime);
+
+   Lat_Long lat_long;
+   Real& latitude = lat_long.latitude;
+   Real& longitude = lat_long.longitude;
+
+   for (Integer i = 0; i < size_2d.i; i++)
+   {
+
+      const Real x = Real (i);
+
+      for (Integer j = 0; j < size_2d.j; j++)
+      {
+
+         const Real y = Real (j);
+         transform.reverse (latitude, longitude, x, y);
+
+         const Color& color = Hrit::get_color (channel_str,
+            disk_ptr_map, navigation_map, lat_long);
+         //const Color& color = enhancement.get_color (raw_datum);
+         raster.set_pixel (i, j, color);
+
+      }
+
+   }
+
+   return raster_ptr;
+
+}
+
