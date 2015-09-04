@@ -43,6 +43,9 @@ namespace twiin
          const Dstring
          output_dir;
 
+         Track_Map
+         trajectory_map;
+
          Dstring
          get_file_path (const Dstring& format,
                         const Dstring& stage,
@@ -132,6 +135,24 @@ namespace twiin
                            const Tokens& title_tokens,
                            const Dstring& filename,
                            const bool is_bludge) const;
+
+         void
+         twiin_trajectory_generate (const Dstring& identifier,
+                                    const Dstring& stage_str,
+                                    const Lat_Long& lat_long,
+                                    const Level& level,
+                                    const Dtime& dtime,
+                                    const Real finish_tau,
+                                    const Tokens& arguments);
+
+         void
+         twiin_trajectory_ingest (const Dstring& file_path);
+
+         void
+         twiin_trajectory_write (const Dstring& file_path) const;
+
+         void
+         twiin_trajectory_print (const Dstring& identifier) const;
 
          void
          twiin_trajectory (const Tokens& tokens);

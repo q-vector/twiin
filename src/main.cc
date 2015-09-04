@@ -925,25 +925,58 @@ main (int argc,
 }
 
 void
-Twiin::twiin_trajectory (const Tokens& tokens)
+Twiin::twiin_trajectory_generate (const Dstring& identifier,
+                                  const Dstring& stage_str,
+                                  const Lat_Long& lat_long,
+                                  const Level& level,
+                                  const Dtime& dtime,
+                                  const Real finish_tau,
+                                  const Tokens& arguments)
 {
 
-   const Dstring stage_str (tokens[0]);
-   const Lat_Long lat_long (tokens[1]);
-   const Level level (tokens[2]);
-   const Dtime dtime (tokens[3]);
-   const Real finish_tau = stof (tokens[4]);
-
    vector<Model::Product> product_vector;
-   product_vector.push_back (Model::Product ("Q"));
-   product_vector.push_back (Model::Product ("THETA"));
+   for (Integer i = 0; i < arguments.size (); i++)
+   {
+      const Tokens t (arguments[i], "=");
+      if (t.size () == 2 && t[0].get_lower_case () == "product")
+      {
+         const Model::Product product (t[1]);
+         product_vector.push_back (product);
+      }
+   }
 
    const Data data (config_file);
    const Model& model = data.get_model ();
    const Track& trajectory = model.get_stage (stage_str).get_trajectory (
       lat_long, level, dtime, finish_tau, product_vector);
 
+   trajectory_map.insert (make_pair (identifier, trajectory));
+
+}
+
+void
+Twiin::twiin_trajectory_ingest (const Dstring& file_path)
+{
+   igzstream file (file_path);
+   trajectory_map.ingest (file);
+   file.close ();
+}
+
+void
+Twiin::twiin_trajectory_write (const Dstring& file_path) const
+{
+   ofstream file (file_path, ios::app);
+   trajectory_map.write (file);
+   file.close ();
+}
+
+void
+Twiin::twiin_trajectory_print (const Dstring& identifier) const
+{
+
+   const Track& trajectory = trajectory_map.at (identifier);
    const set<Dtime>& dtime_set = trajectory.get_dtime_set ();
+
    for (auto iterator = dtime_set.begin ();
         iterator != dtime_set.end (); iterator++)
    {
@@ -965,6 +998,54 @@ Twiin::twiin_trajectory (const Tokens& tokens)
 
       cout << endl;
 
+   }
+
+}
+
+void
+Twiin::twiin_trajectory (const Tokens& tokens)
+{
+
+   const Dstring& action = tokens[0].get_lower_case ();
+   const Integer n = tokens.size ();
+
+   if (action == "clear")
+   {
+      trajectory_map.clear ();
+   }
+   else
+   if (action == "generate")
+   {
+      const Dstring& identifier = tokens[1];
+      const Dstring& stage_str = tokens[2];
+      const Lat_Long lat_long (tokens[3]);
+      const Level level (tokens[4]);
+      const Dtime dtime (tokens[5]);
+      const Real finish_tau = stof (tokens[6]);
+      twiin_trajectory_generate (identifier, stage_str, lat_long,
+         level, dtime, finish_tau, tokens.subtokens (7));
+   }
+   else
+   if (action == "ingest")
+   {
+      const Dstring& file_path = tokens[1];
+      twiin_trajectory_ingest (file_path);
+   }
+   else
+   if (action == "write")
+   {
+      const Dstring& file_path = tokens[1];
+      twiin_trajectory_write (file_path);
+   }
+   else
+   if (action == "print")
+   {
+      const Dstring& identifier = tokens[1];
+      twiin_trajectory_print (identifier);
+   }
+   else
+   {
+      throw Exception ("twiin_trajectory");
    }
 
 }

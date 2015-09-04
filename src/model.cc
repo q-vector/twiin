@@ -2953,7 +2953,7 @@ Model::Stage::get_trajectory (Lat_Long lat_long,
 
       const Real topography = get_topography (lat_long);
       if (level.type == Level::SURFACE) { level.value = topography; }
-      const Dtime& epoch = trajectory.get_dtime ();
+      const Dtime& epoch = trajectory.get_epoch ();
       const Real tau = dtime.t - epoch.t;
 
       trajectory.add (tau, lat_long);
