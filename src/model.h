@@ -597,6 +597,10 @@ namespace twiin
                                const Real finish_tau,
                                const vector<Product>& product_vector = vector<Product> ()) const;
 
+               void
+               evaluate_trajectory (Track& trajectory,
+                                    const vector<Product>& product_vector);
+
                Aws::Obs
                get_aws_obs (const Lat_Long& lat_long,
                             const Dtime& dtime) const;

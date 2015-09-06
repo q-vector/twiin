@@ -2944,6 +2944,7 @@ Model::Stage::get_trajectory (Lat_Long lat_long,
                               const Real finish_tau,
                               const vector<Product>& product_vector) const
 {
+
    Track trajectory (dtime);
 
    while (true)
@@ -3018,6 +3019,65 @@ Model::Stage::get_trajectory (Lat_Long lat_long,
 
    trajectory.okay ();
    return trajectory;
+
+}
+
+void
+Model::Stage::evaluate_trajectory (Track& trajectory,
+                                   const vector<Product>& product_vector)
+{
+
+   const Level surface ("Surface");
+   const Dtime& epoch = trajectory.get_epoch ();
+   const set<Real>& tau_set = trajectory.get_tau_set ();
+
+   for (auto p = product_vector.begin (); p != product_vector.end (); p++)
+   {
+
+      const Product& product = *(p);
+      const Met_Element& met_element = product.get_met_element ();
+
+      for (auto t = tau_set.begin (); t != tau_set.end (); t++)
+      {
+
+         const Real& tau = *(t);
+         const Dtime dtime (epoch.t + tau);
+         const Lat_Long& lat_long = trajectory.get_lat_long (tau);
+         if (out_of_bounds (lat_long)) { break; }
+
+         const Real topography = get_topography (lat_long);
+         const Real z = trajectory.get_datum ("z", tau);
+         const Level& level = (z <= topography) ? surface : Level::z_level (z);
+
+         Real datum;
+
+         switch (product.enumeration)
+         {
+
+            case Q_TENDENCY:
+            case Q_H_ADVECTION:
+            case Q_V_ADVECTION:
+            case Q_S_ADVECTION:
+            case Q_SV_ADVECTION:
+            case Q_N_ADVECTION:
+            case Q_NV_ADVECTION:
+
+            default:
+            {
+               datum = evaluate (met_element, lat_long, level, dtime);
+               break;
+            }
+
+         }
+
+         const Real datum = evaluate (met_element, lat_long, level, dtime);
+         trajectory.add (product.get_string (), tau, datum);
+
+      }
+
+      trajectory.okay (product.get_string ());
+
+   }
 
 }
 
