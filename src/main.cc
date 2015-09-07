@@ -955,6 +955,30 @@ Twiin::twiin_trajectory_generate (const Dstring& identifier,
 }
 
 void
+Twiin::twiin_trajectory_survey (const Dstring& identifier,
+                                const Dstring& stage_str,
+                                const Tokens& arguments)
+{
+
+   vector<Model::Product> product_vector;
+   for (Integer i = 0; i < arguments.size (); i++)
+   {
+      const Tokens t (arguments[i], "=");
+      if (t.size () == 2 && t[0].get_lower_case () == "product")
+      {
+         const Model::Product product (t[1]);
+         product_vector.push_back (product);
+      }
+   }
+
+   const Data data (config_file);
+   const Model& model = data.get_model ();
+   Track& trajectory = trajectory_map.at (identifier);
+   model.get_stage (stage_str).survey_trajectory (trajectory, product_vector);
+
+}
+
+void
 Twiin::twiin_trajectory_ingest (const Dstring& file_path)
 {
    igzstream file (file_path);
@@ -1024,6 +1048,13 @@ Twiin::twiin_trajectory (const Tokens& tokens)
       const Real finish_tau = stof (tokens[6]);
       twiin_trajectory_generate (identifier, stage_str, lat_long,
          level, dtime, finish_tau, tokens.subtokens (7));
+   }
+   else
+   if (action == "survey")
+   {
+      const Dstring& identifier = tokens[1];
+      const Dstring& stage_str = tokens[2];
+      twiin_trajectory_survey (identifier, stage_str, tokens.subtokens (3));
    }
    else
    if (action == "ingest")

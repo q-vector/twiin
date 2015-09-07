@@ -146,6 +146,11 @@ namespace twiin
                                     const Tokens& arguments);
 
          void
+         twiin_trajectory_survey (const Dstring& identifier,
+                                  const Dstring& stage_str,
+                                  const Tokens& arguments);
+
+         void
          twiin_trajectory_ingest (const Dstring& file_path);
 
          void

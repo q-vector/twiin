@@ -43,6 +43,7 @@ Model::Product::Product (const Dstring& str)
    else if (str == "W")              { enumeration = Product::W; }
    else if (str == "W_TRANSLUCENT")  { enumeration = Product::W_TRANSLUCENT; }
    else if (str == "Q_TENDENCY")     { enumeration = Product::Q_TENDENCY; }
+   else if (str == "Q_L_TENDENCY")   { enumeration = Product::Q_L_TENDENCY; }
    else if (str == "Q_ADVECTION")    { enumeration = Product::Q_ADVECTION; }
    else if (str == "Q_H_ADVECTION")  { enumeration = Product::Q_H_ADVECTION; }
    else if (str == "Q_V_ADVECTION")  { enumeration = Product::Q_V_ADVECTION; }
@@ -90,6 +91,7 @@ Model::Product::get_string () const
       case Product::W:              return "W";
       case Product::W_TRANSLUCENT:  return "W_TRANSLUCENT";
       case Product::Q_TENDENCY:     return "Q_TENDENCY";
+      case Product::Q_L_TENDENCY:   return "Q_L_TENDENCY";
       case Product::Q_ADVECTION:    return "Q_ADVECTION";
       case Product::Q_H_ADVECTION:  return "Q_H_ADVECTION";
       case Product::Q_V_ADVECTION:  return "Q_V_ADVECTION";
@@ -138,6 +140,7 @@ Model::Product::get_description () const
       case Product::W:              return "Vertical Velocity";
       case Product::W_TRANSLUCENT:  return "Vertical Velocity";
       case Product::Q_TENDENCY:     return "Q Tendency";
+      case Product::Q_L_TENDENCY:   return "Q Lagrangian Tendency";
       case Product::Q_ADVECTION:    return "Q Advection";
       case Product::Q_H_ADVECTION:  return "Horizontal Q Advection";
       case Product::Q_V_ADVECTION:  return "Vertical Q Advection";
@@ -177,6 +180,7 @@ Model::Product::get_met_element () const
       case Product::W:              return denise::W;
       case Product::W_TRANSLUCENT:  return denise::W;
       case Product::Q_TENDENCY:     return denise::Q_TENDENCY;
+      case Product::Q_L_TENDENCY:   return denise::Q_L_TENDENCY;
       case Product::Q_ADVECTION:    return denise::Q_ADVECTION;
       case Product::Q_H_ADVECTION:  return denise::Q_H_ADVECTION;
       case Product::Q_V_ADVECTION:  return denise::Q_V_ADVECTION;
@@ -206,6 +210,7 @@ Model::Product::get_unit () const
       case Product::W:              return "ms\u207b\u00b9";
       case Product::W_TRANSLUCENT:  return "ms\u207b\u00b9";
       case Product::Q_TENDENCY:     return "g kg\u207b\u00b9s\u207b\u00b9";
+      case Product::Q_L_TENDENCY:   return "g kg\u207b\u00b9s\u207b\u00b9";
       case Product::Q_ADVECTION:    return "g kg\u207b\u00b9s\u207b\u00b9";
       case Product::Q_H_ADVECTION:  return "g kg\u207b\u00b9s\u207b\u00b9";
       case Product::Q_V_ADVECTION:  return "g kg\u207b\u00b9s\u207b\u00b9";
@@ -267,6 +272,7 @@ Model::Product::get_tick_tuple () const
       }
 
       case Model::Product::Q_TENDENCY:
+      case Model::Product::Q_L_TENDENCY:
       case Model::Product::Q_ADVECTION:
       case Model::Product::Q_H_ADVECTION:
       case Model::Product::Q_V_ADVECTION:
@@ -804,6 +810,7 @@ Model::Stage::get_valid_time_set (const Product& product,
       case Product::P_RHO:
       case Product::Q:
       case Product::Q_TENDENCY:
+      case Product::Q_L_TENDENCY:
       case Product::Q_ADVECTION:
       case Product::Q_H_ADVECTION:
       case Product::Q_V_ADVECTION:
@@ -1269,19 +1276,32 @@ Model::Stage::evaluate (const Met_Element& met_element,
                         const Level& level,
                         const Dtime& dtime) const
 {
-   if (met_element == MSLP ||
-       met_element == PRECIP_RATE ||
-       met_element == FFDI ||
-       level.type == Level::SURFACE)
+
+   if (level.type == Level::SURFACE)
    {
       const Integer l = get_surface_l (dtime);
       return evaluate (met_element, lat_long, l);
    }
-   else
+
+   switch (met_element)
    {
-      const Integer l = get_uppers_l (dtime);
-      return evaluate (met_element, lat_long, level, l);
+
+      case MSLP:
+      case PRECIP_RATE:
+      case FFDI:
+      {
+         const Integer l = get_surface_l (dtime);
+         return evaluate (met_element, lat_long, l);
+      }
+
+      default:
+      {
+         const Integer l = get_uppers_l (dtime);
+         return evaluate (met_element, lat_long, level, l);
+      }
+
    }
+
 }
 
 Real
@@ -2125,6 +2145,7 @@ Model::Stage::get_color (const Model::Product& product,
       }
 
       case Model::Product::Q_TENDENCY:
+      case Model::Product::Q_L_TENDENCY:
       case Model::Product::Q_ADVECTION:
       case Model::Product::Q_H_ADVECTION:
       case Model::Product::Q_V_ADVECTION:
@@ -3023,8 +3044,8 @@ Model::Stage::get_trajectory (Lat_Long lat_long,
 }
 
 void
-Model::Stage::evaluate_trajectory (Track& trajectory,
-                                   const vector<Product>& product_vector)
+Model::Stage::survey_trajectory (Track& trajectory,
+                                 const vector<Product>& product_vector) const
 {
 
    const Level surface ("Surface");
@@ -3035,7 +3056,6 @@ Model::Stage::evaluate_trajectory (Track& trajectory,
    {
 
       const Product& product = *(p);
-      const Met_Element& met_element = product.get_met_element ();
 
       for (auto t = tau_set.begin (); t != tau_set.end (); t++)
       {
@@ -3047,30 +3067,65 @@ Model::Stage::evaluate_trajectory (Track& trajectory,
 
          const Real topography = get_topography (lat_long);
          const Real z = trajectory.get_datum ("z", tau);
-         const Level& level = (z <= topography) ? surface : Level::z_level (z);
+
+         const bool is_surface = (z <= topography);
+         const Level& level = is_surface ? surface : Level::z_level (z);
 
          Real datum;
 
          switch (product.enumeration)
          {
 
-            case Q_TENDENCY:
-            case Q_H_ADVECTION:
-            case Q_V_ADVECTION:
-            case Q_S_ADVECTION:
-            case Q_SV_ADVECTION:
-            case Q_N_ADVECTION:
-            case Q_NV_ADVECTION:
+            case Product::Q_TENDENCY:
+            {
+               if (is_surface)
+               {
+                  const Integer l = get_surface_l (dtime);
+                  datum = evaluate_tendency (Q, lat_long, l);
+               }
+               else
+               {
+                  const Integer l = get_uppers_l (dtime);
+                  datum = evaluate_tendency (Q, lat_long, level, l);
+               }
+               break;
+            }
+
+            case Product::Q_H_ADVECTION:
+            {
+               if (is_surface)
+               {
+                  const Integer l = get_surface_l (dtime);
+                  datum = evaluate_h_advection (Q, lat_long, l);
+               }
+               else
+               {
+                  const Integer l = get_uppers_l (dtime);
+                  datum = evaluate_h_advection (Q, lat_long, level, l);
+               }
+               break;
+            }
+
+            case Product::Q_V_ADVECTION:
+            {
+               if (is_surface) { datum = 0; }
+               else
+               {
+                  const Integer l = get_uppers_l (dtime);
+                  datum = evaluate_v_advection (Q, lat_long, level, l);
+               }
+               break;
+            }
 
             default:
             {
+               const Met_Element& met_element = product.get_met_element ();
                datum = evaluate (met_element, lat_long, level, dtime);
                break;
             }
 
          }
 
-         const Real datum = evaluate (met_element, lat_long, level, dtime);
          trajectory.add (product.get_string (), tau, datum);
 
       }

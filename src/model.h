@@ -54,6 +54,7 @@ namespace twiin
                   W,
                   W_TRANSLUCENT,
                   Q_TENDENCY,
+                  Q_L_TENDENCY,
                   Q_ADVECTION,
                   Q_H_ADVECTION,
                   Q_V_ADVECTION,
@@ -598,8 +599,8 @@ namespace twiin
                                const vector<Product>& product_vector = vector<Product> ()) const;
 
                void
-               evaluate_trajectory (Track& trajectory,
-                                    const vector<Product>& product_vector);
+               survey_trajectory (Track& trajectory,
+                                  const vector<Product>& product_vector) const;
 
                Aws::Obs
                get_aws_obs (const Lat_Long& lat_long,
