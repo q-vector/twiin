@@ -172,6 +172,29 @@ namespace twiin
                                const Real u_bg = 0);
 
          static void
+         render_time_cross_w (const RefPtr<Context>& cr,
+                              const Transform_2D& transform,
+                              const Box_2D& box_2d,
+                              const Model::Stage& stage,
+                              const Track& track);
+
+         static void
+         render_time_cross_mesh (const RefPtr<Context>& cr,
+                                 const Transform_2D& transform,
+                                 const Domain_1D& domain_z,
+                                 const Track& track);
+
+         static void
+         render_time_cross (const RefPtr<Context>& cr,
+                            const Transform_2D& transform,
+                            const Box_2D& box_2d,
+                            const Domain_1D& domain_z,
+                            const Model::Stage& stage,
+                            const Model::Product& product,
+                            const Track& track,
+                            const bool lagrangian = false);
+
+         static void
          render_meteogram_mesh (const RefPtr<Context>& cr,
                                 const Domain_1D& domaint_t,
                                 const Domain_1D& domain_temperature,

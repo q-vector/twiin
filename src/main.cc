@@ -1027,6 +1027,47 @@ Twiin::twiin_trajectory_print (const Dstring& identifier) const
 }
 
 void
+Twiin::twiin_trajectory_surface (const Dstring& surface_identifier,
+                                 const Dstring& geodetic_transform_identifier,
+                                 const Dstring& identifier,
+                                 const Dtime& dtime) const
+{
+
+   const RefPtr<Surface>& surface = get_surface (surface_identifier);
+   const RefPtr<Context> cr = get_cr (surface_identifier);
+   const Size_2D& size_2d = get_size_2d (surface_identifier);
+   const Point_2D centre (Real (size_2d.i) / 2, Real (size_2d.j) / 2);
+
+   const Geodetic_Transform* geodetic_transform_ptr =
+      get_geodetic_transform_ptr (geodetic_transform_identifier, centre);
+   const Geodetic_Transform& geodetic_transform = *geodetic_transform_ptr;
+
+   const Track& trajectory = trajectory_map.at (identifier);
+   const Real start_tau = trajectory.get_start_tau ();
+   const Real end_tau = trajectory.get_end_tau ();
+   const Real n = Integer (round ((end_tau - start_tau) / 0.025));
+   const Tuple tau_tuple (n, start_tau, end_tau);
+
+   Color::black ().cairo (cr);
+   cr->set_font_size (14);
+
+   for (auto iterator = tau_tuple.begin ();
+        iterator != tau_tuple.end (); iterator++)
+   {
+      const Real tau = *(iterator);
+      const Lat_Long& lat_long = trajectory.get_lat_long (tau);
+      const Point_2D& point = geodetic_transform.transform (lat_long);
+      Ring (0.2).cairo (cr, point);
+      cr->fill ();
+   }
+
+   const Lat_Long& lat_long = trajectory.get_lat_long (dtime);
+   const Point_2D& point = geodetic_transform.transform (lat_long);
+   Label (identifier, point, 'c', 'c').cairo (cr);
+
+}
+
+void
 Twiin::twiin_trajectory (const Tokens& tokens)
 {
 
@@ -1073,6 +1114,16 @@ Twiin::twiin_trajectory (const Tokens& tokens)
    {
       const Dstring& identifier = tokens[1];
       twiin_trajectory_print (identifier);
+   }
+   else
+   if (action == "surface")
+   {
+      const Dstring& surface_identifier = tokens[1];
+      const Dstring& geodetic_transform_identifier = tokens[2];
+      const Dstring& identifier = tokens[3];
+      const Dtime& dtime (tokens[4]);
+      twiin_trajectory_surface (surface_identifier,
+         geodetic_transform_identifier, identifier, dtime);
    }
    else
    {

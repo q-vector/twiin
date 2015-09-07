@@ -2914,6 +2914,197 @@ Model::Stage::get_cross_section_raster_ptr (const Box_2D& box_2d,
 
 }
 
+Raster*
+Model::Stage::get_time_cross_raster_ptr (const Box_2D& box_2d,
+                                         const Transform_2D& transform,
+                                         const Model::Product& product,
+                                         const Track& track,
+                                         const bool lagrangian) const
+{
+
+   Raster* raster_ptr = new Raster (box_2d);
+
+   Color color;
+
+   const bool is_speed = (product.enumeration == Model::Product::SPEED);
+   const Model::Product& p = (is_speed ?
+      Model::Product ("SPEED_HIGHER") : product);
+
+   Real t;
+   Level level (Level::HEIGHT, GSL_NAN);
+   Real& z = level.value;
+
+   const Geodesy geodesy;
+   const Index_2D& index_2d = box_2d.index_2d;
+   const Size_2D& size_2d = box_2d.size_2d;
+
+   const Real start_t = track.get_start_time ().t;
+   const Real end_t = track.get_end_time ().t;
+
+   for (Integer i = index_2d.i; i < index_2d.i + size_2d.i; i++)
+   {
+
+      transform.reverse (t, z, Real (i), 0);
+      if (t < start_t || t > end_t) { continue; }
+
+      const Dtime dtime (t);
+      const size_t l = get_uppers_l (dtime);
+
+      const Lat_Long& lat_long = track.get_lat_long (dtime);
+      const Lat_Long& ll = lat_long;
+      if (out_of_bounds (ll)) { continue; }
+
+      const Real topography = get_topography (ll);
+      const Motion& motion = track.get_motion (dtime);
+
+      for (Integer j = index_2d.j; j < index_2d.j + size_2d.j; j++)
+      {
+
+         transform.reverse (t, z, Real (i), Real (j));
+
+         if (z < topography) { color = Color::black (); }
+         else
+         {
+
+            switch (product.enumeration)
+            {
+
+               case Model::Product::WIND:
+               {
+                  const Real u = evaluate (U, ll, level, l);
+                  const Real v = evaluate (V, ll, level, l);
+                  const Wind wind (u, v);
+                  const Real direction = wind.get_direction ();
+                  const Real speed = wind.get_speed ();
+                  color = get_wind_color (direction, speed);
+                  break;
+               }
+
+               case Model::Product::BRUNT_VAISALA:
+               {
+                  const Real datum = evaluate_brunt_vaisala (ll, level, l);
+                  color = get_color (p, datum);
+                  break;
+               }
+
+               case Model::Product::SCORER:
+               {
+                  const Real u_bg = (lagrangian ? motion.get_speed () : 0);
+                  const Real datum = evaluate_scorer (
+                     motion.get_direction (), ll, level, l, u_bg);
+                  color = get_color (p, datum);
+                  break;
+               }
+
+               case Model::Product::ALONG_SPEED:
+               {
+                  const Real u_bg = (lagrangian ? motion.get_speed () : 0);
+                  const Real datum = evaluate_along_speed (
+                     motion.get_direction (), ll, level, l, u_bg);
+                  color = get_color (p, datum);
+                  break;
+               }
+
+               case Model::Product::NORMAL_SPEED:
+               {
+                  const Real datum = evaluate_normal_speed (
+                     motion.get_direction (), lat_long, level, l);
+                  color = get_color (p, datum);
+                  break;
+               }
+
+               case Model::Product::Q_TENDENCY:
+               {
+                  const Real u_bg = (lagrangian ? motion.get_speed () : 0);
+                  const Real datum = evaluate_s_tendency (
+                     Q, motion.get_direction (), lat_long, level, l, u_bg);
+                  color = get_color (p, datum);
+                  break;
+               }
+
+               case Model::Product::Q_ADVECTION:
+               {
+                  const Real h = evaluate_h_advection (Q, ll, level, l);
+                  const Real v = evaluate_v_advection (Q, ll, level, l);
+                  const Real datum = h + v;
+                  color = get_color (p, datum);
+                  break;
+               }
+
+               case Model::Product::Q_H_ADVECTION:
+               {
+                  const Real datum = evaluate_h_advection (Q, ll, level, l);
+                  color = get_color (p, datum);
+                  break;
+               }
+
+               case Model::Product::Q_V_ADVECTION:
+               {
+                  const Real datum = evaluate_v_advection (Q, ll, level, l);
+                  color = get_color (p, datum);
+                  break;
+               }
+
+               case Model::Product::Q_S_ADVECTION:
+               {
+                  const Real u_bg = (lagrangian ? motion.get_speed () : 0);
+                  const Real datum = evaluate_s_advection (Q,
+                     motion.get_direction (), ll, level, l, u_bg);
+                  color = get_color (p, datum);
+                  break;
+               }
+
+               case Model::Product::Q_N_ADVECTION:
+               {
+                  const Real datum = evaluate_n_advection (Q,
+                     motion.get_direction (), ll, level, l);
+                  color = get_color (p, datum);
+                  break;
+               }
+
+               case Model::Product::Q_SV_ADVECTION:
+               {
+                  const Real u_bg = (lagrangian ? motion.get_speed () : 0);
+                  const Real v = evaluate_v_advection (Q, ll, level, l);
+                  const Real s = evaluate_s_advection (Q,
+                     motion.get_direction (), ll, level, l, u_bg);
+                  const Real datum = s + v;
+                  color = get_color (p, datum);
+                  break;
+               }
+
+               case Model::Product::Q_NV_ADVECTION:
+               {
+                  const Real v = evaluate_v_advection (Q, ll, level, l);
+                  const Real n = evaluate_n_advection (Q,
+                     motion.get_direction (), ll, level, l);
+                  const Real datum = n + v;
+                  color = get_color (p, datum);
+                  break;
+               }
+
+               default:
+               {
+                  const Met_Element met_element = product.get_met_element ();
+                  const Real datum = evaluate (met_element, ll, level, l);
+                  color = get_color (p, datum);
+                  break;
+               }
+
+            }
+
+         }
+
+         raster_ptr->set_pixel (i - index_2d.i, j - index_2d.j, color);
+
+      }
+
+   }
+
+   return raster_ptr;
+
+}
+
 size_t
 Model::Stage::get_surface_l (const Dtime& dtime) const
 {
@@ -3012,7 +3203,7 @@ Model::Stage::get_trajectory (Lat_Long lat_long,
       const Real sign = (finish_tau > 0 ? 1 : -1);
       const Real dt_x = fabs (0.7 * h_long * LATITUDE_LENGTH / u);
       const Real dt_y = fabs (0.7 * h_lat * LATITUDE_LENGTH / v);
-      const Real dt = std::min (0.25, std::min (dt_x, dt_y)) * sign;
+      const Real dt = std::min (1.0/60.0, std::min (dt_x, dt_y)) * sign;
       const Real dts = dt * 3600;
 
       const Wind wind_ (u, v);

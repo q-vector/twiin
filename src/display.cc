@@ -768,6 +768,109 @@ Display::render_cross_section (const RefPtr<Context>& cr,
 }
 
 void
+Display::render_time_cross_w (const RefPtr<Context>& cr,
+                              const Transform_2D& transform,
+                              const Box_2D& box_2d,
+                              const Model::Stage& stage,
+                              const Track& track)
+{
+   Raster* raster_ptr = stage.get_time_cross_raster_ptr (box_2d,
+      transform, Model::Product ("W_TRANSLUCENT"), track);
+   raster_ptr->blit (cr);
+   delete raster_ptr;
+}
+
+void
+Display::render_time_cross_mesh (const RefPtr<Context>& cr,
+                                 const Transform_2D& transform,
+                                 const Domain_1D& domain_z,
+                                 const Track& track)
+{
+
+   cr->save ();
+
+   const Real start_t = track.get_start_time ().t;
+   const Real end_t = track.get_end_time ().t;
+   const Domain_1D domain_t (start_t, end_t);
+
+   const Real start_z = domain_z.start;
+   const Real end_z = domain_z.end;
+
+   const Point_2D& bl = transform.transform (start_t, start_z);
+   const Point_2D& ur = transform.transform (end_t, end_z);
+
+   Color::black (0.3).cairo (cr);
+
+   const Color& minor_color = Color::black (0.10);
+   const Color& middle_color = Color::black (0.25);
+   const Color& major_color = Color::black (0.50);
+
+   Mesh_2D mesh (Size_2D (2, 2), Domain_2D (domain_t, domain_z),
+      1, 1, minor_color,
+      6, GSL_NAN, middle_color,
+      24, 10, major_color);
+
+   Rect (bl, ur).cairo (cr);
+   cr->stroke ();
+   mesh.render (cr, transform);
+
+   Color::black ().cairo (cr);
+
+   mesh.render_label_y (cr, transform, 2,
+      start_t, "%.0fm", Label::REAL, 'r', 'c', 5);
+   mesh.render_label_x (cr, transform, 2,
+      domain_z.end, "%b %d", Label::TIME, 'c', 't', 15);
+   mesh.render_label_x (cr, transform, 1,
+      domain_z.end, "%HZ", Label::TIME, 'c', 't', 5);
+
+   cr->restore ();
+
+}
+
+void
+Display::render_time_cross (const RefPtr<Context>& cr,
+                            const Transform_2D& transform,
+                            const Box_2D& box_2d,
+                            const Domain_1D& domain_z,
+                            const Model::Stage& stage,
+                            const Model::Product& product,
+                            const Track& track,
+                            const bool lagrangian)
+{
+
+   cr->save ();
+
+   Color::white ().cairo (cr);
+   cr->paint ();
+
+   Raster* raster_ptr = stage.get_time_cross_raster_ptr (
+      box_2d, transform, product, track, lagrangian);
+   raster_ptr->blit (cr);
+   delete raster_ptr;
+
+   if (product.enumeration == Model::Product::RHO ||
+       product.enumeration == Model::Product::THETA)
+   {
+      render_time_cross_w (cr, transform, box_2d, stage, track);
+   }
+
+   render_time_cross_mesh (cr, transform, domain_z, track);
+
+   //render_time_cross_arrows (cr, transform, box_2d, stage,
+   //   product, dtime, journey, u_bg);
+
+   if (lagrangian)
+   {
+      Color::black ().cairo (cr);
+      const Index_2D anchor = box_2d.get_ne ();
+      Label ("Lagrangian", box_2d.get_ne (), 'r', 't', 10).cairo (cr);
+   }
+
+   cr->restore ();
+
+}
+
+void
 Display::render_meteogram_mesh (const RefPtr<Context>& cr,
                                 const Domain_1D& domain_t,
                                 const Domain_1D& domain_temperature,

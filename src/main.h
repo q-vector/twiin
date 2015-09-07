@@ -160,6 +160,12 @@ namespace twiin
          twiin_trajectory_print (const Dstring& identifier) const;
 
          void
+         twiin_trajectory_surface (const Dstring& surface_identifier,
+                                   const Dstring& geodetic_transform_identifier,
+                                   const Dstring& identifier,
+                                   const Dtime& dtime) const;
+
+         void
          twiin_trajectory (const Tokens& tokens);
 
          void

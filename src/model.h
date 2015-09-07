@@ -585,6 +585,13 @@ namespace twiin
                                              const Journey& journey,
                                              const Real u_bg = 0) const;
 
+               Raster*
+               get_time_cross_raster_ptr (const Box_2D& box_2d,
+                                          const Transform_2D& transform,
+                                          const Model::Product& product,
+                                          const Track& track,
+                                          const bool lagrangian = false) const;
+
                size_t
                get_surface_l (const Dtime& dtime) const;
 
