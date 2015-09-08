@@ -25,10 +25,6 @@ namespace twiin
       public:
 
          static void
-         set_title_tokens (Title& title,
-                           const Tokens& title_tokens);
-
-         static void
          set_title (Title& title,
                     const Dtime& basetime,
                     const Dstring& stage_str,
@@ -43,6 +39,13 @@ namespace twiin
                     const Model::Product& product,
                     const Dtime& dtime,
                     const Journey& journey);
+
+         static void
+         set_title (Title& title,
+                    const Dtime& basetime,
+                    const Dstring& stage_str,
+                    const Model::Product& product,
+                    const Dstring& track_id);
 
          static void
          set_title (Title& title,

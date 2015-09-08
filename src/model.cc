@@ -1144,7 +1144,7 @@ Model::Stage::evaluate (const Met_Element& met_element,
       case T:
       {
          const Real theta = evaluate_raw ("ml_theta", i, j, k, l);
-         const Real p = evaluate_raw ("ml_ptheta", i, j, k, l);
+         const Real p = evaluate_raw ("ml_ptheta", i, j, k, l - 1);
          datum = Thermo_Point::theta_p (theta - K, p).get_t () + K;
          break;
       };
@@ -1152,7 +1152,7 @@ Model::Stage::evaluate (const Met_Element& met_element,
       case TD:
       {
          const Real q = evaluate (Q, i, j, k, l);
-         const Real p = evaluate_raw ("ml_ptheta", i, j, k, l);
+         const Real p = evaluate_raw ("ml_ptheta", i, j, k, l - 1);
          const Real r = q / (1 - q);
          datum = Thermo_Point::p_r_s (p, r).get_t () + K;
          break;
@@ -1162,7 +1162,7 @@ Model::Stage::evaluate (const Met_Element& met_element,
       {
          const Real t = evaluate (T, i, j, k, l);
          const Real q = evaluate (Q, i, j, k, l);
-         const Real p = evaluate_raw ("ml_ptheta", i, j, k, l);
+         const Real p = evaluate_raw ("ml_ptheta", i, j, k, l - 1);
          const Real r = q / (1 - q);
          const Real t_d = Thermo_Point::p_r_s (p, r).get_t () + K;
          datum = Moisture::get_rh (t - K, t_d - K, WATER);
@@ -1172,7 +1172,7 @@ Model::Stage::evaluate (const Met_Element& met_element,
       case RHO:
       {
          const Real theta = evaluate_raw ("ml_theta", i, j, k, l);
-         const Real p = evaluate_raw ("ml_ptheta", i, j, k, l);
+         const Real p = evaluate_raw ("ml_ptheta", i, j, k, l - 1);
          const Real t = Thermo_Point::theta_p (theta - K, p).get_t () + K;
          datum = p / (R_d * t);
          break;
@@ -1200,7 +1200,7 @@ Model::Stage::evaluate (const Met_Element& met_element,
       case THETA_E:
       {
          typedef Thermo_Point Tp;
-         const Real p = evaluate_raw ("ml_ptheta", i, j, k, l);
+         const Real p = evaluate_raw ("ml_ptheta", i, j, k, l - 1);
          const Real theta = evaluate_raw ("ml_theta", i, j, k, l);
          const Real q = evaluate_raw ("ml_spechum", i, j, k, l);
          const Real t = Thermo_Point::theta_p (theta - K, p).get_t () + K;
@@ -1213,7 +1213,7 @@ Model::Stage::evaluate (const Met_Element& met_element,
       case THETA_V:
       {
          typedef Thermo_Point Tp;
-         const Real p = evaluate_raw ("ml_ptheta", i, j, k, l);
+         const Real p = evaluate_raw ("ml_ptheta", i, j, k, l - 1);
          const Real theta = evaluate_raw ("ml_theta", i, j, k, l);
          const Real q = evaluate_raw ("ml_spechum", i, j, k, l);
          const Real t = Thermo_Point::theta_p (theta - K, p).get_t () + K;
@@ -1230,16 +1230,59 @@ Model::Stage::evaluate (const Met_Element& met_element,
 
          switch (met_element)
          {
-            case U:       { varname = "ml_xwind"; break; } 
-            case V:       { varname = "ml_ywind"; break; } 
-            case W:       { varname = "ml_zwind"; break; } 
-            case THETA:   { varname = "ml_theta"; break; } 
-            case Q:       { varname = "ml_spechum"; break; } 
-            case P_THETA: { varname = "ml_ptheta"; break; } 
-            case P_RHO:   { varname = "ml_prho"; break; } 
+
+            case U:
+            {
+               varname = "ml_xwind";
+               datum = evaluate_raw (varname, i, j, k, l);
+               break;
+            } 
+
+            case V:
+            {
+               varname = "ml_ywind";
+               datum = evaluate_raw (varname, i, j, k, l);
+               break;
+            } 
+
+            case W:
+            {
+               varname = "ml_zwind";
+               datum = evaluate_raw (varname, i, j, k, l);
+               break;
+            } 
+
+            case THETA:
+            {
+               varname = "ml_theta";
+               datum = evaluate_raw (varname, i, j, k, l);
+               break;
+            } 
+
+            case Q:
+            {
+               varname = "ml_spechum";
+               datum = evaluate_raw (varname, i, j, k, l);
+               break;
+            } 
+
+            case P_THETA:
+
+            {
+               varname = "ml_ptheta";
+               datum = evaluate_raw (varname, i, j, k, l - 1);
+               break;
+            } 
+
+            case P_RHO:
+            {
+               varname = "ml_prho";
+               datum = evaluate_raw (varname, i, j, k, l - 1);
+               break;
+            } 
+
          }
 
-         datum = evaluate_raw (varname, i, j, k, l);
          break;
 
       }
@@ -2490,9 +2533,9 @@ Model::Stage::get_color (const Product& product,
 
 Color
 Model::Stage::get_color (const Product& product,
-                          const Lat_Long& lat_long,
-                          const Level& level,
-                          const size_t l) const
+                         const Lat_Long& lat_long,
+                         const Level& level,
+                         const size_t l) const
 {
 
    switch (product.enumeration)
@@ -2544,7 +2587,7 @@ Model::Stage::get_color (const Product& product,
 
       default:
       {
-
+ 
          const Met_Element met_element = product.get_met_element ();
 
          size_t i, j, k;

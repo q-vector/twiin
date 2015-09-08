@@ -69,6 +69,18 @@ void
 Display::set_title (Title& title,
                     const Dtime& basetime,
                     const Dstring& stage_str,
+                    const Model::Product& product,
+                    const Dstring& track_id)
+{
+   const Dstring& basetime_str = basetime.get_string ();
+   const Dstring stage_product = stage_str + " / " + product.get_description ();
+   title.set (track_id, "", stage_product, basetime_str, "");
+}
+
+void
+Display::set_title (Title& title,
+                    const Dtime& basetime,
+                    const Dstring& stage_str,
                     const Dtime& dtime,
                     const Location& location)
 {
@@ -806,9 +818,9 @@ Display::render_time_cross_mesh (const RefPtr<Context>& cr,
    const Color& major_color = Color::black (0.50);
 
    Mesh_2D mesh (Size_2D (2, 2), Domain_2D (domain_t, domain_z),
-      1, 1, minor_color,
+      1, GSL_NAN, minor_color,
       6, GSL_NAN, middle_color,
-      24, 10, major_color);
+      24, 1000, major_color);
 
    Rect (bl, ur).cairo (cr);
    cr->stroke ();
@@ -819,9 +831,9 @@ Display::render_time_cross_mesh (const RefPtr<Context>& cr,
    mesh.render_label_y (cr, transform, 2,
       start_t, "%.0fm", Label::REAL, 'r', 'c', 5);
    mesh.render_label_x (cr, transform, 2,
-      domain_z.end, "%b %d", Label::TIME, 'c', 't', 15);
+      domain_z.start, "%b %d", Label::TIME, 'c', 't', 15);
    mesh.render_label_x (cr, transform, 1,
-      domain_z.end, "%HZ", Label::TIME, 'c', 't', 5);
+      domain_z.start, "%HZ", Label::TIME, 'c', 't', 5);
 
    cr->restore ();
 

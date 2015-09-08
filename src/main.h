@@ -43,7 +43,7 @@ namespace twiin
          const Dstring
          output_dir;
 
-         Track_Map
+         Track::Map
          trajectory_map;
 
          Dstring
@@ -59,6 +59,12 @@ namespace twiin
                         const Model::Product& product,
                         const Dtime& dtime,
                         const Journey& journey) const;
+
+         Dstring
+         get_file_path (const Dstring& format,
+                        const Dstring& stage,
+                        const Model::Product& product,
+                        const Dstring& track_id) const;
 
          Dstring
          get_file_path (const Dstring& format,
@@ -98,6 +104,8 @@ namespace twiin
                const Dstring& level_str,
                const Dstring& time_str,
                const Dstring& zoom_str,
+               const Dstring& track_id_str,
+               const Track::Map& track_map,
                const Tokens& annotation_tokens,
                const Dstring& format,
                const Tokens& title_tokens,
@@ -116,6 +124,17 @@ namespace twiin
                         const Dstring& filename,
                         const Real u_bg,
                         const bool is_bludge) const;
+
+         void
+         time_cross (const Dstring& stage_str,
+                     const Dstring& product_str,
+                     const Dstring& track_id_str,
+                     const Track::Map& track_map,
+                     const Dstring& format,
+                     const Tokens& title_tokens,
+                     const Dstring& filename,
+                     const bool lagrangian,
+                     const bool is_bludge) const;
 
          void
          meteogram (const Dstring& stage_str,

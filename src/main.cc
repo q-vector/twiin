@@ -1,5 +1,6 @@
 #include <getopt.h>
 #include <denise/dstring.h>
+#include <denise/gzstream.h>
 #include "main.h"
 
 #ifndef ENABLE_GTKMM
@@ -92,6 +93,17 @@ Twiin::get_file_path (const Dstring& format,
 Dstring
 Twiin::get_file_path (const Dstring& format,
                       const Dstring& stage,
+                      const Model::Product& product,
+                      const Dstring& track_id) const
+{
+   const Dstring& file_name = stage + "-" + product.get_string () + "-" +
+      track_id + "." + format;
+   return output_dir + "/" + file_name;
+}
+
+Dstring
+Twiin::get_file_path (const Dstring& format,
+                      const Dstring& stage,
                       const Dtime& dtime,
                       const Location& location) const
 {
@@ -172,6 +184,8 @@ Twiin::plan (const Dstring& stage_str,
              const Dstring& level_str,
              const Dstring& time_str,
              const Dstring& zoom_str,
+             const Dstring& track_id_str,
+             const Track::Map& track_map,
              const Tokens& annotation_tokens,
              const Dstring& format,
              const Tokens& title_tokens,
@@ -204,6 +218,7 @@ Twiin::plan (const Dstring& stage_str,
    const Tokens level_tokens (level_str, ":");
    const Tokens stage_tokens (stage_str, ":");
    const Tokens product_tokens (product_str, ":");
+   const Tokens track_id_tokens (track_id_str, ":");
 
    Transform_Ptr_Map transform_ptr_map (size_2d, config_file);
 
@@ -258,8 +273,8 @@ Twiin::plan (const Dstring& stage_str,
                const Dstring& file_path = (filename == "") ?
                   get_file_path (format, s, product, level, dtime) :
                   output_dir + "/" + filename;
-               cout << file_path << endl;
-               if (is_bludge) { continue; }
+               cout << file_path;
+               if (is_bludge) { cout << " will be made" << endl; continue; }
 
                try
                {
@@ -288,6 +303,37 @@ Twiin::plan (const Dstring& stage_str,
 
                   }
 
+                  for (auto t = track_id_tokens.begin ();
+                       t != track_id_tokens.end (); t++)
+                  {
+
+                     const Dstring& track_id = *(t);
+                     const Track& track = track_map.at (track_id);
+
+                     const Real start_tau = track.get_start_tau ();
+                     const Real end_tau = track.get_end_tau ();
+                     const Real n = Integer (round ((end_tau - start_tau) / 0.025));
+                     const Tuple tau_tuple (n, start_tau, end_tau);
+
+                     Color::black ().cairo (cr);
+                     cr->set_font_size (14);
+
+                     for (auto iterator = tau_tuple.begin ();
+                          iterator != tau_tuple.end (); iterator++)
+                     {
+                        const Real tau = *(iterator);
+                        const Lat_Long& lat_long = track.get_lat_long (tau);
+                        const Point_2D& point = transform.transform (lat_long);
+                        Ring (0.2).cairo (cr, point);
+                        cr->fill ();
+                     }
+
+                     const Lat_Long& lat_long = track.get_lat_long (dtime);
+                     const Point_2D& point = transform.transform (lat_long);
+                     Label (track_id, point, 'c', 'c').cairo (cr);
+
+                  }
+
                   if (title_tokens.size () == 0)
                   {
                      Display::set_title (title, basetime,
@@ -305,8 +351,10 @@ Twiin::plan (const Dstring& stage_str,
 
                   if (format == "png") { surface->write_to_png (file_path); }
 
+                  cout << " okay" << endl;
+
                }
-               catch (...) { cout << "failed" << endl; }
+               catch (...) { cout << " failed" << endl; }
 
             }
 
@@ -393,8 +441,8 @@ Twiin::cross_section (const Dstring& stage_str,
             const Dstring& file_path = (filename == "") ?
                get_file_path (format, s, product, dtime, journey) :
                output_dir + "/" + filename;
-            cout << file_path << endl;
-            if (is_bludge) { continue; }
+            cout << file_path;
+            if (is_bludge) { cout << " will be made" << endl; continue; }
 
             try
             {
@@ -427,15 +475,133 @@ Twiin::cross_section (const Dstring& stage_str,
 
                if (format == "png") { surface->write_to_png (file_path); }
 
+               cout << " okay" << endl;
+
             }
-            catch (...) { cout << "failed" << endl; }
+            catch (...) { cout << " failed" << endl; }
 
          }
 
       }
    }
 
-};
+}
+
+void
+Twiin::time_cross (const Dstring& stage_str,
+                   const Dstring& product_str,
+                   const Dstring& track_id_str,
+                   const Track::Map& track_map,
+                   const Dstring& format,
+                   const Tokens& title_tokens,
+                   const Dstring& filename,
+                   const bool lagrangian,
+                   const bool is_bludge) const
+{
+
+   const Level level ("100m");
+   const Tokens stage_tokens (stage_str, ":");
+   const Tokens product_tokens (product_str, ":");
+   const Tokens track_id_tokens (track_id_str, ":");
+
+   const Domain_1D domain_z (0, 8000);
+
+   Title title (size_2d);
+   const Data data (config_file);
+   const Model& model = data.get_model ();
+   const Dtime& basetime = model.get_basetime ();
+
+   const Real margin_l = 50;
+   const Real margin_r = 20 + 80;
+   const Real margin_t = title.get_height () + 10;
+   const Real margin_b = 40;
+   const Real w = size_2d.i - margin_l - margin_r;
+   const Real h = size_2d.j - margin_t - margin_b;
+
+   for (Tokens::const_iterator i = stage_tokens.begin ();
+        i != stage_tokens.end (); i++)
+   {
+
+      const Dstring s (*i);
+      const Model::Stage& stage = model.get_stage (s);
+
+      for (Tokens::const_iterator j = product_tokens.begin ();
+           j != product_tokens.end (); j++)
+      {
+
+         const Model::Product product (*j);
+
+         const bool is_speed = (product.enumeration == Model::Product::SPEED);
+         const Model::Product& p = (is_speed ?
+            Model::Product (Model::Product::SPEED_HIGHER) : product);
+
+         #pragma omp parallel for
+         for (Integer index = 0; index < track_id_tokens.size (); index++)
+         {
+
+            const Dstring& track_id = track_id_tokens[index];
+            const Track& track = track_map.at (track_id);
+
+            const Real start_t = track.get_start_time ().t;
+            const Real end_t = track.get_end_time ().t;
+            const Domain_1D domain_t (start_t, end_t);
+
+            Affine_Transform_2D transform;
+            const Real span_t = domain_t.get_span ();
+            const Real span_z = domain_z.get_span ();
+            transform.scale (1, -1);
+            transform.translate (-start_t, 0);
+            transform.scale (w / span_t, h / span_z);
+            transform.translate (margin_l, size_2d.j - margin_b);
+
+            const Dstring& file_path = (filename == "") ?
+               get_file_path (format, s, product, track_id) :
+               output_dir + "/" + filename;
+            cout << file_path;
+            if (is_bludge) { cout << " will be made" << endl; continue; }
+
+            try
+            {
+
+               RefPtr<Surface> surface = denise::get_surface (
+                  size_2d, format, file_path);
+               RefPtr<Context> cr = denise::get_cr (surface);
+
+               const Index_2D i2d (margin_l, margin_t);
+               const Size_2D s2d (size_2d.i - margin_l - margin_r,
+                                  size_2d.j - margin_t - margin_b);
+               const Box_2D box_2d (i2d, s2d);
+
+               if (s2d.i < 0 || s2d.j < 0) { continue; }
+
+               Display::render_time_cross (cr, transform, box_2d,
+                  domain_z, stage, product, track, lagrangian);
+
+               Display::render_color_bar (cr, size_2d, p);
+
+               if (title_tokens.size () == 0)
+               {
+                  Display::set_title (title, basetime, s, product, track_id);
+               }
+               else
+               {
+                  title.set (title_tokens);
+               }
+               title.cairo (cr);
+
+               if (format == "png") { surface->write_to_png (file_path); }
+
+               cout << " okay" << endl;
+
+            }
+            catch (...) { cout << " failed" << endl; }
+
+         }
+
+      }
+   }
+
+}
 
 void
 Twiin::meteogram (const Dstring& stage_str,
@@ -475,8 +641,8 @@ Twiin::meteogram (const Dstring& stage_str,
          const Dstring& file_path = (filename == "") ?
             get_file_path (format, s, location) :
             output_dir + "/" + filename;
-         cout << file_path << endl;
-         if (is_bludge) { continue; }
+         cout << file_path;
+         if (is_bludge) { cout << " will be made" << endl; continue; }
 
          try
          {
@@ -500,8 +666,10 @@ Twiin::meteogram (const Dstring& stage_str,
 
             if (format == "png") { surface->write_to_png (file_path); }
 
+            cout << " okay" << endl;
+
          }
-         catch (...) { cout << "failed" << endl; }
+         catch (...) { cout << " failed" << endl; }
 
       }
 
@@ -578,8 +746,8 @@ Twiin::vertical_profile (const Dstring& stage_str,
                      get_file_path (format, s, dtime, sole_location) :
                      get_file_path (format, s, dtime, location_name)) :
                   output_dir + "/" + filename;
-            cout << file_path << endl;
-            if (is_bludge) { continue; }
+            cout << file_path;
+            if (is_bludge) { cout << " will be made" << endl; continue; }
 
             try
             {
@@ -633,8 +801,10 @@ Twiin::vertical_profile (const Dstring& stage_str,
 
                }
 
+               cout << " okay" << endl;
+
             }
-            catch (...) { cout << "failed" << endl; }
+            catch (...) { cout << " failed" << endl; }
 
          }
 
@@ -690,9 +860,11 @@ main (int argc,
    Tokens title_tokens;
    bool is_bludge = false;
    bool is_cross_section = false;
+   bool is_time_cross = false;
    bool is_gui = false;
    bool is_interactive = false;
    bool is_meteogram = false;
+   bool lagrangian = false;
    bool ignore_pressure = false;
    bool no_stage = false;
    bool no_wind_barb = false;
@@ -700,11 +872,14 @@ main (int argc,
    Real u_bg = 0;
    Dstring location_str ("");
    Journey journey;
+   Track::Map track_map;
+   Dstring track_id_str ("");
    Dstring config_file_path (Dstring (getenv ("HOME")) + "/.twiin.rc");
 
    int c;
    int option_index = 0;
-   while ((c = getopt_long (argc, argv, "a:bc:F:f:Gg:il:m:o:Pp:Ss:T:t:x:u:v:Wz:",
+   char optstring[] = "a:bc:F:f:Gg:ij:Ll:M:m:o:Pp:Ss:T:t:X:x:u:v:Wz:";
+   while ((c = getopt_long (argc, argv, optstring,
           long_options, &option_index)) != -1)
    {
 
@@ -761,9 +936,34 @@ main (int argc,
             break;
          }
 
+         case 'j':
+         {
+            track_id_str = Dstring (optarg);
+            break;
+         }
+
+         case 'L':
+         {
+            lagrangian = true;
+            break;
+         }
+
          case 'l':
          {
             level_str = (Dstring (optarg));
+            break;
+         }
+
+         case 'M':
+         {
+            const Dstring file_path (optarg);
+            igzstream file (file_path);
+            if (!file.is_open ())
+            {
+               throw IO_Exception ("Can't open " + file_path);
+            }
+            track_map.ingest (file);
+            file.close ();
             break;
          }
 
@@ -848,6 +1048,15 @@ main (int argc,
             break;
          }
 
+         case 'X':
+         {
+            is_gui = false;
+            is_interactive = false;
+            is_time_cross = true;
+            track_id_str = Dstring (optarg);
+            break;
+         }
+
          case 'z':
          {
             zoom_str = (Dstring (optarg));
@@ -893,6 +1102,12 @@ main (int argc,
                time_str, format, title_tokens, filename, u_bg, is_bludge);
          }
          else
+         if (is_time_cross)
+         {
+            twiin.time_cross (stage_str, product_str, track_id_str, track_map,
+               format, title_tokens, filename, lagrangian, is_bludge);
+         }
+         else
          if (is_meteogram)
          {
             twiin.meteogram (stage_str, location_str, time_str,
@@ -906,9 +1121,9 @@ main (int argc,
          }
          else
          {
-            twiin.plan (stage_str, product_str, level_str,
-               time_str, zoom_str, annotation_tokens, format,
-               title_tokens, filename, no_stage, no_wind_barb, is_bludge);
+            twiin.plan (stage_str, product_str, level_str, time_str, zoom_str,
+               track_id_str, track_map, annotation_tokens, format, title_tokens,
+               filename, no_stage, no_wind_barb, is_bludge);
          }
       }
 
