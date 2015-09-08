@@ -1222,9 +1222,13 @@ Twiin::twiin_trajectory_print (const Dstring& identifier) const
       const Dtime& dtime = *(iterator);
       const Dstring& time_str = dtime.get_string ("%Y%m%d%H%M%S");
       const Lat_Long& ll = trajectory.get_lat_long (dtime);
+      const Motion& motion = trajectory.get_motion (dtime);
+      const Real direction = motion.get_direction ();
+      const Real speed = motion.get_speed ();
       const Real z = trajectory.get_datum ("z", dtime);
 
-      cout << time_str << " " << ll << " " << z << " ";
+      cout << time_str << " " << ll << " " << direction << " "
+           << speed << " " << z << " ";
 
       for (auto iterator_e = trajectory.begin ();
            iterator_e != trajectory.end (); iterator_e++)
