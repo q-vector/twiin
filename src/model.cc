@@ -3253,6 +3253,19 @@ Model::Stage::get_trajectory (Lat_Long lat_long,
       const Dtime dtime_ (dtime.t + dt, false);
       const Lat_Long& lat_long_ = Geodesy::get_destination (lat_long,
          wind_.get_speed () * dts, wind_.get_direction () + 180);
+      if (out_of_bounds (lat_long_)) { break; }
+
+      const Real topography_ = get_topography (lat_long_);
+      if (level.type == Level::HEIGHT)
+      {
+         if (level.value > 38000) { break; }
+         if (level.value < topography_)
+         {
+            level.value = topography_;
+            level.type = Level::SURFACE;
+         }
+      }
+
       const Real u_ = evaluate (U, lat_long_, level, dtime_);
       const Real v_ = evaluate (V, lat_long_, level, dtime_);
       const Wind wind ((u + u_), (v + v_));
