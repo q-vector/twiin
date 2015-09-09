@@ -45,7 +45,8 @@ namespace twiin
                     const Dtime& basetime,
                     const Dstring& stage_str,
                     const Model::Product& product,
-                    const Dstring& track_id);
+                    const Dstring& track_id,
+                    const bool lagrangian);
 
          static void
          set_title (Title& title,

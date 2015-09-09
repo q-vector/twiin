@@ -94,10 +94,12 @@ Dstring
 Twiin::get_file_path (const Dstring& format,
                       const Dstring& stage,
                       const Model::Product& product,
-                      const Dstring& track_id) const
+                      const Dstring& track_id,
+                      const bool lagrangian) const
 {
+   const Dstring pov_str (lagrangian ? "LAGRANGIAN" : "EULERIAN");
    const Dstring& file_name = stage + "-" + product.get_string () + "-" +
-      track_id + "." + format;
+      track_id + "-" + pov_str + "." + format;
    return output_dir + "/" + file_name;
 }
 
@@ -555,7 +557,7 @@ Twiin::time_cross (const Dstring& stage_str,
             transform.translate (margin_l, size_2d.j - margin_b);
 
             const Dstring& file_path = (filename == "") ?
-               get_file_path (format, s, product, track_id) :
+               get_file_path (format, s, product, track_id, lagrangian) :
                output_dir + "/" + filename;
             cout << file_path;
             if (is_bludge) { cout << " will be made" << endl; continue; }
@@ -581,7 +583,8 @@ Twiin::time_cross (const Dstring& stage_str,
 
                if (title_tokens.size () == 0)
                {
-                  Display::set_title (title, basetime, s, product, track_id);
+                  Display::set_title (title, basetime, s,
+                     product, track_id, lagrangian);
                }
                else
                {

@@ -64,7 +64,8 @@ namespace twiin
          get_file_path (const Dstring& format,
                         const Dstring& stage,
                         const Model::Product& product,
-                        const Dstring& track_id) const;
+                        const Dstring& track_id,
+                        const bool lagrangian) const;
 
          Dstring
          get_file_path (const Dstring& format,

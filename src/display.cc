@@ -70,11 +70,13 @@ Display::set_title (Title& title,
                     const Dtime& basetime,
                     const Dstring& stage_str,
                     const Model::Product& product,
-                    const Dstring& track_id)
+                    const Dstring& track_id,
+                    const bool lagrangian)
 {
+   const Dstring pov_str (lagrangian ? "Lagrangian" : "Eulerian");
    const Dstring& basetime_str = basetime.get_string ();
    const Dstring stage_product = stage_str + " / " + product.get_description ();
-   title.set (track_id, "", stage_product, basetime_str, "");
+   title.set (track_id, "", stage_product, basetime_str, pov_str);
 }
 
 void
@@ -870,13 +872,6 @@ Display::render_time_cross (const RefPtr<Context>& cr,
 
    //render_time_cross_arrows (cr, transform, box_2d, stage,
    //   product, dtime, journey, u_bg);
-
-   if (lagrangian)
-   {
-      Color::black ().cairo (cr);
-      const Index_2D anchor = box_2d.get_ne ();
-      Label ("Lagrangian", box_2d.get_ne (), 'r', 't', 10).cairo (cr);
-   }
 
    cr->restore ();
 
