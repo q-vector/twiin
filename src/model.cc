@@ -2977,7 +2977,6 @@ Model::Stage::get_time_cross_raster_ptr (const Box_2D& box_2d,
    Level level (Level::HEIGHT, GSL_NAN);
    Real& z = level.value;
 
-   const Geodesy geodesy;
    const Index_2D& index_2d = box_2d.index_2d;
    const Size_2D& size_2d = box_2d.size_2d;
 
@@ -3229,7 +3228,7 @@ Model::Stage::get_trajectory (Lat_Long lat_long,
       if (level.type == Level::HEIGHT)
       {
          if (level.value > 38000) { break; }
-         if (level.value < topography)
+         if (level.value <= topography)
          {
             level.value = topography;
             level.type = Level::SURFACE;
@@ -3259,7 +3258,7 @@ Model::Stage::get_trajectory (Lat_Long lat_long,
       if (level.type == Level::HEIGHT)
       {
          if (level.value > 38000) { break; }
-         if (level.value < topography_)
+         if (level.value <= topography_)
          {
             level.value = topography_;
             level.type = Level::SURFACE;

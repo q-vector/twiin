@@ -106,6 +106,20 @@ Twiin::get_file_path (const Dstring& format,
 Dstring
 Twiin::get_file_path (const Dstring& format,
                       const Dstring& stage,
+                      const Model::Product& product,
+                      const Level& level,
+                      const Dtime& dtime,
+                      const Dstring& track_id) const
+{
+   const Dstring& time_str = dtime.get_string ("%Y%m%d%H%M");
+   const Dstring& file_name = stage + "-" + product.get_string () + "-" +
+      time_str + "-" + track_id + "-" + level.get_string () + "." + format;
+   return output_dir + "/" + file_name;
+}
+
+Dstring
+Twiin::get_file_path (const Dstring& format,
+                      const Dstring& stage,
                       const Dtime& dtime,
                       const Location& location) const
 {
@@ -348,6 +362,211 @@ Twiin::plan (const Dstring& stage_str,
                   title.cairo (cr);
 
                   Display::render_annotations (cr, transform, annotation_tokens);
+                  Display::render_scale_bar (cr, transform, size_2d);
+                  Display::render_color_bar (cr, size_2d, p);
+
+                  if (format == "png") { surface->write_to_png (file_path); }
+
+                  cout << " okay" << endl;
+
+               }
+               catch (...) { cout << " failed" << endl; }
+
+            }
+
+         }
+
+      }
+
+   }
+
+   if (gt_ptr != NULL) { delete gt_ptr; }
+
+}
+
+void
+Twiin::plan (const Dstring& stage_str,
+             const Dstring& product_str,
+             const Dstring& time_str,
+             const Dstring& zoom_str,
+             const Dstring& track_id_str,
+             const Track::Map& track_map,
+             const Tokens& annotation_tokens,
+             const Dstring& format,
+             const Tokens& title_tokens,
+             const Dstring& filename,
+             const bool no_stage,
+             const bool no_wind_barb,
+             const bool is_bludge) const
+{
+
+   Gshhs* gshhs_ptr = NULL;
+
+   for (auto iterator = config_file.begin ();
+        iterator != config_file.end (); iterator++)
+   {
+
+      const Tokens tokens (*(iterator), " \f\t\n");
+      if (tokens.size () != 2) { continue; }
+      if (tokens[0] != "overlay") { continue; }
+
+      const Tokens overlay_tokens (tokens[1], ":");
+      if (overlay_tokens[0] != "GSHHS") { continue; }
+
+      const Dstring gshhs_file_path (overlay_tokens[8]);
+      gshhs_ptr = new Gshhs (gshhs_file_path);
+      break;
+
+   }
+
+   const Dtime::Set time_set (time_str);
+   const Tokens stage_tokens (stage_str, ":");
+   const Tokens product_tokens (product_str, ":");
+   const Tokens track_id_tokens (track_id_str, ":");
+
+   Transform_Ptr_Map transform_ptr_map (size_2d, config_file);
+
+   Title title (size_2d);
+   const Data data (config_file);
+   const Model& model = data.get_model ();
+   const Dtime& basetime = model.get_basetime ();
+   const Hrit& hrit = data.get_hrit ();
+   const Station::Map& station_map = data.get_station_map ();
+
+   const Point_2D centre (size_2d.i/2, size_2d.j/2);
+   Geodetic_Transform* gt_ptr = (zoom_str == "" ? NULL :
+      Geodetic_Transform::get_transform_ptr (zoom_str, centre)); 
+
+   for (Tokens::const_iterator i = stage_tokens.begin ();
+        i != stage_tokens.end (); i++)
+   {
+
+      const Dstring s (*i);
+      const Model::Stage& stage = model.get_stage (s);
+      const Geodetic_Transform& transform = gt_ptr == NULL ?
+         *(transform_ptr_map[s]) : *gt_ptr;
+
+      const Geodetic_Mesh& mesh = transform.get_mesh (size_2d);
+
+      for (Tokens::const_iterator j = product_tokens.begin ();
+           j != product_tokens.end (); j++)
+      {
+
+         const Model::Product product (*j);
+         const bool is_speed = (product.enumeration == Model::Product::SPEED);
+
+         for (auto t = track_id_tokens.begin ();
+              t != track_id_tokens.end (); t++)
+         {
+
+            const Dstring& track_id = *(t);
+            const Track& track = track_map.at (track_id);
+            const Real start_tau = track.get_start_tau ();
+            const Real end_tau = track.get_end_tau ();
+
+            const Level surface ("Surface");
+            const vector<Dtime>& valid_time_vector =
+               stage.get_valid_time_vector (product, surface, time_set);
+
+            for (auto l = valid_time_vector.begin ();
+                 l != valid_time_vector.end (); l++)
+            {
+        
+               const Dtime& dtime = *(l);
+               const Lat_Long& lat_long = track.get_lat_long (dtime);
+               const Real z = track.get_datum ("z", dtime);
+               const Real topography = stage.get_topography (lat_long);
+
+               const bool is_surface = (z <= topography);
+               if (!is_surface)
+               {
+                  const set<Dtime>& uvts =
+                     stage.get_valid_time_set (product, Level ("100m"));
+                  if (uvts.find (dtime) == uvts.end ()) { continue; }
+               }
+
+               const Level& level = (is_surface ?
+                  surface : Level (Level::HEIGHT, z));
+               const bool is_higher =
+                  (level.type == Level::HEIGHT) && (level.value > 1500);
+               const Model::Product& p = ((is_speed && is_higher) ?
+                  Model::Product (Model::Product::SPEED_HIGHER) : product);
+
+               const Dstring& file_path = (filename == "") ?
+                  get_file_path (format, s, product, level, dtime, track_id) :
+                  output_dir + "/" + filename;
+               cout << file_path;
+               if (is_bludge) { cout << " will be made" << endl; continue; }
+
+               try
+               {
+
+                  RefPtr<Surface> surface = denise::get_surface (
+                     size_2d, format, file_path);
+                  RefPtr<Context> cr = denise::get_cr (surface);
+
+                  Display::render (cr, transform, size_2d, model, hrit,
+                     station_map, dtime, level, s, p, no_stage,
+                     no_wind_barb);
+
+                  if (gshhs_ptr != NULL)
+                  {
+                     cr->save ();
+
+                     cr->set_line_width (2);
+                     Color::black (0.6).cairo (cr);
+                     gshhs_ptr->cairo (cr, transform);
+                     cr->stroke ();
+
+                     cr->save ();
+                     mesh.cairo (cr, transform);
+
+                     cr->restore ();
+
+                  }
+
+                  if (title_tokens.size () == 0)
+                  {
+                     Display::set_title (title, basetime,
+                        s, product, dtime, level);
+                  }
+                  else
+                  {
+                     title.set (title_tokens);
+                  }
+                  title.cairo (cr);
+
+                  const Real n = Integer (round ((end_tau - start_tau) / 0.025));
+                  const Tuple tau_tuple (n, start_tau, end_tau);
+
+                  cr->save ();
+                  Color::black ().cairo (cr);
+                  cr->set_font_size (14);
+
+                  Simple_Polyline simple_polyline;
+
+                  for (auto iterator = tau_tuple.begin ();
+                       iterator != tau_tuple.end (); iterator++)
+                  {
+                     const Real tau = *(iterator);
+                     const Lat_Long& lat_long = track.get_lat_long (tau);
+                     simple_polyline.add (lat_long);
+                     const Point_2D& point = transform.transform (lat_long);
+                     Ring (0.2).cairo (cr, point);
+                     cr->fill ();
+                  }
+
+                  cr->set_line_width (0.5);
+                  simple_polyline.cairo (cr, transform);
+                  cr->stroke ();
+
+                  const Point_2D& point = transform.transform (lat_long);
+                  Label (track_id, point, 'c', 'c').cairo (cr);
+
+                  cr->restore ();
+
+                  Display::render_annotations (cr, transform,
+                     annotation_tokens);
                   Display::render_scale_bar (cr, transform, size_2d);
                   Display::render_color_bar (cr, size_2d, p);
 
@@ -853,7 +1072,7 @@ main (int argc,
    Dstring output_dir (".");
    Dstring product_str ("WIND");
    Dstring stage_str ("STAGE3");
-   Dstring level_str ("Surface");
+   Dstring level_str ("");
    Dstring time_str;
    Dstring zoom_str ("");
    Dstring format ("png");
@@ -1124,9 +1343,20 @@ main (int argc,
          }
          else
          {
-            twiin.plan (stage_str, product_str, level_str, time_str, zoom_str,
-               track_id_str, track_map, annotation_tokens, format, title_tokens,
-               filename, no_stage, no_wind_barb, is_bludge);
+            const bool level_specified = (level_str != "");
+            if (level_specified)
+            {
+               twiin.plan (stage_str, product_str, level_str, time_str,
+                  zoom_str, track_id_str, track_map, annotation_tokens,
+                  format, title_tokens, filename, no_stage, no_wind_barb,
+                  is_bludge);
+            }
+            else
+            {
+               twiin.plan (stage_str, product_str, time_str, zoom_str,
+                  track_id_str, track_map, annotation_tokens, format,
+                  title_tokens, filename, no_stage, no_wind_barb, is_bludge);
+            }
          }
       }
 

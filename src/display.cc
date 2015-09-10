@@ -797,21 +797,14 @@ Display::render_time_cross_w (const RefPtr<Context>& cr,
 void
 Display::render_time_cross_mesh (const RefPtr<Context>& cr,
                                  const Transform_2D& transform,
-                                 const Domain_1D& domain_z,
-                                 const Track& track)
+                                 const Domain_1D& domain_t,
+                                 const Domain_1D& domain_z)
 {
 
    cr->save ();
 
-   const Real start_t = track.get_start_time ().t;
-   const Real end_t = track.get_end_time ().t;
-   const Domain_1D domain_t (start_t, end_t);
-
-   const Real start_z = domain_z.start;
-   const Real end_z = domain_z.end;
-
-   const Point_2D& bl = transform.transform (start_t, start_z);
-   const Point_2D& ur = transform.transform (end_t, end_z);
+   const Point_2D& bl = transform.transform (domain_t.start, domain_z.start);
+   const Point_2D& ur = transform.transform (domain_t.end, domain_z.end);
 
    Color::black (0.3).cairo (cr);
 
@@ -831,12 +824,42 @@ Display::render_time_cross_mesh (const RefPtr<Context>& cr,
    Color::black ().cairo (cr);
 
    mesh.render_label_y (cr, transform, 2,
-      start_t, "%.0fm", Label::REAL, 'r', 'c', 5);
+      domain_t.start, "%.0fm", Label::REAL, 'r', 'c', 5);
    mesh.render_label_x (cr, transform, 2,
       domain_z.start, "%b %d", Label::TIME, 'c', 't', 15);
    mesh.render_label_x (cr, transform, 1,
       domain_z.start, "%HZ", Label::TIME, 'c', 't', 5);
 
+   cr->restore ();
+
+}
+
+void
+Display::render_time_cross_track (const RefPtr<Context>& cr,
+                                  const Transform_2D& transform,
+                                  const Track& track)
+{
+
+   const Real start_t = track.get_start_time ().t;
+   const Real end_t = track.get_end_time ().t;
+   const Integer n = Integer (round ((end_t - start_t) / 0.025));
+   const Tuple t_tuple (n, start_t, end_t);
+
+   Simple_Polyline trace;
+
+   for (auto iterator = t_tuple.begin ();
+        iterator != t_tuple.end (); iterator++)
+   {
+      const Dtime dtime (*iterator);
+      const Real z = track.get_datum ("z", dtime);
+      trace.add (Point_2D (dtime.t, z));
+   }
+
+   cr->save ();
+   cr->set_line_width (1);
+   Color::black (0.5).cairo (cr);
+   trace.cairo (cr, transform);
+   cr->stroke ();
    cr->restore ();
 
 }
@@ -868,7 +891,12 @@ Display::render_time_cross (const RefPtr<Context>& cr,
       render_time_cross_w (cr, transform, box_2d, stage, track);
    }
 
-   render_time_cross_mesh (cr, transform, domain_z, track);
+   const Real start_t = track.get_start_time ().t;
+   const Real end_t = track.get_end_time ().t;
+   const Domain_1D domain_t (start_t, end_t);
+   render_time_cross_mesh (cr, transform, domain_t, domain_z);
+
+   render_time_cross_track (cr, transform, track); 
 
    //render_time_cross_arrows (cr, transform, box_2d, stage,
    //   product, dtime, journey, u_bg);

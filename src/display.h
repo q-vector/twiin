@@ -185,8 +185,13 @@ namespace twiin
          static void
          render_time_cross_mesh (const RefPtr<Context>& cr,
                                  const Transform_2D& transform,
-                                 const Domain_1D& domain_z,
-                                 const Track& track);
+                                 const Domain_1D& domain_t,
+                                 const Domain_1D& domain_z);
+
+         static void
+         render_time_cross_track (const RefPtr<Context>& cr,
+                                  const Transform_2D& transform,
+                                  const Track& track);
 
          static void
          render_time_cross (const RefPtr<Context>& cr,
