@@ -840,8 +840,9 @@ Display::render_time_cross_track (const RefPtr<Context>& cr,
                                   const Track& track)
 {
 
-   const Real start_t = track.get_start_time ().t;
-   const Real end_t = track.get_end_time ().t;
+   const Dtime& epoch = track.get_epoch ();
+   const Real start_t = epoch.t + track.get_start_tau ();
+   const Real end_t = epoch.t + track.get_end_tau ();
    const Integer n = Integer (round ((end_t - start_t) / 0.025));
    const Tuple t_tuple (n, start_t, end_t);
 
@@ -851,6 +852,7 @@ Display::render_time_cross_track (const RefPtr<Context>& cr,
         iterator != t_tuple.end (); iterator++)
    {
       const Dtime dtime (*iterator);
+      if (dtime.t < start_t || dtime.t > end_t) { continue; }
       const Real z = track.get_datum ("z", dtime);
       trace.add (Point_2D (dtime.t, z));
    }

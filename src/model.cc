@@ -2980,16 +2980,16 @@ Model::Stage::get_time_cross_raster_ptr (const Box_2D& box_2d,
    const Index_2D& index_2d = box_2d.index_2d;
    const Size_2D& size_2d = box_2d.size_2d;
 
-   const Real start_t = track.get_start_time ().t;
-   const Real end_t = track.get_end_time ().t;
+   const Dtime& start_time = track.get_start_time ();
+   const Dtime& end_time = track.get_end_time ();
 
    for (Integer i = index_2d.i; i < index_2d.i + size_2d.i; i++)
    {
 
       transform.reverse (t, z, Real (i), 0);
-      if (t < start_t || t > end_t) { continue; }
-
       const Dtime dtime (t);
+      if (dtime < start_time || dtime > end_time) { continue; }
+
       const size_t l = get_uppers_l (dtime);
 
       const Lat_Long& lat_long = track.get_lat_long (dtime);
@@ -3243,10 +3243,10 @@ Model::Stage::get_trajectory (Lat_Long lat_long,
       const Real h_long = grid_size.second;
 
       const Real sign = (finish_tau > 0 ? 1 : -1);
-      const Real dt_x = fabs (0.7 * h_long * LATITUDE_LENGTH / u);
-      const Real dt_y = fabs (0.7 * h_lat * LATITUDE_LENGTH / v);
-      const Real dt = std::min (1.0/60.0, std::min (dt_x, dt_y)) * sign;
-      const Real dts = dt * 3600;
+      const Real dts_x = fabs (0.45 * h_long * LATITUDE_LENGTH / u);
+      const Real dts_y = fabs (0.45 * h_lat * LATITUDE_LENGTH / v);
+      const Real dts = std::min (1.0, std::min (dts_x, dts_y)) * sign;
+      const Real dt = dts / 3600;
 
       const Wind wind_ (u, v);
       const Dtime dtime_ (dtime.t + dt, false);

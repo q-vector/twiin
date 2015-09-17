@@ -331,7 +331,7 @@ Twiin::plan (const Dstring& stage_str,
                      const Real n = Integer (round ((end_tau - start_tau) / 0.025));
                      const Tuple tau_tuple (n, start_tau, end_tau);
 
-                     Color::black ().cairo (cr);
+                     cr->save ();
                      cr->set_font_size (14);
 
                      for (auto iterator = tau_tuple.begin ();
@@ -339,16 +339,30 @@ Twiin::plan (const Dstring& stage_str,
                      {
                         const Real tau = *(iterator);
                         const Lat_Long& lat_long = track.get_lat_long (tau);
+                        const Real z = track.get_datum ("z", tau);
+                        const Real zz = std::min (z, 5000.0);
+                        const Real hue = (zz / 5000) * 0.833;
                         const Point_2D& point = transform.transform (lat_long);
-                        Ring (0.2).cairo (cr, point);
+                        Color::black (0.5).cairo (cr);
+                        Ring (0.4).cairo (cr, point);
+                        Color::hsb (hue, 0.8, 0.6).cairo (cr);
+                        Ring (0.4).cairo (cr, point);
                         cr->fill ();
                      }
 
                      const Lat_Long& lat_long = track.get_lat_long (dtime);
+                     const Real z = track.get_datum ("z", dtime);
+                     const Real zz = std::min (z, 5000.0);
+                     const Real hue = (zz / 5000) * 0.833;
                      const Point_2D& point = transform.transform (lat_long);
+                     Color::black (0.5).cairo (cr);
+                     Label (track_id, point, 'c', 'c').cairo (cr);
+                     Color::hsb (hue, 0.8, 0.6).cairo (cr);
                      Label (track_id, point, 'c', 'c').cairo (cr);
 
                   }
+
+                  cr->restore ();
 
                   if (title_tokens.size () == 0)
                   {
@@ -461,6 +475,8 @@ Twiin::plan (const Dstring& stage_str,
 
             const Dstring& track_id = *(t);
             const Track& track = track_map.at (track_id);
+            const Dtime& start_time = track.get_start_time ();
+            const Dtime& end_time = track.get_end_time ();
             const Real start_tau = track.get_start_tau ();
             const Real end_tau = track.get_end_tau ();
 
@@ -473,7 +489,11 @@ Twiin::plan (const Dstring& stage_str,
             {
         
                const Dtime& dtime = *(l);
+               if (dtime < start_time || dtime > end_time) { continue; }
+
                const Lat_Long& lat_long = track.get_lat_long (dtime);
+               if (stage.out_of_bounds (lat_long)) { continue; }
+
                const Real z = track.get_datum ("z", dtime);
                const Real topography = stage.get_topography (lat_long);
 
@@ -1409,20 +1429,27 @@ Twiin::twiin_trajectory_survey (const Dstring& identifier,
 {
 
    vector<Model::Product> product_vector;
+cout << arguments << endl;
    for (Integer i = 0; i < arguments.size (); i++)
    {
       const Tokens t (arguments[i], "=");
+cout << "   " << t << " " << t.size () << " " << t[0].get_lower_case () << endl;
       if (t.size () == 2 && t[0].get_lower_case () == "product")
       {
          const Model::Product product (t[1]);
          product_vector.push_back (product);
+cout << "   " << t[1] << " " << product.get_string () << endl;
       }
    }
+   cout << "product_vector size = " << product_vector.size () << endl;
 
    const Data data (config_file);
    const Model& model = data.get_model ();
    Track& trajectory = trajectory_map.at (identifier);
+   cout << "before size = " << trajectory.size () << endl;
    model.get_stage (stage_str).survey_trajectory (trajectory, product_vector);
+
+   cout << "now size = " << trajectory.size () << endl;
 
 }
 
@@ -1547,6 +1574,8 @@ Twiin::twiin_trajectory (const Tokens& tokens)
    {
       const Dstring& identifier = tokens[1];
       const Dstring& stage_str = tokens[2];
+cout << tokens << endl;
+cout << tokens.subtokens (3) << endl;
       twiin_trajectory_survey (identifier, stage_str, tokens.subtokens (3));
    }
    else
