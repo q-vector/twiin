@@ -3276,11 +3276,16 @@ Model::Stage::get_trajectory (Lat_Long lat_long,
       const Dtime next_dtime (dtime.t + dt, false);
       const Real u_ = evaluate (U, ll_, level_, next_dtime);
       const Real v_ = evaluate (V, ll_, level_, next_dtime);
+      const Wind wind_ (u_, v_);
       const Wind wind_a ((u + u_) * 0.5, (v + v_) * 0.5);
 
       const Real distance_a = wind_a.get_speed () * dts;
       const Real azimuth_a = wind_a.get_direction () + 180;
-      lat_long = G::get_destination (lat_long, distance_a, azimuth_a);
+      const Lat_Long& nll = G::get_destination (lat_long, distance_a, azimuth_a);
+
+      const Real ddd = Geodesy::get_distance (lat_long, nll);
+      const Real zzz = Geodesy::get_azimuth_forward (lat_long, nll);
+      const Real sss = ddd / dts;
 
       if (level_.type != Level::SURFACE)
       {
@@ -3288,6 +3293,7 @@ Model::Stage::get_trajectory (Lat_Long lat_long,
          level.value = (level.value + (w + w_) * 0.5 * dts);
       }
 
+      lat_long = nll;
       dtime.t = next_dtime.t;
 
    }
