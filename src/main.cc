@@ -1429,27 +1429,20 @@ Twiin::twiin_trajectory_survey (const Dstring& identifier,
 {
 
    vector<Model::Product> product_vector;
-cout << arguments << endl;
    for (Integer i = 0; i < arguments.size (); i++)
    {
       const Tokens t (arguments[i], "=");
-cout << "   " << t << " " << t.size () << " " << t[0].get_lower_case () << endl;
       if (t.size () == 2 && t[0].get_lower_case () == "product")
       {
          const Model::Product product (t[1]);
          product_vector.push_back (product);
-cout << "   " << t[1] << " " << product.get_string () << endl;
       }
    }
-   cout << "product_vector size = " << product_vector.size () << endl;
 
    const Data data (config_file);
    const Model& model = data.get_model ();
    Track& trajectory = trajectory_map.at (identifier);
-   cout << "before size = " << trajectory.size () << endl;
    model.get_stage (stage_str).survey_trajectory (trajectory, product_vector);
-
-   cout << "now size = " << trajectory.size () << endl;
 
 }
 
@@ -1574,8 +1567,6 @@ Twiin::twiin_trajectory (const Tokens& tokens)
    {
       const Dstring& identifier = tokens[1];
       const Dstring& stage_str = tokens[2];
-cout << tokens << endl;
-cout << tokens.subtokens (3) << endl;
       twiin_trajectory_survey (identifier, stage_str, tokens.subtokens (3));
    }
    else
