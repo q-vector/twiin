@@ -293,6 +293,13 @@ namespace twiin
                          
                Real
                evaluate (const Met_Element& met_element,
+                         const size_t i,
+                         const size_t j,
+                         const Level& level,
+                         const size_t l) const;
+                         
+               Real
+               evaluate (const Met_Element& met_element,
                          const Lat_Long& lat_long,
                          const size_t k,
                          const size_t l) const;
@@ -335,6 +342,13 @@ namespace twiin
 
                Real
                evaluate_dt (const Met_Element& met_element,
+                            const size_t i,
+                            const size_t j,
+                            const Level& level,
+                            const size_t l) const;
+
+               Real
+               evaluate_dt (const Met_Element& met_element,
                             const Lat_Long& lat_long,
                             const size_t k,
                             const size_t l) const;
@@ -365,6 +379,13 @@ namespace twiin
 
                Real
                evaluate_dx (const Met_Element& met_element,
+                            const size_t i,
+                            const size_t j,
+                            const Level& level,
+                            const size_t l) const;
+
+               Real
+               evaluate_dx (const Met_Element& met_element,
                             const Lat_Long& lat_long,
                             const size_t k,
                             const size_t l) const;
@@ -395,6 +416,13 @@ namespace twiin
 
                Real
                evaluate_dy (const Met_Element& met_element,
+                            const size_t i,
+                            const size_t j,
+                            const Level& level,
+                            const size_t l) const;
+
+               Real
+               evaluate_dy (const Met_Element& met_element,
                             const Lat_Long& lat_long,
                             const size_t k,
                             const size_t l) const;
@@ -409,6 +437,13 @@ namespace twiin
                Real
                evaluate_dz (const Met_Element& met_element,
                             const Lat_Long& lat_long,
+                            const Level& level,
+                            const size_t l) const;
+
+               Real
+               evaluate_dz (const Met_Element& met_element,
+                            const size_t i,
+                            const size_t j,
                             const Level& level,
                             const size_t l) const;
 
@@ -452,13 +487,28 @@ namespace twiin
                Real
                evaluate_wind_advection (const Met_Element& met_element,
                                         const Lat_Long& lat_long,
-                                        const Level& level,
+                                        const size_t l,
+                                        const Wind& wind) const;
+
+               Real
+               evaluate_wind_advection (const Met_Element& met_element,
+                                        const size_t i,
+                                        const size_t j,
                                         const size_t l,
                                         const Wind& wind) const;
 
                Real
                evaluate_wind_advection (const Met_Element& met_element,
                                         const Lat_Long& lat_long,
+                                        const Level& level,
+                                        const size_t l,
+                                        const Wind& wind) const;
+
+               Real
+               evaluate_wind_advection (const Met_Element& met_element,
+                                        const size_t i,
+                                        const size_t j,
+                                        const Level& level,
                                         const size_t l,
                                         const Wind& wind) const;
 
@@ -470,7 +520,22 @@ namespace twiin
 
                Real
                evaluate_h_advection (const Met_Element& met_element,
+                                     const size_t i,
+                                     const size_t j,
+                                     const size_t l,
+                                     const Wind& wind_bg = Wind (0, 0)) const;
+
+               Real
+               evaluate_h_advection (const Met_Element& met_element,
                                      const Lat_Long& lat_long,
+                                     const Level& level,
+                                     const size_t l,
+                                     const Wind& wind_bg = Wind (0, 0)) const;
+
+               Real
+               evaluate_h_advection (const Met_Element& met_element,
+                                     const size_t i,
+                                     const size_t j,
                                      const Level& level,
                                      const size_t l,
                                      const Wind& wind_bg = Wind (0, 0)) const;
@@ -482,9 +547,25 @@ namespace twiin
                                      const size_t l) const;
 
                Real
+               evaluate_v_advection (const Met_Element& met_element,
+                                     const size_t i,
+                                     const size_t j,
+                                     const Level& level,
+                                     const size_t l) const;
+
+               Real
                evaluate_s_tendency (const Met_Element& met_element,
                                     const Real azimuth,
                                     const Lat_Long& lat_long,
+                                    const Level& level,
+                                    const size_t l,
+                                    const Real u_bg) const;
+
+               Real
+               evaluate_s_tendency (const Met_Element& met_element,
+                                    const Real azimuth,
+                                    const size_t i,
+                                    const size_t j,
                                     const Level& level,
                                     const size_t l,
                                     const Real u_bg) const;
@@ -498,9 +579,26 @@ namespace twiin
                                      const Real u_bg = 0) const;
 
                Real
+               evaluate_s_advection (const Met_Element& met_element,
+                                     const Real azimuth,
+                                     const size_t i,
+                                     const size_t j,
+                                     const Level& level,
+                                     const size_t l,
+                                     const Real u_bg = 0) const;
+
+               Real
                evaluate_n_advection (const Met_Element& met_element,
                                      const Real azimuth,
                                      const Lat_Long& lat_long,
+                                     const Level& level,
+                                     const size_t l) const;
+
+               Real
+               evaluate_n_advection (const Met_Element& met_element,
+                                     const Real azimuth,
+                                     const size_t i,
+                                     const size_t j,
                                      const Level& level,
                                      const size_t l) const;
 
@@ -511,18 +609,47 @@ namespace twiin
                                       const size_t l) const;
                          
                Real
+               evaluate_normal_speed (const Real azimuth,
+                                      const size_t i,
+                                      const size_t j,
+                                      const Level& level,
+                                      const size_t l) const;
+                         
+               Real
                evaluate_along_speed (const Real azimuth,
                                      const Lat_Long& lat_long,
                                      const Level& level,
                                      const size_t l,
                                      const Real u_bg = 0) const;
-                         
+
+               Real
+               evaluate_along_speed (const Real azimuth,
+                                     const size_t i,
+                                     const size_t j,
+                                     const Level& level,
+                                     const size_t l,
+                                     const Real u_bg = 0) const;
+
+               Real
+               evaluate_scorer (const Real azimuth,
+                                const size_t i,
+                                const size_t j,
+                                const Level& level,
+                                const size_t l,
+                                const Real u_bg = 0) const;
+
                Real
                evaluate_scorer (const Real azimuth,
                                 const Lat_Long& lat_long,
                                 const Level& level,
                                 const size_t l,
                                 const Real u_bg = 0) const;
+
+               Real
+               evaluate_brunt_vaisala (const size_t i,
+                                       const size_t j,
+                                       const Level& level,
+                                       const size_t l) const;
 
                Real
                evaluate_brunt_vaisala (const Lat_Long& lat_long,

@@ -1089,9 +1089,20 @@ Model::Stage::evaluate (const Met_Element& met_element,
                         const Level& level,
                         const size_t l) const
 {
-
-   size_t i, j, k;
+   size_t i, j;
    acquire_ij (i, j, lat_long);
+   return evaluate (met_element, i, j, level, l);
+}
+
+Real
+Model::Stage::evaluate (const Met_Element& met_element,
+                        const size_t i,
+                        const size_t j,
+                        const Level& level,
+                        const size_t l) const
+{
+
+   size_t k;
    acquire_k (k, met_element, i, j, level);
    if (k < 0 || k > 69) { return GSL_NAN; }
 
@@ -1385,9 +1396,20 @@ Model::Stage::evaluate_dt (const Met_Element& met_element,
                            const Level& level,
                            const size_t l) const
 {
-
-   size_t i, j, k;
+   size_t i, j;
    acquire_ij (i, j, lat_long);
+   return evaluate_dt (met_element, i, j, level, l);
+}
+
+Real
+Model::Stage::evaluate_dt (const Met_Element& met_element,
+                           const size_t i,
+                           const size_t j,
+                           const Level& level,
+                           const size_t l) const
+{
+
+   size_t k;
    acquire_k (k, met_element, i, j, level);
    if (k < 0 || k > 69) { return GSL_NAN; }
 
@@ -1467,13 +1489,22 @@ Model::Stage::evaluate_dx (const Met_Element& met_element,
                            const Level& level,
                            const size_t l) const
 {
+   size_t i, j;
+   acquire_ij (i, j, lat_long);
+   return evaluate_dx (met_element, i, j, level, l);
+}
+
+Real
+Model::Stage::evaluate_dx (const Met_Element& met_element,
+                           const size_t i,
+                           const size_t j,
+                           const Level& level,
+                           const size_t l) const
+{
 
    // Note k could be different upstream / downstream
 
-   size_t i, j;
    size_t upper_k, lower_k;
-   acquire_ij (i, j, lat_long);
-
    const Integer m = tuple_longitude.size ();
    if (j < 0 || j >= m) { return GSL_NAN; }
 
@@ -1567,13 +1598,22 @@ Model::Stage::evaluate_dy (const Met_Element& met_element,
                            const Level& level,
                            const size_t l) const
 {
+   size_t i, j;
+   acquire_ij (i, j, lat_long);
+   return evaluate_dy (met_element, i, j, level, l);
+}
+
+Real
+Model::Stage::evaluate_dy (const Met_Element& met_element,
+                           const size_t i,
+                           const size_t j,
+                           const Level& level,
+                           const size_t l) const
+{
 
    // Note k could be different upstream / downstream
 
-   size_t i, j;
    size_t upper_k, lower_k;
-   acquire_ij (i, j, lat_long);
-
    const Integer n = tuple_latitude.size ();
    if (i < 0 || i >= n) { return GSL_NAN; }
 
@@ -1596,9 +1636,9 @@ Model::Stage::evaluate_dy (const Met_Element& met_element,
 
 Real
 Model::Stage::evaluate_dy (const Met_Element& met_element,
-                            const Lat_Long& lat_long,
-                            const size_t k,
-                            const size_t l) const
+                           const Lat_Long& lat_long,
+                           const size_t k,
+                           const size_t l) const
 {
    // calculation along constant k
    size_t i, j;
@@ -1608,10 +1648,10 @@ Model::Stage::evaluate_dy (const Met_Element& met_element,
 
 Real
 Model::Stage::evaluate_dy (const Met_Element& met_element,
-                            const size_t i,
-                            const size_t j,
-                            const size_t k,
-                            const size_t l) const
+                           const size_t i,
+                           const size_t j,
+                           const size_t k,
+                           const size_t l) const
 {
 
    // calculation along constant k
@@ -1631,24 +1671,32 @@ Model::Stage::evaluate_dy (const Met_Element& met_element,
 
 Real
 Model::Stage::evaluate_dz (const Met_Element& met_element,
-                            const Lat_Long& lat_long,
-                            const Level& level,
-                            const size_t l) const
+                           const Lat_Long& lat_long,
+                           const Level& level,
+                           const size_t l) const
 {
-
-   size_t i, j, k;
+   size_t i, j;
    acquire_ij (i, j, lat_long);
-   acquire_k (k, met_element, i, j, level);
-
-   return evaluate_dz (met_element, i, j, k, l);
-
+   return evaluate_dz (met_element, i, j, level, l);
 }
 
 Real
 Model::Stage::evaluate_dz (const Met_Element& met_element,
-                            const Lat_Long& lat_long,
-                            const size_t k,
-                            const size_t l) const
+                           const size_t i,
+                           const size_t j,
+                           const Level& level,
+                           const size_t l) const
+{
+   size_t k;
+   acquire_k (k, met_element, i, j, level);
+   return evaluate_dz (met_element, i, j, k, l);
+}
+
+Real
+Model::Stage::evaluate_dz (const Met_Element& met_element,
+                           const Lat_Long& lat_long,
+                           const size_t k,
+                           const size_t l) const
 {
    size_t i, j;
    acquire_ij (i, j, lat_long);
@@ -1657,10 +1705,10 @@ Model::Stage::evaluate_dz (const Met_Element& met_element,
 
 Real
 Model::Stage::evaluate_dz (const Met_Element& met_element,
-                            const size_t i,
-                            const size_t j,
-                            const size_t k,
-                            const size_t l) const
+                           const size_t i,
+                           const size_t j,
+                           const size_t k,
+                           const size_t l) const
 {
 
    const Integer n = 70;
@@ -1745,15 +1793,21 @@ Model::Stage::evaluate_wind_advection (const Met_Element& met_element,
                                        const size_t l,
                                        const Wind& wind) const
 {
-
    size_t i, j;
    acquire_ij (i, j, lat_long);
+   return evaluate_wind_advection (met_element, i, j, l, wind);
+}
 
-   const Real ddx = evaluate_dx (met_element, lat_long, l);
-   const Real ddy = evaluate_dy (met_element, lat_long, l);
-
+Real
+Model::Stage::evaluate_wind_advection (const Met_Element& met_element,
+                                       const size_t i,
+                                       const size_t j,
+                                       const size_t l,
+                                       const Wind& wind) const
+{
+   const Real ddx = evaluate_dx (met_element, i, j, l);
+   const Real ddy = evaluate_dy (met_element, i, j, l);
    return -wind.u * ddx - wind.v * ddy;
-
 }
 
 Real
@@ -1763,17 +1817,27 @@ Model::Stage::evaluate_wind_advection (const Met_Element& met_element,
                                        const size_t l,
                                        const Wind& wind) const
 {
-
    size_t i, j;
    acquire_ij (i, j, lat_long);
+   return evaluate_wind_advection (met_element, i, j, level, l, wind);
+}
+
+Real
+Model::Stage::evaluate_wind_advection (const Met_Element& met_element,
+                                       const size_t i,
+                                       const size_t j,
+                                       const Level& level,
+                                       const size_t l,
+                                       const Wind& wind) const
+{
 
    size_t k, k_rho;
    acquire_k (k_rho, U, i, j, level);
    acquire_k (k, met_element, i, j, level);
    if (k < 0 || k > 69) { return GSL_NAN; }
 
-   const Real ddx = evaluate_dx (met_element, lat_long, level, l);
-   const Real ddy = evaluate_dy (met_element, lat_long, level, l);
+   const Real ddx = evaluate_dx (met_element, i, j, level, l);
+   const Real ddy = evaluate_dy (met_element, i, j, level, l);
 
    return -wind.u * ddx - wind.v * ddy;
 
@@ -1782,37 +1846,21 @@ Model::Stage::evaluate_wind_advection (const Met_Element& met_element,
 Real
 Model::Stage::evaluate_h_advection (const Met_Element& met_element,
                                     const Lat_Long& lat_long,
-                                    const Level& level,
                                     const size_t l,
                                     const Wind& wind_bg) const
 {
-
    size_t i, j;
    acquire_ij (i, j, lat_long);
-
-   size_t k, k_rho;
-   acquire_k (k_rho, U, i, j, level);
-   acquire_k (k, met_element, i, j, level);
-   if (k < 0 || k > 69) { return GSL_NAN; }
-
-   const Real u = evaluate (U, i, j, k_rho, l);
-   const Real v = evaluate (V, i, j, k_rho, l);
-   const Real ddx = evaluate_dx (met_element, lat_long, level, l);
-   const Real ddy = evaluate_dy (met_element, lat_long, level, l);
-
-   return -(u - wind_bg.u) * ddx - (v - wind_bg.v) * ddy;
-
+   return evaluate_h_advection (met_element, i, j, l, wind_bg);
 }
 
 Real
 Model::Stage::evaluate_h_advection (const Met_Element& met_element,
-                                    const Lat_Long& lat_long,
+                                    const size_t i,
+                                    const size_t j,
                                     const size_t l,
                                     const Wind& wind_bg) const
 {
-
-   size_t i, j;
-   acquire_ij (i, j, lat_long);
 
    const Real u = evaluate (U, i, j, l);
    const Real v = evaluate (V, i, j, l);
@@ -1824,14 +1872,60 @@ Model::Stage::evaluate_h_advection (const Met_Element& met_element,
 }
 
 Real
+Model::Stage::evaluate_h_advection (const Met_Element& met_element,
+                                    const Lat_Long& lat_long,
+                                    const Level& level,
+                                    const size_t l,
+                                    const Wind& wind_bg) const
+{
+   size_t i, j;
+   acquire_ij (i, j, lat_long);
+   return evaluate_h_advection (met_element, i, j, level, l, wind_bg);
+}
+
+Real
+Model::Stage::evaluate_h_advection (const Met_Element& met_element,
+                                    const size_t i,
+                                    const size_t j,
+                                    const Level& level,
+                                    const size_t l,
+                                    const Wind& wind_bg) const
+{
+
+   size_t k, k_rho;
+   acquire_k (k_rho, U, i, j, level);
+   acquire_k (k, met_element, i, j, level);
+   if (k < 0 || k > 69) { return GSL_NAN; }
+
+   const Real u = evaluate (U, i, j, k_rho, l);
+   const Real v = evaluate (V, i, j, k_rho, l);
+   const Real ddx = evaluate_dx (met_element, i, j, level, l);
+   const Real ddy = evaluate_dy (met_element, i, j, level, l);
+
+   return -(u - wind_bg.u) * ddx - (v - wind_bg.v) * ddy;
+
+}
+
+Real
 Model::Stage::evaluate_v_advection (const Met_Element& met_element,
                                     const Lat_Long& lat_long,
                                     const Level& level,
                                     const size_t l) const
 {
-
    size_t i, j, k, k_w;
    acquire_ij (i, j, lat_long);
+   return evaluate_v_advection (met_element, i, j, level, l);
+}
+
+Real
+Model::Stage::evaluate_v_advection (const Met_Element& met_element,
+                                    const size_t i,
+                                    const size_t j,
+                                    const Level& level,
+                                    const size_t l) const
+{
+
+   size_t k, k_w;
 
    acquire_k (k, met_element, i, j, level);
    if (k < 0 || k > 69) { return GSL_NAN; }
@@ -1854,16 +1948,24 @@ Model::Stage::evaluate_s_tendency (const Met_Element& met_element,
                                    const size_t l,
                                    const Real u_bg) const
 {
+   size_t i, j;
+   acquire_ij (i, j, lat_long);
+   return evaluate_s_tendency (met_element, azimuth, i, j, level, l, u_bg);
+}
 
-
+Real
+Model::Stage::evaluate_s_tendency (const Met_Element& met_element,
+                                   const Real azimuth,
+                                   const size_t i,
+                                   const size_t j,
+                                   const Level& level,
+                                   const size_t l,
+                                   const Real u_bg) const
+{
    const Met_Element& me = met_element;
-   const Lat_Long& ll = lat_long;
-
-   const Real t = evaluate_dt (me, ll, level, l);
-   const Real a = evaluate_s_advection (me, azimuth, ll, level, l, u_bg);
-
+   const Real t = evaluate_dt (me, i, j, level, l);
+   const Real a = evaluate_s_advection (me, azimuth, i, j, level, l, u_bg);
    return t + a;
-
 }
 
 Real
@@ -1874,10 +1976,22 @@ Model::Stage::evaluate_s_advection (const Met_Element& met_element,
                                     const size_t l,
                                     const Real u_bg) const
 {
-
-   size_t i, j, k, k_rho;
+   size_t i, j;
    acquire_ij (i, j, lat_long);
+   return evaluate_s_advection (met_element, azimuth, i, j, level, l, u_bg);
+}
 
+Real
+Model::Stage::evaluate_s_advection (const Met_Element& met_element,
+                                    const Real azimuth,
+                                    const size_t i,
+                                    const size_t j,
+                                    const Level& level,
+                                    const size_t l,
+                                    const Real u_bg) const
+{
+
+   size_t k, k_rho;
    acquire_k (k, met_element, i, j, level);
    if (k < 0 || k > 69) { return GSL_NAN; }
 
@@ -1890,8 +2004,8 @@ Model::Stage::evaluate_s_advection (const Met_Element& met_element,
    const Real v = evaluate (V, i, j, k_rho, l);
    const Real s = u * sin (theta) + v * cos (theta) - u_bg;
 
-   const Real ddx = evaluate_dx (met_element, lat_long, level, l);
-   const Real ddy = evaluate_dy (met_element, lat_long, level, l);
+   const Real ddx = evaluate_dx (met_element, i, j, level, l);
+   const Real ddy = evaluate_dy (met_element, i, j, level, l);
    const Real dds = ddx * sin (theta) + ddy * cos (theta);
 
    return -s * dds;
@@ -1905,9 +2019,21 @@ Model::Stage::evaluate_n_advection (const Met_Element& met_element,
                                     const Level& level,
                                     const size_t l) const
 {
-
-   size_t i, j, k, k_rho;
+   size_t i, j;
    acquire_ij (i, j, lat_long);
+   return evaluate_n_advection (met_element, azimuth, i, j, level, l);
+}
+
+Real
+Model::Stage::evaluate_n_advection (const Met_Element& met_element,
+                                    const Real azimuth,
+                                    const size_t i,
+                                    const size_t j,
+                                    const Level& level,
+                                    const size_t l) const
+{
+
+   size_t k, k_rho;
 
    acquire_k (k, met_element, i, j, level);
    if (k < 0 || k > 69) { return GSL_NAN; }
@@ -1921,8 +2047,8 @@ Model::Stage::evaluate_n_advection (const Met_Element& met_element,
    const Real v = evaluate (V, i, j, k_rho, l);
    const Real n = v * sin (theta) - u * cos (theta);
 
-   const Real ddx = evaluate_dx (met_element, lat_long, level, l);
-   const Real ddy = evaluate_dy (met_element, lat_long, level, l);
+   const Real ddx = evaluate_dx (met_element, i, j, level, l);
+   const Real ddy = evaluate_dy (met_element, i, j, level, l);
    const Real ddn = ddy * sin (theta) - ddx * cos (theta);
 
    return -n * ddn;
@@ -1935,9 +2061,20 @@ Model::Stage::evaluate_normal_speed (const Real azimuth,
                                      const Level& level,
                                      const size_t l) const
 {
-
-   size_t i, j, k;
+   size_t i, j;
    acquire_ij (i, j, lat_long);
+   return evaluate_normal_speed (azimuth, i, j, level, l);
+}
+
+Real
+Model::Stage::evaluate_normal_speed (const Real azimuth,
+                                     const size_t i,
+                                     const size_t j,
+                                     const Level& level,
+                                     const size_t l) const
+{
+
+   size_t k;
    acquire_k (k, U, i, j, level);
    if (k < 0 || k > 69) { return GSL_NAN; }
 
@@ -1956,9 +2093,21 @@ Model::Stage::evaluate_along_speed (const Real azimuth,
                                     const size_t l,
                                     const Real u_bg) const
 {
-
-   size_t i, j, k;
+   size_t i, j;
    acquire_ij (i, j, lat_long);
+   return evaluate_along_speed (azimuth, i, j, level, l, u_bg);
+}
+
+Real
+Model::Stage::evaluate_along_speed (const Real azimuth,
+                                    const size_t i,
+                                    const size_t j,
+                                    const Level& level,
+                                    const size_t l,
+                                    const Real u_bg) const
+{
+
+   size_t k;
    acquire_k (k, U, i, j, level);
    if (k < 0 || k > 69) { return GSL_NAN; }
 
@@ -1977,9 +2126,21 @@ Model::Stage::evaluate_scorer (const Real azimuth,
                                const size_t l,
                                const Real u_bg) const
 {
-
-   size_t i, j, k_rho, k_theta;
+   size_t i, j;
    acquire_ij (i, j, lat_long);
+   return evaluate_scorer (azimuth, i, j, level, l, u_bg);
+}
+
+Real
+Model::Stage::evaluate_scorer (const Real azimuth,
+                               const size_t i,
+                               const size_t j,
+                               const Level& level,
+                               const size_t l,
+                               const Real u_bg) const
+{
+
+   size_t k_rho, k_theta;
 
    acquire_k (k_rho, U, i, j, level);
    if (k_rho <= 0 || k_rho >= 69) { return GSL_NAN; }
@@ -2043,9 +2204,19 @@ Model::Stage::evaluate_brunt_vaisala (const Lat_Long& lat_long,
                                       const Level& level,
                                       const size_t l) const
 {
-
-   size_t i, j, k;
+   size_t i, j;
    acquire_ij (i, j, lat_long);
+   return evaluate_brunt_vaisala (i, j, level, l);
+}
+
+Real
+Model::Stage::evaluate_brunt_vaisala (const size_t i,
+                                      const size_t j,
+                                      const Level& level,
+                                      const size_t l) const
+{
+
+   size_t k;
    acquire_k (k, THETA, i, j, level);
    if (k <= 0 || k >= 69) { return GSL_NAN; }
 
@@ -2870,6 +3041,7 @@ Model::Stage::get_cross_section_raster_ptr (const Box_2D& box_2d,
                case Model::Product::Q_TENDENCY:
                {
                   const Real azimuth = journey.get_azimuth_forward (x, geodesy);
+                  size_t i, j;
                   const Real datum = evaluate_s_tendency (
                      Q, azimuth, lat_long, level, l, u_bg);
                   color = get_color (p, datum);
@@ -2983,26 +3155,30 @@ Model::Stage::get_time_cross_raster_ptr (const Box_2D& box_2d,
    const Dtime& start_time = track.get_start_time ();
    const Dtime& end_time = track.get_end_time ();
 
-   for (Integer i = index_2d.i; i < index_2d.i + size_2d.i; i++)
+   for (Integer ii = index_2d.i; ii < index_2d.i + size_2d.i; ii++)
    {
 
-      transform.reverse (t, z, Real (i), 0);
-      const Dtime dtime (t);
+      transform.reverse (t, z, Real (ii), 0);
+      Dtime dtime (t);
       if (dtime < start_time || dtime > end_time) { continue; }
 
       const size_t l = get_uppers_l (dtime);
+      dtime = valid_uppers_time_vector[l];
 
       const Lat_Long& lat_long = track.get_lat_long (dtime);
       const Lat_Long& ll = lat_long;
       if (out_of_bounds (ll)) { continue; }
 
-      const Real topography = get_topography (ll);
+      size_t i, j;
+      acquire_ij (i, j, lat_long);
+
+      const Real topography = get_topography (i, j);
       const Motion& motion = track.get_motion (dtime);
 
-      for (Integer j = index_2d.j; j < index_2d.j + size_2d.j; j++)
+      for (Integer jj = index_2d.j; jj < index_2d.j + size_2d.j; jj++)
       {
 
-         transform.reverse (t, z, Real (i), Real (j));
+         transform.reverse (t, z, Real (ii), Real (jj));
 
          if (z < topography) { color = Color::black (); }
          else
@@ -3013,8 +3189,8 @@ Model::Stage::get_time_cross_raster_ptr (const Box_2D& box_2d,
 
                case Model::Product::WIND:
                {
-                  const Real u = evaluate (U, ll, level, l);
-                  const Real v = evaluate (V, ll, level, l);
+                  const Real u = evaluate (U, i, j, level, l);
+                  const Real v = evaluate (V, i, j, level, l);
                   const Wind wind (u, v);
                   const Real direction = wind.get_direction ();
                   const Real speed = wind.get_speed ();
@@ -3024,7 +3200,7 @@ Model::Stage::get_time_cross_raster_ptr (const Box_2D& box_2d,
 
                case Model::Product::BRUNT_VAISALA:
                {
-                  const Real datum = evaluate_brunt_vaisala (ll, level, l);
+                  const Real datum = evaluate_brunt_vaisala (i, j, level, l);
                   color = get_color (p, datum);
                   break;
                }
@@ -3033,7 +3209,7 @@ Model::Stage::get_time_cross_raster_ptr (const Box_2D& box_2d,
                {
                   const Real u_bg = (lagrangian ? motion.get_speed () : 0);
                   const Real datum = evaluate_scorer (
-                     motion.get_direction (), ll, level, l, u_bg);
+                     motion.get_direction (), i, j, level, l, u_bg);
                   color = get_color (p, datum);
                   break;
                }
@@ -3042,7 +3218,7 @@ Model::Stage::get_time_cross_raster_ptr (const Box_2D& box_2d,
                {
                   const Real u_bg = (lagrangian ? motion.get_speed () : 0);
                   const Real datum = evaluate_along_speed (
-                     motion.get_direction (), ll, level, l, u_bg);
+                     motion.get_direction (), i, j, level, l, u_bg);
                   color = get_color (p, datum);
                   break;
                }
@@ -3050,7 +3226,7 @@ Model::Stage::get_time_cross_raster_ptr (const Box_2D& box_2d,
                case Model::Product::NORMAL_SPEED:
                {
                   const Real datum = evaluate_normal_speed (
-                     motion.get_direction (), lat_long, level, l);
+                     motion.get_direction (), i, j, level, l);
                   color = get_color (p, datum);
                   break;
                }
@@ -3059,15 +3235,15 @@ Model::Stage::get_time_cross_raster_ptr (const Box_2D& box_2d,
                {
                   const Real u_bg = (lagrangian ? motion.get_speed () : 0);
                   const Real datum = evaluate_s_tendency (
-                     Q, motion.get_direction (), lat_long, level, l, u_bg);
+                     Q, motion.get_direction (), i, j, level, l, u_bg);
                   color = get_color (p, datum);
                   break;
                }
 
                case Model::Product::Q_ADVECTION:
                {
-                  const Real h = evaluate_h_advection (Q, ll, level, l);
-                  const Real v = evaluate_v_advection (Q, ll, level, l);
+                  const Real h = evaluate_h_advection (Q, i, j, level, l);
+                  const Real v = evaluate_v_advection (Q, i, j, level, l);
                   const Real datum = h + v;
                   color = get_color (p, datum);
                   break;
@@ -3075,14 +3251,14 @@ Model::Stage::get_time_cross_raster_ptr (const Box_2D& box_2d,
 
                case Model::Product::Q_H_ADVECTION:
                {
-                  const Real datum = evaluate_h_advection (Q, ll, level, l);
+                  const Real datum = evaluate_h_advection (Q, i, j, level, l);
                   color = get_color (p, datum);
                   break;
                }
 
                case Model::Product::Q_V_ADVECTION:
                {
-                  const Real datum = evaluate_v_advection (Q, ll, level, l);
+                  const Real datum = evaluate_v_advection (Q, i, j, level, l);
                   color = get_color (p, datum);
                   break;
                }
@@ -3091,7 +3267,7 @@ Model::Stage::get_time_cross_raster_ptr (const Box_2D& box_2d,
                {
                   const Real u_bg = (lagrangian ? motion.get_speed () : 0);
                   const Real datum = evaluate_s_advection (Q,
-                     motion.get_direction (), ll, level, l, u_bg);
+                     motion.get_direction (), i, j, level, l, u_bg);
                   color = get_color (p, datum);
                   break;
                }
@@ -3099,7 +3275,7 @@ Model::Stage::get_time_cross_raster_ptr (const Box_2D& box_2d,
                case Model::Product::Q_N_ADVECTION:
                {
                   const Real datum = evaluate_n_advection (Q,
-                     motion.get_direction (), ll, level, l);
+                     motion.get_direction (), i, j, level, l);
                   color = get_color (p, datum);
                   break;
                }
@@ -3107,9 +3283,9 @@ Model::Stage::get_time_cross_raster_ptr (const Box_2D& box_2d,
                case Model::Product::Q_SV_ADVECTION:
                {
                   const Real u_bg = (lagrangian ? motion.get_speed () : 0);
-                  const Real v = evaluate_v_advection (Q, ll, level, l);
+                  const Real v = evaluate_v_advection (Q, i, j, level, l);
                   const Real s = evaluate_s_advection (Q,
-                     motion.get_direction (), ll, level, l, u_bg);
+                     motion.get_direction (), i, j, level, l, u_bg);
                   const Real datum = s + v;
                   color = get_color (p, datum);
                   break;
@@ -3117,9 +3293,9 @@ Model::Stage::get_time_cross_raster_ptr (const Box_2D& box_2d,
 
                case Model::Product::Q_NV_ADVECTION:
                {
-                  const Real v = evaluate_v_advection (Q, ll, level, l);
+                  const Real v = evaluate_v_advection (Q, i, j, level, l);
                   const Real n = evaluate_n_advection (Q,
-                     motion.get_direction (), ll, level, l);
+                     motion.get_direction (), i, j, level, l);
                   const Real datum = n + v;
                   color = get_color (p, datum);
                   break;
@@ -3128,7 +3304,7 @@ Model::Stage::get_time_cross_raster_ptr (const Box_2D& box_2d,
                default:
                {
                   const Met_Element met_element = product.get_met_element ();
-                  const Real datum = evaluate (met_element, ll, level, l);
+                  const Real datum = evaluate (met_element, i, j, level, l);
                   color = get_color (p, datum);
                   break;
                }
@@ -3137,7 +3313,7 @@ Model::Stage::get_time_cross_raster_ptr (const Box_2D& box_2d,
 
          }
 
-         raster_ptr->set_pixel (i - index_2d.i, j - index_2d.j, color);
+         raster_ptr->set_pixel (ii - index_2d.i, jj - index_2d.j, color);
 
       }
 
@@ -3281,11 +3457,7 @@ Model::Stage::get_trajectory (Lat_Long lat_long,
 
       const Real distance_a = wind_a.get_speed () * dts;
       const Real azimuth_a = wind_a.get_direction () + 180;
-      const Lat_Long& nll = G::get_destination (lat_long, distance_a, azimuth_a);
-
-      const Real ddd = Geodesy::get_distance (lat_long, nll);
-      const Real zzz = Geodesy::get_azimuth_forward (lat_long, nll);
-      const Real sss = ddd / dts;
+      lat_long = G::get_destination (lat_long, distance_a, azimuth_a);
 
       if (level_.type != Level::SURFACE)
       {
@@ -3293,7 +3465,6 @@ Model::Stage::get_trajectory (Lat_Long lat_long,
          level.value = (level.value + (w + w_) * 0.5 * dts);
       }
 
-      lat_long = nll;
       dtime.t = next_dtime.t;
 
    }

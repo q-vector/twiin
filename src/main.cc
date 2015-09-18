@@ -706,7 +706,8 @@ Twiin::cross_section (const Dstring& stage_str,
 
                if (title_tokens.size () == 0)
                {
-                  Display::set_title (title, basetime, s, product, dtime, journey);
+                  Display::set_title (title, basetime,
+                     s, product, dtime, journey);
                }
                else
                {
