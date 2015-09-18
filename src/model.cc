@@ -3245,42 +3245,50 @@ Model::Stage::get_trajectory (Lat_Long lat_long,
       const Real sign = (finish_tau > 0 ? 1 : -1);
       const Real dts_x = fabs (0.45 * h_long * LATITUDE_LENGTH / u);
       const Real dts_y = fabs (0.45 * h_lat * LATITUDE_LENGTH / v);
-      const Real dts = std::min (1.0, std::min (dts_x, dts_y)) * sign;
+      const Real dts = std::max (1.0, std::min (dts_x, dts_y)) * sign;
       const Real dt = dts / 3600;
 
-      const Wind wind_ (u, v);
-      const Dtime dtime_ (dtime.t + dt, false);
-      const Lat_Long& lat_long_ = Geodesy::get_destination (lat_long,
-         wind_.get_speed () * dts, wind_.get_direction () + 180);
-      if (out_of_bounds (lat_long_)) { break; }
+      typedef Geodesy G;
+      const Wind wind (u, v);
+      const Real distance_ = wind.get_speed () * dts;
+      const Real azimuth_ = wind.get_direction () + 180;
+      const Lat_Long& ll_ = G::get_destination (lat_long, distance_, azimuth_);
+      if (out_of_bounds (ll_)) { break; }
 
-      const Real topography_ = get_topography (lat_long_);
+      const Real topography_ = get_topography (ll_);
+      Level level_ = level;
+      Real w = GSL_NAN;
+
       if (level.type == Level::HEIGHT)
       {
-         if (level.value > 38000) { break; }
-         if (level.value <= topography_)
+         w = evaluate (W, lat_long, level, dtime); 
+         level_.value = level.value + w * dts;
+         if (level_.value_ > 38000) { break; }
+         if (level_.value <= topography_)
          {
             level.value = topography_;
+            level_.value = topography_;
             level.type = Level::SURFACE;
+            level_.type = Level::SURFACE;
          }
       }
 
-      const Real u_ = evaluate (U, lat_long_, level, dtime_);
-      const Real v_ = evaluate (V, lat_long_, level, dtime_);
-      const Wind wind ((u + u_), (v + v_));
-      const Real distance = wind.get_speed () * 0.5 * dts;
-      const Real azimuth = wind.get_direction () + 180;
-      lat_long = Geodesy::get_destination (lat_long, distance, azimuth);
+      const Dtime next_dtime (dtime.t + dt, false);
+      const Real u_ = evaluate (U, ll_, level_, next_dtime);
+      const Real v_ = evaluate (V, ll_, level_, next_dtime);
+      const Wind wind_a ((u + u_) * 0.5, (v + v_) * 0.5);
 
-      if (level.type != Level::SURFACE)
+      const Real distance_a = wind_a.get_speed () * dts;
+      const Real azimuth_a = wind_a.get_direction () + 180;
+      lat_long = G::get_destination (lat_long, distance_a, azimuth_a);
+
+      if (level_.type != Level::SURFACE)
       {
-         const Real w = evaluate (W, lat_long, level, dtime);
-         const Real z_ = level.value + w * dts;
-         const Real w_ = evaluate (W, lat_long_, level, dtime_);
+         const Real w_ = evaluate (W, ll_, level_, next_dtime);
          level.value = (level.value + (w + w_) * 0.5 * dts);
       }
 
-      dtime.t += dt;
+      dtime.t = next_dtime.t;
 
    }
 
