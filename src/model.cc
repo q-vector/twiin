@@ -1365,7 +1365,7 @@ Model::Stage::evaluate_dt (const Met_Element& met_element,
 {
    size_t i, j;
    acquire_ij (i, j, lat_long);
-   return evaluate_dx (met_element, i, j, l);
+   return evaluate_dt (met_element, i, j, l);
 }
 
 Real
