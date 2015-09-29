@@ -94,6 +94,26 @@ Dstring
 Twiin::get_file_path (const Dstring& format,
                       const Dstring& stage,
                       const Model::Product& product,
+                      const Dtime& dtime,
+                      const Lat_Long& lat_long,
+                      const Real distance,
+                      const bool lagrangian) const
+{
+   const Dstring pov_str (lagrangian ? "LAGRANGIAN" : "EULERIAN");
+   const Dstring& time_str = dtime.get_string ("%Y%m%d%H%M");
+   const Dstring& ll_str = lat_long.get_string (false, Dstring ("%.4f"));
+
+   const Real d = distance * 1e-3;
+   const Dstring& where_str = ll_str + Dstring::render ("-%.0fkm", d);
+   const Dstring& file_name = stage + "-" + product.get_string () + "-" +
+      time_str + "-" + where_str + "-" + pov_str + + "." + format;
+   return output_dir + "/" + file_name;
+}
+
+Dstring
+Twiin::get_file_path (const Dstring& format,
+                      const Dstring& stage,
+                      const Model::Product& product,
                       const Dstring& track_id,
                       const bool lagrangian) const
 {
@@ -628,9 +648,6 @@ Twiin::cross_section (const Dstring& stage_str,
 
    const Geodesy geodesy;
    const Real distance = journey.get_distance (geodesy);
-   const Lat_Long origin (journey.front ());
-   const Lat_Long destination (journey.back ());
-
    const Domain_1D domain_x (0, distance);
    const Domain_1D domain_z (0, 8000);
 
@@ -724,6 +741,148 @@ Twiin::cross_section (const Dstring& stage_str,
 
          }
 
+      }
+   }
+
+}
+
+void
+Twiin::cross_section (const Dstring& stage_str,
+                      const Dstring& product_str,
+                      const Dstring& track_id_str,
+                      const Track::Map& track_map,
+                      const Real distance,
+                      const Dstring& time_str,
+                      const Dstring& format,
+                      const Tokens& title_tokens,
+                      const Dstring& filename,
+                      const bool lagrangian,
+                      const bool is_bludge) const
+{
+
+   const Level level ("100m");
+   const Dtime::Set time_set (time_str);
+   const Tokens stage_tokens (stage_str, ":");
+   const Tokens product_tokens (product_str, ":");
+   const Tokens track_id_tokens (track_id_str, ":");
+
+   const Domain_1D domain_x (0, distance);
+   const Domain_1D domain_z (0, 8000);
+
+   Title title (size_2d);
+   const Data data (config_file);
+   const Model& model = data.get_model ();
+   const Dtime& basetime = model.get_basetime ();
+
+   const Real margin_l = 50;
+   const Real margin_r = 20 + 80;
+   const Real margin_t = title.get_height () + 10;
+   const Real margin_b = 20;
+   const Real w = size_2d.i - margin_l - margin_r;
+   const Real h = size_2d.j - margin_t - margin_b;
+
+   for (Tokens::const_iterator i = stage_tokens.begin ();
+        i != stage_tokens.end (); i++)
+   {
+
+      const Dstring s (*i);
+      const Model::Stage& stage = model.get_stage (s);
+
+      for (Tokens::const_iterator j = product_tokens.begin ();
+           j != product_tokens.end (); j++)
+      {
+
+         const Model::Product product (*j);
+
+         const bool is_speed = (product.enumeration == Model::Product::SPEED);
+         const Model::Product& p = (is_speed ?
+            Model::Product (Model::Product::SPEED_HIGHER) : product);
+
+         for (Integer index = 0; index < track_id_tokens.size (); index++)
+         {
+
+            const Dstring& track_id = track_id_tokens[index];
+            const Track& track = track_map.at (track_id);
+
+            const Real start_t = track.get_start_time ().t;
+            const Real end_t = track.get_end_time ().t;
+
+            const vector<Dtime>& valid_time_vector =
+               stage.get_valid_time_vector (product, level, time_set);
+
+            #pragma omp parallel for
+            for (Integer l = 0; l < valid_time_vector.size (); l++)
+            {
+
+               const Dtime& dtime = valid_time_vector.at (l);
+               if (dtime.t < start_t || dtime.t > end_t) { continue; }
+
+               typedef Geodesy G;
+               const Lat_Long& ll = track.get_lat_long (dtime);
+               const Motion& motion = track.get_motion (dtime);
+               const Real direction = motion.get_direction ();
+               const Real speed = motion.get_speed ();
+
+               Journey journey;
+               journey.push_back (G::get_destination (ll, -distance, direction));
+               journey.push_back (G::get_destination (ll, distance, direction));
+               const Domain_1D domain_x (-distance, distance);
+               const Domain_1D domain_z (0, 8000);
+
+               Affine_Transform_2D transform;
+               const Real span_x = domain_x.get_span ();
+               const Real span_z = domain_z.get_span ();
+               transform.scale (1, -1);
+               transform.scale (w / span_x, h / span_z);
+               transform.translate (margin_l, size_2d.j - margin_b);
+
+               const Real u_bg = (lagrangian ? speed : 0);
+
+               const Dstring& file_path = (filename == "") ? get_file_path (
+                  format, s, product, dtime, ll, distance, lagrangian) :
+                  output_dir + "/" + filename;
+               cout << file_path;
+               if (is_bludge) { cout << " will be made" << endl; continue; }
+
+               try
+               {
+
+                  RefPtr<Surface> surface = denise::get_surface (
+                     size_2d, format, file_path);
+                  RefPtr<Context> cr = denise::get_cr (surface);
+
+                  const Index_2D i2d (margin_l, margin_t);
+                  const Size_2D s2d (size_2d.i - margin_l - margin_r,
+                                     size_2d.j - margin_t - margin_b);
+                  const Box_2D box_2d (i2d, s2d);
+
+                  if (s2d.i < 0 || s2d.j < 0) { continue; }
+
+                  Display::render_cross_section (cr, transform, box_2d,
+                     domain_z, stage, product, dtime, journey, u_bg);
+
+                  Display::render_color_bar (cr, size_2d, p);
+
+                  if (title_tokens.size () == 0)
+                  {
+                     Display::set_title (title, basetime, s, product,
+                        dtime, ll, distance, lagrangian);
+                  }
+                  else
+                  {
+                     title.set (title_tokens);
+                  }
+                  title.cairo (cr);
+
+                  if (format == "png") { surface->write_to_png (file_path); }
+
+                  cout << " okay" << endl;
+
+               }
+               catch (...) { cout << " failed" << endl; }
+
+            }
+         }
       }
    }
 
@@ -1057,6 +1216,120 @@ Twiin::vertical_profile (const Dstring& stage_str,
 
 }
 
+void
+Twiin::vertical_profile (const Dstring& stage_str,
+                         const Dstring& track_id_str,
+                         const Track::Map& track_map,
+                         const Dstring& time_str,
+                         const Dstring& format,
+                         const Tokens& title_tokens,
+                         const Dstring& filename,
+                         const bool is_bludge) const
+{
+
+   const Model::Product product ("T");
+   const Level level ("100m");
+   const Dtime::Set time_set (time_str);
+   const Tokens stage_tokens (stage_str, ":");
+   const Tokens track_id_tokens (track_id_str, ":");
+
+   Title title (size_2d);
+   const Data data (config_file);
+   const Model& model = data.get_model ();
+   const Dtime& basetime = model.get_basetime ();
+   const Station::Map& station_map = data.get_station_map ();
+
+   const Tephigram tephigram (size_2d);
+
+   for (Tokens::const_iterator i = stage_tokens.begin ();
+        i != stage_tokens.end (); i++)
+   {
+
+      const Dstring s (*i);
+      const Model::Stage& stage = model.get_stage (s);
+
+      for (auto t = track_id_tokens.begin ();
+           t != track_id_tokens.end (); t++)
+      {
+
+         const Dstring& track_id = *(t);
+         const Track& track = track_map.at (track_id);
+         const Dtime& start_time = track.get_start_time ();
+         const Dtime& end_time = track.get_end_time ();
+         const Real start_tau = track.get_start_tau ();
+         const Real end_tau = track.get_end_tau ();
+
+         const vector<Dtime>& valid_time_vector =
+            stage.get_valid_time_vector (product, level, time_set);
+
+         for (Integer l = 0; l < valid_time_vector.size (); l++)
+         {
+
+            const Dtime& dtime = valid_time_vector.at (l);
+            if (dtime < start_time || dtime > end_time) { continue; }
+
+            const Lat_Long& lat_long = track.get_lat_long (dtime);
+            if (stage.out_of_bounds (lat_long)) { continue; }
+
+            const Real z = track.get_datum ("z", dtime);
+            const Level level (Level::HEIGHT, z);
+
+            const Dstring& file_path =
+               (filename == "") ?
+                  get_file_path (format, s, dtime, track_id) :
+                  output_dir + "/" + filename;
+            cout << file_path;
+            if (is_bludge) { cout << " will be made" << endl; continue; }
+
+            try
+            {
+
+               if (format == "snd")
+               {
+
+                  Sounding* sounding_ptr =
+                     stage.get_sounding_ptr (lat_long, dtime);
+                  sounding_ptr->save (file_path);
+                  delete sounding_ptr;
+               }
+               else
+               {
+
+                  RefPtr<Surface> surface = denise::get_surface (
+                     size_2d, format, file_path);
+                  RefPtr<Context> cr = denise::get_cr (surface);
+
+                  Display::render_vertical_profile (cr, tephigram,
+                     stage, dtime, lat_long, level);
+
+                  if (title_tokens.size () == 0)
+                  {
+                     Display::set_title (title, basetime, s, dtime, track_id +
+                       " " + lat_long.get_string (4, true, true, true));
+                  }
+                  else
+                  {
+                     title.set (title_tokens);
+                  }
+                  title.cairo (cr);
+
+                  if (format == "png") { surface->write_to_png (file_path); }
+
+               }
+
+               cout << " okay" << endl;
+
+            }
+            catch (...) { cout << " failed" << endl; }
+
+         }
+
+      }
+
+   }
+
+}
+
 int
 main (int argc,
       char** argv)
@@ -1064,29 +1337,36 @@ main (int argc,
 
    static struct option long_options[] =
    {
-      { "annotation",       1, 0, 'a' },
-      { "bludge",           0, 0, 'b' },
-      { "config",           1, 0, 'c' },
-      { "filename",         1, 0, 'F' },
-      { "format",           1, 0, 'f' },
-      { "geometry",         1, 0, 'g' },
-      { "gui",              0, 0, 'G' },
-      { "interactive",      0, 0, 'i' },
-      { "level",            1, 0, 'l' },
-      { "meteogram",        1, 0, 'm' },
-      { "output-dir",       1, 0, 'o' },
-      { "ignore-pressure",  0, 0, 'P' },
-      { "product",          1, 0, 'p' },
-      { "no-stage",         0, 0, 'S' },
-      { "stage",            1, 0, 's' },
-      { "title",            1, 0, 'T' },
-      { "time",             1, 0, 't' },
-      { "cross-section",    1, 0, 'x' },
-      { "u_bg",             1, 0, 'u' },
-      { "vertical-profile", 1, 0, 'v' },
-      { "no-wind-barb",     0, 0, 'W' },
-      { "zoom",             1, 0, 'z' },
-      { NULL, 0, NULL, 0 }
+      { "annotation",                   1, 0, 'a' },
+      { "bludge",                       0, 0, 'b' },
+      { "config",                       1, 0, 'c' },
+      { "filename",                     1, 0, 'F' },
+      { "format",                       1, 0, 'f' },
+      { "geometry",                     1, 0, 'g' },
+      { "gui",                          0, 0, 'G' },
+      { "interactive",                  0, 0, 'i' },
+      { "journey",                      0, 0, 'J' },
+      { "track",                        0, 0, 'j' },
+      { "trajectory",                   0, 0, 'j' },
+      { "level",                        1, 0, 'l' },
+      { "track-map",                    1, 0, 'M' },
+      { "trajectory-map",               1, 0, 'M' },
+      { "meteogram",                    1, 0, 'm' },
+      { "output-dir",                   1, 0, 'o' },
+      { "ignore-pressure",              0, 0, 'P' },
+      { "product",                      1, 0, 'p' },
+      { "no-stage",                     0, 0, 'S' },
+      { "stage",                        1, 0, 's' },
+      { "title",                        1, 0, 'T' },
+      { "time",                         1, 0, 't' },
+      { "u_bg",                         1, 0, 'u' },
+      { "vertical-profile-along-track", 0, 0, 'V' },
+      { "vertical-profile",             1, 0, 'v' },
+      { "no-wind-barb",                 0, 0, 'W' },
+      { "time-cross",                   0, 0, 'X' },
+      { "cross-section",                0, 0, 'x' },
+      { "zoom",                         1, 0, 'z' },
+      { NULL, 0, 0, 0 }
    };
 
    Size_2D size_2d (960, 960);
@@ -1113,15 +1393,17 @@ main (int argc,
    bool no_wind_barb = false;
    bool is_vertical_profile = false;
    Real u_bg = 0;
+   Real distance = 100e3;
+   Real height = 8000;
    Dstring location_str ("");
-   Journey journey;
+   Dstring journey_str ("");
    Track::Map track_map;
    Dstring track_id_str ("");
    Dstring config_file_path (Dstring (getenv ("HOME")) + "/.twiin.rc");
 
    int c;
    int option_index = 0;
-   char optstring[] = "a:bc:F:f:Gg:ij:Ll:M:m:o:Pp:Ss:T:t:X:x:u:v:Wz:";
+   char optstring[] = "a:bc:d:F:f:Gg:h:iJ:j:Ll:M:mO:o:Pp:Ss:T:t:u:vVWXxz:";
    while ((c = getopt_long (argc, argv, optstring,
           long_options, &option_index)) != -1)
    {
@@ -1144,6 +1426,12 @@ main (int argc,
          case 'c':
          {
             config_file_path = (Dstring (optarg));
+            break;
+         }
+
+         case 'd':
+         {
+            distance = stof (Dstring (optarg));
             break;
          }
 
@@ -1173,9 +1461,21 @@ main (int argc,
             break;
          }
 
+         case 'h':
+         {
+            height = stof (Dstring (optarg));
+            break;
+         }
+
          case 'i':
          {
             is_interactive = true;
+            break;
+         }
+
+         case 'J':
+         {
+            journey_str = Dstring (optarg);
             break;
          }
 
@@ -1215,8 +1515,12 @@ main (int argc,
             is_gui = false;
             is_interactive = false;
             is_meteogram = true;
-            location_str = (Dstring (optarg));
             break;
+         }
+
+         case 'O':
+         {
+            location_str = (Dstring (optarg));
          }
 
          case 'o':
@@ -1272,7 +1576,14 @@ main (int argc,
             is_gui = false;
             is_interactive = false;
             is_vertical_profile = true;
-            location_str = (Dstring (optarg));
+            break;
+         }
+
+         case 'V':
+         {
+            is_gui = false;
+            is_interactive = false;
+            is_vertical_profile = true;
             break;
          }
 
@@ -1287,7 +1598,6 @@ main (int argc,
             is_gui = false;
             is_interactive = false;
             is_cross_section = true;
-            journey = Journey (Dstring (optarg));
             break;
          }
 
@@ -1296,7 +1606,6 @@ main (int argc,
             is_gui = false;
             is_interactive = false;
             is_time_cross = true;
-            track_id_str = Dstring (optarg);
             break;
          }
 
@@ -1339,28 +1648,57 @@ main (int argc,
       else
       {
 
+         const bool journey_specified = (journey_str != "");
+         const bool location_specified = (location_str != "");
+         const bool track_specified = (track_id_str != "");
+
          if (is_cross_section)
          {
-            twiin.cross_section (stage_str, product_str, journey,
-               time_str, format, title_tokens, filename, u_bg, is_bludge);
+            if (journey_specified)
+            {
+               const Journey journey (journey_str);
+               twiin.cross_section (stage_str, product_str, journey,
+                  time_str, format, title_tokens, filename, u_bg, is_bludge);
+            }
+            if (track_specified)
+            {
+               twiin.cross_section (stage_str, product_str, track_id_str,
+                  track_map, distance, time_str, format, title_tokens,
+                  filename, lagrangian, is_bludge);
+            }
          }
          else
          if (is_time_cross)
          {
-            twiin.time_cross (stage_str, product_str, track_id_str, track_map,
-               format, title_tokens, filename, lagrangian, is_bludge);
+            if (track_specified)
+            {
+               twiin.time_cross (stage_str, product_str, track_id_str,
+                  track_map, format, title_tokens, filename, lagrangian,
+                  is_bludge);
+            }
          }
          else
          if (is_meteogram)
          {
-            twiin.meteogram (stage_str, location_str, time_str,
-               format, title_tokens, filename, ignore_pressure, is_bludge);
+            if (location_str != "")
+            {
+               twiin.meteogram (stage_str, location_str, time_str,
+                  format, title_tokens, filename, ignore_pressure, is_bludge);
+            }
          }
          else
          if (is_vertical_profile)
          {
-            twiin.vertical_profile (stage_str, location_str,
-               time_str, format, title_tokens, filename, is_bludge);
+            if (location_specified)
+            {
+               twiin.vertical_profile (stage_str, location_str,
+                  time_str, format, title_tokens, filename, is_bludge);
+            }
+            else
+            {
+               twiin.vertical_profile (stage_str, track_id_str, track_map,
+                  time_str, format, title_tokens, filename, is_bludge);
+            }
          }
          else
          {

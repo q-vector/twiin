@@ -70,6 +70,38 @@ Display::set_title (Title& title,
                     const Dtime& basetime,
                     const Dstring& stage_str,
                     const Model::Product& product,
+                    const Dtime& dtime,
+                    const Lat_Long& lat_long,
+                    const Real distance,
+                    const bool lagrangian)
+{
+
+   const Real forecast_hour = dtime.t - basetime.t;
+   const Integer forecast_minutes = Integer (round (forecast_hour * 60));
+   const Integer fh = Integer (round (forecast_hour * 60)) / 60;
+   const Integer fm = Integer (round (forecast_hour * 60)) % 60;
+
+   const Real d = distance * 1e-3;
+   const Dstring& ll_str = lat_long.get_string (4, true, true, true);
+   const Dstring& where_str = ll_str + Dstring::render ("\u00b1%.0f km", d);
+
+   const Dstring pov_str (lagrangian ? "Lagrangian" : "Eulerian");
+
+   const Dstring fmt ("%Y.%m.%d %H:%M UTC");
+   const Dstring& time_str = dtime.get_string (fmt);
+   const Dstring& basetime_str = basetime.get_string () +
+      Dstring::render (" +%d:%02d", fh, fm);
+   const Dstring stage_product = stage_str + " / " + product.get_description ();
+
+   title.set (time_str, where_str, stage_product, basetime_str, pov_str);
+
+}
+
+void
+Display::set_title (Title& title,
+                    const Dtime& basetime,
+                    const Dstring& stage_str,
+                    const Model::Product& product,
                     const Dstring& track_id,
                     const bool lagrangian)
 {
@@ -760,7 +792,7 @@ Display::render_cross_section (const RefPtr<Context>& cr,
    if (product.enumeration == Model::Product::RHO ||
        product.enumeration == Model::Product::THETA)
    {
-      render_cross_section_w (cr, transform, box_2d, stage, dtime, journey);
+//      render_cross_section_w (cr, transform, box_2d, stage, dtime, journey);
    }
 
    render_cross_section_mesh (cr, transform, domain_z, journey);
@@ -1241,7 +1273,8 @@ Display::render_vertical_profile (const RefPtr<Context>& cr,
                                   const Thermo_Diagram& thermo_diagram,
                                   const Model::Stage& stage,
                                   const Dtime& dtime,
-                                  const Lat_Long& lat_long)
+                                  const Lat_Long& lat_long,
+                                  const Level& level)
 {
 
    cr->save ();
@@ -1256,6 +1289,32 @@ Display::render_vertical_profile (const RefPtr<Context>& cr,
    thermo_diagram.render (cr, 900);
    cr->set_line_width (2);
    sounding.render (cr, thermo_diagram);
+
+   Real p = GSL_NAN;
+
+   switch (level.type)
+   {
+      case Level::PRESSURE: { p = level.value;                         break; }
+      case Level::HEIGHT:   { p = sounding.get_pressure (level.value); break; }
+   }
+
+   const Real as = 20;
+   const Real t = sounding.get_temperature (thermo_diagram, p);
+   const Real td = sounding.get_dew_point (thermo_diagram, p);
+   const Thermo_Point& tp_t = Thermo_Point::t_p (t, p);
+   const Thermo_Point& tp_td = Thermo_Point::t_p (td, p);
+   const Point_2D& p_t = thermo_diagram.transform (tp_t) + Point_2D (as, 0);
+   const Point_2D& p_td = thermo_diagram.transform (tp_td) + Point_2D (-as, 0);
+
+   Color::hsb (0.33, 0.5, 0.5, 0.5).cairo (cr);
+
+   const Arrow arrow_t (M_PI, as);
+   arrow_t.cairo (cr, p_t);
+   cr->fill ();
+
+   const Arrow arrow_td (0, as);
+   arrow_td.cairo (cr, p_td);
+   cr->fill ();
 
    delete sounding_ptr;
 

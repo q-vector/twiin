@@ -45,6 +45,16 @@ namespace twiin
                     const Dtime& basetime,
                     const Dstring& stage_str,
                     const Model::Product& product,
+                    const Dtime& dtime,
+                    const Lat_Long& lat_long,
+                    const Real distance,
+                    const bool lagrangian);
+
+         static void
+         set_title (Title& title,
+                    const Dtime& basetime,
+                    const Dstring& stage_str,
+                    const Model::Product& product,
                     const Dstring& track_id,
                     const bool lagrangian);
 
@@ -239,7 +249,8 @@ namespace twiin
                                   const Thermo_Diagram& thermo_diagram,
                                   const Model::Stage& stage,
                                   const Dtime& dtime,
-                                  const Lat_Long& lat_long);
+                                  const Lat_Long& lat_long,
+                                  const Level& level = Level (Level::NAL));
 
          static void
          render_vertical_profile (const RefPtr<Context>& cr,

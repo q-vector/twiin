@@ -64,6 +64,15 @@ namespace twiin
          get_file_path (const Dstring& format,
                         const Dstring& stage,
                         const Model::Product& product,
+                        const Dtime& dtime,
+                        const Lat_Long& lat_long,
+                        const Real distance,
+                        const bool lagrangian) const;
+
+         Dstring
+         get_file_path (const Dstring& format,
+                        const Dstring& stage,
+                        const Model::Product& product,
                         const Dstring& track_id,
                         const bool lagrangian) const;
 
@@ -150,6 +159,19 @@ namespace twiin
                         const bool is_bludge) const;
 
          void
+         cross_section (const Dstring& stage_str,
+                        const Dstring& product_str,
+                        const Dstring& track_id_str,
+                        const Track::Map& track_map,
+                        const Real distance,
+                        const Dstring& time_str,
+                        const Dstring& format,
+                        const Tokens& title_tokens,
+                        const Dstring& filename,
+                        const bool lagrangian,
+                        const bool is_bludge) const;
+
+         void
          time_cross (const Dstring& stage_str,
                      const Dstring& product_str,
                      const Dstring& track_id_str,
@@ -173,6 +195,16 @@ namespace twiin
          void
          vertical_profile (const Dstring& stage_str,
                            const Dstring& location_str,
+                           const Dstring& time_str,
+                           const Dstring& format,
+                           const Tokens& title_tokens,
+                           const Dstring& filename,
+                           const bool is_bludge) const;
+
+         void
+         vertical_profile (const Dstring& stage_str,
+                           const Dstring& track_id_str,
+                           const Track::Map& track_map,
                            const Dstring& time_str,
                            const Dstring& format,
                            const Tokens& title_tokens,
