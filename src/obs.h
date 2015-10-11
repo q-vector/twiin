@@ -147,6 +147,17 @@ namespace twiin
 
                Obs (const Obs& obs);
 
+               Real
+               get_rh () const;
+
+               Real
+               get_gfdi (const Real gust_weight = 0.333,
+                         const Real curing = 100) const;
+
+               Real
+               get_ffdi (const Real gust_weight = 0.333,
+                         const Real df = 10) const;
+
          };
 
          class Key

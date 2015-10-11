@@ -222,6 +222,32 @@ Aws::Obs::Obs (const Aws::Obs& obs)
 {
 }
 
+Real
+Aws::Obs::get_rh () const
+{
+   return Moisture::get_rh (temperature, dew_point);   
+}
+
+Real
+Aws::Obs::get_gfdi (const Real gust_weight,
+                    const Real curing) const
+{
+   const Real rh = get_rh ();   
+   const Real gw = std::max (std::min (gust_weight, 1.0), 0.0);
+   const Real kph = (wind_speed * (1 - gw) + wind_gust * gw) * 3.6;
+   return Fire::get_gfdi (temperature, rh, kph, curing);
+}
+
+Real
+Aws::Obs::get_ffdi (const Real gust_weight,
+                    const Real df) const
+{
+   const Real rh = get_rh ();   
+   const Real gw = std::max (std::min (gust_weight, 1.0), 0.0);
+   const Real kph = (wind_speed * (1 - gw) + wind_gust * gw) * 3.6;
+   return Fire::get_ffdi (temperature, rh, kph, df);
+}
+
 Aws::Key::Key (const Integer station_id,
                const Dtime& dtime)
    : station_id (station_id),
