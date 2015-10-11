@@ -188,8 +188,10 @@ void
 Twiin::gui (const Dstring& stage_str,
             const Dstring& product_str,
             const Dstring& level_str,
-            const Dstring& time_str) const
+            const Dstring& time_str,
+            const Tokens& journey_tokens) const
 {
+cout << "gui a " << endl;
 
    const Tokens stage_tokens (stage_str, ":");
    const Tokens product_tokens (product_str, ":");
@@ -198,12 +200,15 @@ Twiin::gui (const Dstring& stage_str,
    const Dstring stage (stage_tokens[0]);
    const Model::Product product (product_tokens[0]);
    const Level level (level_tokens[0]);
+cout << "time_str = " << time_str << endl;
+   const Dtime dtime (time_str);
+cout << "dtime = " << dtime << endl;
 
    const Data data (config_file);
 
    Gtk::Window gtk_window;
-   Console console (gtk_window, size_2d,
-      config_file, data, stage, product, level);
+   Console console (gtk_window, size_2d, config_file,
+      data, stage, product, level, dtime, journey_tokens);
    gtk_window.add (console);
    gtk_window.show_all_children ();
    gtk_window.show ();
@@ -632,7 +637,7 @@ Twiin::plan (const Dstring& stage_str,
 void
 Twiin::cross_section (const Dstring& stage_str,
                       const Dstring& product_str,
-                      const Journey& journey,
+                      const Tokens& journey_tokens,
                       const Dstring& time_str,
                       const Dstring& format,
                       const Tokens& title_tokens,
@@ -641,15 +646,11 @@ Twiin::cross_section (const Dstring& stage_str,
                       const bool is_bludge) const
 {
 
+   const Geodesy geodesy;
    const Level level ("100m");
    const Dtime::Set time_set (time_str);
    const Tokens stage_tokens (stage_str, ":");
    const Tokens product_tokens (product_str, ":");
-
-   const Geodesy geodesy;
-   const Real distance = journey.get_distance (geodesy);
-   const Domain_1D domain_x (0, distance);
-   const Domain_1D domain_z (0, 8000);
 
    Title title (size_2d);
    const Data data (config_file);
@@ -663,84 +664,96 @@ Twiin::cross_section (const Dstring& stage_str,
    const Real w = size_2d.i - margin_l - margin_r;
    const Real h = size_2d.j - margin_t - margin_b;
 
-   Affine_Transform_2D transform;
-   const Real span_x = domain_x.get_span ();
-   const Real span_z = domain_z.get_span ();
-   transform.scale (1, -1);
-   transform.scale (w / span_x, h / span_z);
-   transform.translate (margin_l, size_2d.j - margin_b);
-
-   for (Tokens::const_iterator i = stage_tokens.begin ();
-        i != stage_tokens.end (); i++)
+   for (auto jny = journey_tokens.begin ();
+        jny != journey_tokens.end (); jny++)
    {
 
-      const Dstring s (*i);
-      const Model::Stage& stage = model.get_stage (s);
+      const Dstring& journey_str = *(jny);
+      const Journey journey (journey_str);
 
-      for (Tokens::const_iterator j = product_tokens.begin ();
-           j != product_tokens.end (); j++)
+      const Real distance = journey.get_distance (geodesy);
+      const Domain_1D domain_x (0, distance);
+      const Domain_1D domain_z (0, 8000);
+
+      Affine_Transform_2D transform;
+      const Real span_x = domain_x.get_span ();
+      const Real span_z = domain_z.get_span ();
+      transform.scale (1, -1);
+      transform.scale (w / span_x, h / span_z);
+      transform.translate (margin_l, size_2d.j - margin_b);
+
+      for (Tokens::const_iterator i = stage_tokens.begin ();
+           i != stage_tokens.end (); i++)
       {
 
-         const Model::Product product (*j);
+         const Dstring s (*i);
+         const Model::Stage& stage = model.get_stage (s);
 
-         const bool is_speed = (product.enumeration == Model::Product::SPEED);
-         const Model::Product& p = (is_speed ?
-            Model::Product (Model::Product::SPEED_HIGHER) : product);
-
-         const vector<Dtime>& valid_time_vector =
-            stage.get_valid_time_vector (product, level, time_set);
-
-         #pragma omp parallel for
-         for (Integer l = 0; l < valid_time_vector.size (); l++)
+         for (Tokens::const_iterator j = product_tokens.begin ();
+              j != product_tokens.end (); j++)
          {
 
-            const Dtime& dtime = valid_time_vector.at (l);
+            const Model::Product product (*j);
 
-            const Dstring& file_path = (filename == "") ?
-               get_file_path (format, s, product, dtime, journey) :
-               output_dir + "/" + filename;
-            cout << file_path;
-            if (is_bludge) { cout << " will be made" << endl; continue; }
+            const Model::Product::Enumeration enumeration = product.enumeration;
+            const bool is_speed = (enumeration == Model::Product::SPEED);
+            const Model::Product& p = (is_speed ?
+               Model::Product (Model::Product::SPEED_HIGHER) : product);
 
-            try
+            const vector<Dtime>& valid_time_vector =
+               stage.get_valid_time_vector (product, level, time_set);
+
+            #pragma omp parallel for
+            for (Integer l = 0; l < valid_time_vector.size (); l++)
             {
 
-               RefPtr<Surface> surface = denise::get_surface (
-                  size_2d, format, file_path);
-               RefPtr<Context> cr = denise::get_cr (surface);
+               const Dtime& dtime = valid_time_vector.at (l);
 
-               const Index_2D i2d (margin_l, margin_t);
-               const Size_2D s2d (size_2d.i - margin_l - margin_r,
-                                  size_2d.j - margin_t - margin_b);
-               const Box_2D box_2d (i2d, s2d);
+               const Dstring& file_path = (filename == "") ?
+                  get_file_path (format, s, product, dtime, journey) :
+                  output_dir + "/" + filename;
+               cout << file_path;
+               if (is_bludge) { cout << " will be made" << endl; continue; }
 
-               if (s2d.i < 0 || s2d.j < 0) { continue; }
-
-               Display::render_cross_section (cr, transform, box_2d,
-                  domain_z, stage, product, dtime, journey, u_bg);
-
-               Display::render_color_bar (cr, size_2d, p);
-
-               if (title_tokens.size () == 0)
+               try
                {
-                  Display::set_title (title, basetime,
-                     s, product, dtime, journey);
-               }
-               else
-               {
-                  title.set (title_tokens);
-               }
-               title.cairo (cr);
 
-               if (format == "png") { surface->write_to_png (file_path); }
+                  RefPtr<Surface> surface = denise::get_surface (
+                     size_2d, format, file_path);
+                  RefPtr<Context> cr = denise::get_cr (surface);
 
-               cout << " okay" << endl;
+                  const Index_2D i2d (margin_l, margin_t);
+                  const Size_2D s2d (size_2d.i - margin_l - margin_r,
+                                     size_2d.j - margin_t - margin_b);
+                  const Box_2D box_2d (i2d, s2d);
+
+                  if (s2d.i < 0 || s2d.j < 0) { continue; }
+
+                  Display::render_cross_section (cr, transform, box_2d,
+                     domain_z, stage, product, dtime, journey, u_bg);
+
+                  Display::render_color_bar (cr, size_2d, p);
+
+                  if (title_tokens.size () == 0)
+                  {
+                     Display::set_title (title, basetime,
+                        s, product, dtime, journey);
+                  }
+                  else
+                  {
+                     title.set (title_tokens);
+                  }
+                  title.cairo (cr);
+
+                  if (format == "png") { surface->write_to_png (file_path); }
+
+                  cout << " okay" << endl;
+
+               }
+               catch (...) { cout << " failed" << endl; }
 
             }
-            catch (...) { cout << " failed" << endl; }
-
          }
-
       }
    }
 
@@ -1396,7 +1409,7 @@ main (int argc,
    Real distance = 100e3;
    Real height = 8000;
    Dstring location_str ("");
-   Dstring journey_str ("");
+   Tokens journey_tokens;
    Track::Map track_map;
    Dstring track_id_str ("");
    Dstring config_file_path (Dstring (getenv ("HOME")) + "/.twiin.rc");
@@ -1475,7 +1488,13 @@ main (int argc,
 
          case 'J':
          {
-            journey_str = Dstring (optarg);
+            const Tokens tokens (Dstring (optarg), ":");
+            for (auto iterator = tokens.begin ();
+                 iterator != tokens.end (); iterator++)
+            {
+               const Dstring& journey_str = *(iterator);
+               journey_tokens.push_back (journey_str);
+            }
             break;
          }
 
@@ -1628,6 +1647,11 @@ main (int argc,
    try
    {
 
+      const bool level_specified = (level_str != "");
+      const bool journey_specified = (journey_tokens.size () == 0);
+      const bool location_specified = (location_str != "");
+      const bool track_specified = (track_id_str != "");
+
       const Config_File config_file (config_file_path);
       Twiin twiin (size_2d, config_file, output_dir);
 
@@ -1642,22 +1666,18 @@ main (int argc,
          cerr << "Interactive mode not available" << endl;
 #else /* ENABLE_GTKMM */
          Gtk::Main gtk_main (argc, argv);
-         twiin.gui (stage_str, product_str, level_str, time_str);
+         twiin.gui (stage_str, product_str, (level_specified ?
+            level_str : "Surface"), time_str, journey_tokens);
 #endif /* ENABLE_GTKMM */
       }
       else
       {
 
-         const bool journey_specified = (journey_str != "");
-         const bool location_specified = (location_str != "");
-         const bool track_specified = (track_id_str != "");
-
          if (is_cross_section)
          {
             if (journey_specified)
             {
-               const Journey journey (journey_str);
-               twiin.cross_section (stage_str, product_str, journey,
+               twiin.cross_section (stage_str, product_str, journey_tokens,
                   time_str, format, title_tokens, filename, u_bg, is_bludge);
             }
             if (track_specified)
@@ -1680,7 +1700,7 @@ main (int argc,
          else
          if (is_meteogram)
          {
-            if (location_str != "")
+            if (location_specified)
             {
                twiin.meteogram (stage_str, location_str, time_str,
                   format, title_tokens, filename, ignore_pressure, is_bludge);
@@ -1694,7 +1714,7 @@ main (int argc,
                twiin.vertical_profile (stage_str, location_str,
                   time_str, format, title_tokens, filename, is_bludge);
             }
-            else
+            if (track_specified)
             {
                twiin.vertical_profile (stage_str, track_id_str, track_map,
                   time_str, format, title_tokens, filename, is_bludge);
@@ -1702,7 +1722,6 @@ main (int argc,
          }
          else
          {
-            const bool level_specified = (level_str != "");
             if (level_specified)
             {
                twiin.plan (stage_str, product_str, level_str, time_str,
@@ -1710,7 +1729,7 @@ main (int argc,
                   format, title_tokens, filename, no_stage, no_wind_barb,
                   is_bludge);
             }
-            else
+            if (track_specified)
             {
                twiin.plan (stage_str, product_str, time_str, zoom_str,
                   track_id_str, track_map, annotation_tokens, format,

@@ -195,7 +195,9 @@ Console::Console (Gtk::Window& gtk_window,
                   const Data& data,
                   const Dstring& stage_str,
                   const Model::Product& product,
-                  const Level& level)
+                  const Level& level,
+                  const Dtime& dtime,
+                  const Tokens& journey_tokens)
    : Map_Console (gtk_window, size_2d, config_file),
      Time_Canvas (*this, 12),
      Level_Canvas (*this, 12),
@@ -262,6 +264,7 @@ Console::Console (Gtk::Window& gtk_window,
    const set<Dtime>& ts = stage.get_valid_time_set (product, level);
    time_chooser.set_shape (Time_Chooser::Shape (ts));
    time_chooser.set_leap (1);
+   time_chooser.get_data ().set_time (dtime);
 
    marker_popup_menu.append ("Tephigram");
    marker_popup_menu.get_id_signal ("Tephigram").connect (
@@ -295,15 +298,13 @@ Console::Console (Gtk::Window& gtk_window,
    const Station::Map& station_map = data.get_station_map ();
    get_marker_store ().set_attractor (station_map);
 
-   const Lat_Long mountain_wave_rjf_a (-32.4774, 147.1520);
-   const Lat_Long mountain_wave_rjf_b (-34.3215, 153.2280);
-   const Lat_Long mountain_wave_a (-31.7849, 147.9219);
-   const Lat_Long mountain_wave_b (-35.4056, 152.7273);
-   const Lat_Long dry_slow_nw_a (-32.8879, 144.7283);
-   const Lat_Long dry_slow_nw_b (-29.0739, 149.1825);
-   get_route_store ().insert (mountain_wave_a, mountain_wave_b);
-   get_route_store ().insert (mountain_wave_rjf_a, mountain_wave_rjf_b);
-   get_route_store ().insert (dry_slow_nw_a, dry_slow_nw_b);
+   for (auto iterator = journey_tokens.begin ();
+        iterator != journey_tokens.end (); iterator++)
+   {
+      const Dstring& journey_str = *(iterator);
+      const Journey journey (journey_str);
+      get_route_store ().insert (journey);
+   }
 
 }
 

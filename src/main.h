@@ -113,7 +113,8 @@ namespace twiin
          gui (const Dstring& stage_str,
               const Dstring& product_str,
               const Dstring& level_str,
-              const Dstring& time_str) const;
+              const Dstring& time_str,
+              const Tokens& journey_tokens) const;
 #endif /* ENABLE_GTKMM */
 
          void
@@ -150,7 +151,7 @@ namespace twiin
          void
          cross_section (const Dstring& stage_str,
                         const Dstring& product_str,
-                        const Journey& journey,
+                        const Tokens& journey_tokens,
                         const Dstring& time_str,
                         const Dstring& format,
                         const Tokens& title_tokens,

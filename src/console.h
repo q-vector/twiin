@@ -106,7 +106,9 @@ namespace twiin
                   const Data& data,
                   const Dstring& stage_str,
                   const Model::Product& product,
-                  const Level& level);
+                  const Level& level,
+                  const Dtime& dtime,
+                  const Tokens& journey_tokens);
 
          ~Console ();
 
