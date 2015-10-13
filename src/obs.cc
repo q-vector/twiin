@@ -225,27 +225,118 @@ Aws::Obs::Obs (const Aws::Obs& obs)
 Real
 Aws::Obs::get_rh () const
 {
-   return Moisture::get_rh (temperature, dew_point);   
+   return Moisture::get_rh (temperature - K, dew_point - K);
 }
 
 Real
 Aws::Obs::get_gfdi (const Real gust_weight,
                     const Real curing) const
 {
-   const Real rh = get_rh ();   
    const Real gw = std::max (std::min (gust_weight, 1.0), 0.0);
-   const Real kph = (wind_speed * (1 - gw) + wind_gust * gw) * 3.6;
-   return Fire::get_gfdi (temperature, rh, kph, curing);
+   const Real speed = (wind_speed * (1 - gw) + wind_gust * gw);
+   return Fire::get_gfdi_si (temperature, dew_point, speed, curing);
 }
 
 Real
 Aws::Obs::get_ffdi (const Real gust_weight,
                     const Real df) const
 {
-   const Real rh = get_rh ();   
    const Real gw = std::max (std::min (gust_weight, 1.0), 0.0);
-   const Real kph = (wind_speed * (1 - gw) + wind_gust * gw) * 3.6;
-   return Fire::get_ffdi (temperature, rh, kph, df);
+   const Real speed = (wind_speed * (1 - gw) + wind_gust * gw);
+   return Fire::get_ffdi_si (temperature, dew_point, speed, df);
+}
+
+Real
+Aws::Obs::get_product (const Dstring& product_str) const
+{
+
+   const Tokens tokens (product_str, ":");
+   const Dstring& p = tokens[0];
+   const Integer n = tokens.size ();
+
+   if (p == "t" || p == "temperature")
+   {
+      return temperature;
+   }
+   else
+   if (p == "td" || p == "dew_point")
+   {
+      return dew_point;
+   }
+   else
+   if (p == "rh" || p == "relative_humidity")
+   {
+      return get_rh ();
+   }
+   else
+   if (p == "direction" || p == "wind_direction")
+   {
+      return wind_direction;
+   }
+   else
+   if (p == "speed" || p == "wind_speed")
+   {
+      return wind_speed;
+   }
+   else
+   if (p == "gust" || p == "wind_gust")
+   {
+      return wind_gust;
+   }
+   else
+   if (p == "p" || p == "station_p")
+   {
+      return station_p;
+   }
+   else
+   if (p == "mslp" || p == "mean_sea_level_pressure")
+   {
+      return mslp;
+   }
+   else
+   if (p == "gfdi")
+   {
+
+      if (n < 2) { return get_gfdi (); }
+      const Real gust_weight = stof (tokens[1]);
+
+      if (n < 3) { return get_gfdi (gust_weight); }
+      const Real curing = stof (tokens[2]);
+
+      return get_gfdi (gust_weight, curing);
+
+   }
+   else
+   if (p == "ffdi")
+   {
+
+      if (n < 2) { return get_ffdi (); }
+      const Real gust_weight = stof (tokens[1]);
+
+      if (n < 3) { return get_ffdi (gust_weight); }
+      const Real df = stof (tokens[2]);
+
+      return get_ffdi (gust_weight, df);
+
+   }
+
+}
+
+Tuple
+Aws::Obs::get_products (const Tokens& product_tokens) const
+{
+
+   Tuple tuple;
+
+   for (auto p = product_tokens.begin (); p != product_tokens.end (); p++)
+   {
+      const Dstring& product_str = *(p);
+      const Real datum = get_product (product_str);
+      tuple.push_back (datum);
+   }
+
+   return tuple;
+
 }
 
 Aws::Key::Key (const Integer station_id,
