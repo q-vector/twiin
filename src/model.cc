@@ -2326,7 +2326,7 @@ Model::Stage::get_color (const Model::Product& product,
          const Real saturation = Domain_1D (0, 10).normalize (d);
          const Real odd = (Integer (floor (d / 0.2)) % 2);
          const Real brightness = (odd ? 0.82 : 0.78);
-         return Color::hsb (0.45, saturation, brightness);
+         return Color::hsb (0.58, saturation, brightness);
       }
 
       case Model::Product::RHO:
