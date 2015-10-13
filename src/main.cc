@@ -226,7 +226,7 @@ Twiin::plan (const Dstring& stage_str,
              const Dstring& time_str,
              const Dstring& zoom_str,
              const Dstring& track_id_str,
-             const bool initial_track_id,
+             const bool track_id_initial,
              const Track::Map& track_map,
              const Tokens& annotation_tokens,
              const Dstring& format,
@@ -377,7 +377,7 @@ Twiin::plan (const Dstring& stage_str,
                      }
 
                      const Dstring& track_id_icon = track_id_initial ?
-                        track_id.substr (0, 1) : track_id;
+                        Dstring (track_id.substr (0, 1)) : track_id;
 
                      const Lat_Long& lat_long = track.get_lat_long (dtime);
                      const Real z = track.get_datum ("z", dtime);
@@ -433,7 +433,7 @@ Twiin::plan (const Dstring& stage_str,
              const Dstring& time_str,
              const Dstring& zoom_str,
              const Dstring& track_id_str,
-             const bool initial_track_id,
+             const bool track_id_initial,
              const Track::Map& track_map,
              const Tokens& annotation_tokens,
              const Dstring& format,
@@ -611,7 +611,7 @@ Twiin::plan (const Dstring& stage_str,
                   cr->stroke ();
 
                   const Dstring& track_id_icon = track_id_initial ?
-                     track_id.substr (0, 1) : track_id;
+                     Dstring (track_id.substr (0, 1)) : track_id;
 
                   const Point_2D& point = transform.transform (lat_long);
                   Label (track_id_icon, point, 'c', 'c').cairo (cr);
