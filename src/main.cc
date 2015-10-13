@@ -226,6 +226,7 @@ Twiin::plan (const Dstring& stage_str,
              const Dstring& time_str,
              const Dstring& zoom_str,
              const Dstring& track_id_str,
+             const bool initial_track_id,
              const Track::Map& track_map,
              const Tokens& annotation_tokens,
              const Dstring& format,
@@ -375,15 +376,18 @@ Twiin::plan (const Dstring& stage_str,
                         cr->fill ();
                      }
 
+                     const Dstring& track_id_icon = track_id_initial ?
+                        track_id.substr (0, 1) : track_id;
+
                      const Lat_Long& lat_long = track.get_lat_long (dtime);
                      const Real z = track.get_datum ("z", dtime);
                      const Real zz = std::min (z, 5000.0);
                      const Real hue = (zz / 5000) * 0.833;
                      const Point_2D& point = transform.transform (lat_long);
                      Color::black (0.5).cairo (cr);
-                     Label (track_id, point, 'c', 'c').cairo (cr);
+                     Label (track_id_icon, point + Point_2D (2, 2), 'c', 'c').cairo (cr);
                      Color::hsb (hue, 0.8, 0.6).cairo (cr);
-                     Label (track_id, point, 'c', 'c').cairo (cr);
+                     Label (track_id_icon, point, 'c', 'c').cairo (cr);
 
                   }
 
@@ -429,6 +433,7 @@ Twiin::plan (const Dstring& stage_str,
              const Dstring& time_str,
              const Dstring& zoom_str,
              const Dstring& track_id_str,
+             const bool initial_track_id,
              const Track::Map& track_map,
              const Tokens& annotation_tokens,
              const Dstring& format,
@@ -605,8 +610,11 @@ Twiin::plan (const Dstring& stage_str,
                   simple_polyline.cairo (cr, transform);
                   cr->stroke ();
 
+                  const Dstring& track_id_icon = track_id_initial ?
+                     track_id.substr (0, 1) : track_id;
+
                   const Point_2D& point = transform.transform (lat_long);
-                  Label (track_id, point, 'c', 'c').cairo (cr);
+                  Label (track_id_icon, point, 'c', 'c').cairo (cr);
 
                   cr->restore ();
 
@@ -1357,6 +1365,7 @@ main (int argc,
       { "format",                       1, 0, 'f' },
       { "geometry",                     1, 0, 'g' },
       { "gui",                          0, 0, 'G' },
+      { "plot-first-char-of-track-id",  0, 0, 'I' },
       { "interactive",                  0, 0, 'i' },
       { "journey",                      0, 0, 'J' },
       { "track",                        0, 0, 'j' },
@@ -1412,11 +1421,12 @@ main (int argc,
    Tokens journey_tokens;
    Track::Map track_map;
    Dstring track_id_str ("");
+   bool track_id_initial = false;
    Dstring config_file_path (Dstring (getenv ("HOME")) + "/.twiin.rc");
 
    int c;
    int option_index = 0;
-   char optstring[] = "a:bc:d:F:f:Gg:h:iJ:j:Ll:M:mO:o:Pp:Ss:T:t:u:vVWXxz:";
+   char optstring[] = "a:bc:d:F:f:Gg:h:IiJ:j:Ll:M:mO:o:Pp:Ss:T:t:u:vVWXxz:";
    while ((c = getopt_long (argc, argv, optstring,
           long_options, &option_index)) != -1)
    {
@@ -1477,6 +1487,12 @@ main (int argc,
          case 'h':
          {
             height = stof (Dstring (optarg));
+            break;
+         }
+
+         case 'I':
+         {
+            track_id_initial = true;
             break;
          }
 
@@ -1725,15 +1741,17 @@ main (int argc,
             if (level_specified)
             {
                twiin.plan (stage_str, product_str, level_str, time_str,
-                  zoom_str, track_id_str, track_map, annotation_tokens,
-                  format, title_tokens, filename, no_stage, no_wind_barb,
-                  is_bludge);
+                  zoom_str, track_id_str, track_id_initial, track_map,
+                  annotation_tokens, format, title_tokens, filename,
+                  no_stage, no_wind_barb, is_bludge);
             }
+            else
             if (track_specified)
             {
                twiin.plan (stage_str, product_str, time_str, zoom_str,
-                  track_id_str, track_map, annotation_tokens, format,
-                  title_tokens, filename, no_stage, no_wind_barb, is_bludge);
+                  track_id_str, track_id_initial, track_map, annotation_tokens,
+                  format, title_tokens, filename, no_stage, no_wind_barb,
+                  is_bludge);
             }
          }
       }
