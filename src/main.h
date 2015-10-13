@@ -259,6 +259,12 @@ namespace twiin
          twiin_surface (const Tokens& tokens);
 
          void
+         twiin_time_series (const Tokens& tokens);
+
+         void
+         twiin_time_series_aws (const Tokens& tokens);
+
+         void
          twiin_parse (const Tokens& tokens);
 
          void

@@ -158,6 +158,12 @@ namespace twiin
                get_ffdi (const Real gust_weight = 0.333,
                          const Real df = 10) const;
 
+               Real
+               get_product (const Dstring& product_str) const;
+
+               Tuple
+               get_products (const Tokens& product_tokens) const;
+
          };
 
          class Key

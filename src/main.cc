@@ -1664,7 +1664,7 @@ main (int argc,
    {
 
       const bool level_specified = (level_str != "");
-      const bool journey_specified = (journey_tokens.size () == 0);
+      const bool journey_specified = (journey_tokens.size () != 0);
       const bool location_specified = (location_str != "");
       const bool track_specified = (track_id_str != "");
 
@@ -2056,6 +2056,82 @@ Twiin::twiin_surface (const Tokens& tokens)
 }
 
 void
+Twiin::twiin_time_series (const Tokens& tokens)
+{
+
+   const Dstring& data = tokens[0];
+   if (data == "aws")
+   {
+      twiin_time_series_aws (tokens.subtokens (1));
+   }
+   else
+   {
+      throw Exception ("twiin_time_series");
+   }
+
+}
+
+void
+Twiin::twiin_time_series_aws (const Tokens& arguments)
+{
+
+   Ituple station_ituple;
+   Tokens product_tokens;
+   Dtime::Span time_span;
+
+   const Data data (config_file);
+   const Aws::Repository& aws_repository = data.get_aws_repository ();
+
+   for (auto iterator = arguments.begin ();
+        iterator != arguments.end (); iterator++)
+   {
+
+      const Tokens tkns (iterator->get_lower_case (), "=");
+      const Dstring& option = tkns[0];
+      const Dstring& value = tkns[1];
+      const bool is_yes = (value == "yes" || value == "y" || value == "true");
+
+      if (option == "start") { time_span.start_t = Dtime (value).t; }
+      if (option == "end") { time_span.end_t = Dtime (value).t; }
+
+      if (option == "station") { station_ituple.push_back (stoi (value)); }
+      if (option == "product") { product_tokens.push_back (value); }
+
+   }
+
+cout << time_span.get_start () << " " << time_span.get_end () << " " << station_ituple << " " << product_tokens << endl;
+   for (auto s = station_ituple.begin (); s != station_ituple.end (); s++)
+   {
+
+      const Integer station_id = *(s);
+cout << station_id << " a" << endl;
+      const Aws::Repository* ar_ptr =
+         aws_repository.get_aws_repository_ptr (station_id, time_span);
+cout << station_id << " b" << endl;
+      const Aws::Repository& ar = *ar_ptr;
+
+cout << station_id << " c " << ar.size () << endl;
+      for (auto o = ar.begin (); o != ar.end (); o++)
+      {
+
+         const Aws::Key& key = o->first;
+         const Aws::Obs& obs = o->second;
+         const Tuple& products = obs.get_products (product_tokens);
+
+         cout << key.station_id << " ";
+         cout << key.dtime.get_string ("%Y%m%d%H%M") << " ";
+         cout << products << endl;
+
+      }
+cout << station_id << " d" << endl;
+
+      delete ar_ptr;
+
+   }
+
+}
+
+void
 Twiin::twiin_parse (const Tokens& tokens)
 {
 
@@ -2070,6 +2146,11 @@ Twiin::twiin_parse (const Tokens& tokens)
    if (action == "surface")
    {
       twiin_surface (tokens.subtokens (1));
+   }
+   else
+   if (action == "time_series")
+   {
+      twiin_time_series (tokens.subtokens (1));
    }
    else
    {
