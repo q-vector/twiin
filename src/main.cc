@@ -375,15 +375,17 @@ Twiin::plan (const Dstring& stage_str,
                         cr->fill ();
                      }
 
+                     const Dstring& track_id_icon = track_id.substr (0, 1);
+
                      const Lat_Long& lat_long = track.get_lat_long (dtime);
                      const Real z = track.get_datum ("z", dtime);
                      const Real zz = std::min (z, 5000.0);
                      const Real hue = (zz / 5000) * 0.833;
                      const Point_2D& point = transform.transform (lat_long);
                      Color::black (0.5).cairo (cr);
-                     Label (track_id, point, 'c', 'c').cairo (cr);
+                     Label (track_id_icon, point, 'c', 'c').cairo (cr);
                      Color::hsb (hue, 0.8, 0.6).cairo (cr);
-                     Label (track_id, point, 'c', 'c').cairo (cr);
+                     Label (track_id_icon, point, 'c', 'c').cairo (cr);
 
                   }
 
