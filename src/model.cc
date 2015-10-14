@@ -2344,10 +2344,10 @@ Model::Stage::get_color (const Model::Product& product,
       {
          const Real hue = (datum < 0 ? 0.667 : 0.000);
          const Real absolute = fabs (datum);
-//         const Real quantized = floor (absolute / 0.1) * 0.1;
-         const Real quantized = absolute;
-//         const Real saturation = Domain_1D (0, 3.5).normalize (quantized) * 0.7;
-         const Real saturation = Domain_1D (0, 0.5).normalize (quantized) * 0.7;
+         const Real quantized = floor (absolute / 0.1) * 0.1;
+         //const Real quantized = absolute;
+         const Real saturation = Domain_1D (0, 3.5).normalize (quantized) * 0.7;
+         //const Real saturation = Domain_1D (0, 0.5).normalize (quantized) * 0.7;
          return Color::hsb (hue, saturation, 1.0);
       }
 
