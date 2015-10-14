@@ -647,6 +647,7 @@ Twiin::cross_section (const Dstring& stage_str,
                       const Dstring& product_str,
                       const Tokens& journey_tokens,
                       const Dstring& time_str,
+                      const Real height,
                       const Dstring& format,
                       const Tokens& title_tokens,
                       const Dstring& filename,
@@ -681,7 +682,7 @@ Twiin::cross_section (const Dstring& stage_str,
 
       const Real distance = journey.get_distance (geodesy);
       const Domain_1D domain_x (0, distance);
-      const Domain_1D domain_z (0, 8000);
+      const Domain_1D domain_z (0, height);
 
       Affine_Transform_2D transform;
       const Real span_x = domain_x.get_span ();
@@ -774,6 +775,7 @@ Twiin::cross_section (const Dstring& stage_str,
                       const Track::Map& track_map,
                       const Real distance,
                       const Dstring& time_str,
+                      const Real height,
                       const Dstring& format,
                       const Tokens& title_tokens,
                       const Dstring& filename,
@@ -786,9 +788,6 @@ Twiin::cross_section (const Dstring& stage_str,
    const Tokens stage_tokens (stage_str, ":");
    const Tokens product_tokens (product_str, ":");
    const Tokens track_id_tokens (track_id_str, ":");
-
-   const Domain_1D domain_x (0, distance);
-   const Domain_1D domain_z (0, 8000);
 
    Title title (size_2d);
    const Data data (config_file);
@@ -848,7 +847,7 @@ Twiin::cross_section (const Dstring& stage_str,
                journey.push_back (G::get_destination (ll, -distance, direction));
                journey.push_back (G::get_destination (ll, distance, direction));
                const Domain_1D domain_x (-distance, distance);
-               const Domain_1D domain_z (0, 8000);
+               const Domain_1D domain_z (0, height);
 
                Affine_Transform_2D transform;
                const Real span_x = domain_x.get_span ();
@@ -1694,13 +1693,14 @@ main (int argc,
             if (journey_specified)
             {
                twiin.cross_section (stage_str, product_str, journey_tokens,
-                  time_str, format, title_tokens, filename, u_bg, is_bludge);
+                  time_str, height, format, title_tokens, filename,
+                  u_bg, is_bludge);
             }
             if (track_specified)
             {
                twiin.cross_section (stage_str, product_str, track_id_str,
-                  track_map, distance, time_str, format, title_tokens,
-                  filename, lagrangian, is_bludge);
+                  track_map, distance, time_str, height, format,
+                  title_tokens, filename, lagrangian, is_bludge);
             }
          }
          else

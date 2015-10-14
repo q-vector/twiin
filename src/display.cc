@@ -646,8 +646,8 @@ Display::render_cross_section_w (const RefPtr<Context>& cr,
                                  const Journey& journey)
 {
    Raster* raster_ptr = stage.get_cross_section_raster_ptr (box_2d,
-      transform, Model::Product ("W_TRANSLUCENT"), dtime, journey);
-   raster_ptr->blit (cr);
+      transform, Model::Product ("W"), dtime, journey);
+   raster_ptr->blit (cr, 0.4);
    delete raster_ptr;
 }
 
@@ -792,7 +792,7 @@ Display::render_cross_section (const RefPtr<Context>& cr,
    if (product.enumeration == Model::Product::RHO ||
        product.enumeration == Model::Product::THETA)
    {
-//      render_cross_section_w (cr, transform, box_2d, stage, dtime, journey);
+      render_cross_section_w (cr, transform, box_2d, stage, dtime, journey);
    }
 
    render_cross_section_mesh (cr, transform, domain_z, journey);
