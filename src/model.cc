@@ -2955,6 +2955,7 @@ Model::Stage::get_cross_section_raster_ptr (const Box_2D& box_2d,
 {
 
    Raster* raster_ptr = new Raster (box_2d);
+   raster_ptr->paint (Color::white ());
 
    Color color;
    const size_t l = get_uppers_l (dtime);

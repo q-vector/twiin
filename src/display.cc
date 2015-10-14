@@ -792,7 +792,7 @@ Display::render_cross_section (const RefPtr<Context>& cr,
    if (product.enumeration == Model::Product::RHO ||
        product.enumeration == Model::Product::THETA)
    {
-      render_cross_section_w (cr, transform, box_2d, stage, dtime, journey);
+      //render_cross_section_w (cr, transform, box_2d, stage, dtime, journey);
    }
 
    render_cross_section_mesh (cr, transform, domain_z, journey);
