@@ -15,11 +15,10 @@ Hrit::init (const Dstring& data_path)
 
    this->data_path = data_path;
 
-   const Reg_Exp re ("DK01_[0-9]+");
+   const Reg_Exp re ("DK01_[0-9]...........");
    const Tokens& dir_listing = get_dir_listing (data_path, re);
 
-   for (auto l = dir_listing.begin ();
-        l != dir_listing.end (); l++)
+   for (auto l = dir_listing.begin (); l != dir_listing.end (); l++)
    {
 
       const Dstring& leaf = *(l);
@@ -315,7 +314,8 @@ Hrit::Hrit (const Config_File& config_file)
         iterator != config_file.end (); iterator++)
    {
 
-      const Tokens tokens (*(iterator));
+      const Dstring input_line = *(iterator);
+      const Tokens tokens (input_line, " \t\n");
       if (tokens.size () != 2) { continue; }
       if (tokens[0] != "hrit") { continue; }
 
@@ -333,6 +333,39 @@ Hrit::get_file_path (const Dtime& dtime,
                      const Integer segment) const
 {
    return frame_map.get_frame (dtime).at (channel).at (segment);
+}
+
+set<Dtime>
+Hrit::get_valid_time_set () const
+{
+
+   set<Dtime> valid_time_set;
+
+   for (auto l = frame_map.begin (); l != frame_map.end (); l++)
+   {
+      const Dtime& dtime = l->first;
+      valid_time_set.insert (dtime);
+   }
+
+   return valid_time_set;
+
+}
+
+vector<Dtime>
+Hrit::get_valid_time_vector (const Dtime::Set& time_set) const
+{
+
+   vector<Dtime> valid_time_vector;
+   auto valid_time_set = get_valid_time_set ();
+
+   for (auto l = valid_time_set.begin (); l != valid_time_set.end (); l++)
+   {
+      const Dtime& dtime = *(l);
+      if (time_set.match (dtime)) { valid_time_vector.push_back (dtime); }
+   }
+
+   return valid_time_vector;
+
 }
 
 Geos_Transform

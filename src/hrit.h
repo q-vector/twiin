@@ -143,6 +143,12 @@ class Hrit
       const Dstring&
       get_data_path () const;
 
+      set<Dtime>
+      get_valid_time_set () const;
+
+      vector<Dtime>
+      get_valid_time_vector (const Dtime::Set& time_set) const;
+
       Dstring
       get_file_path (const Dtime& dtime,
                      const Dstring& channel,

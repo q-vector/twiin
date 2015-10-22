@@ -303,7 +303,14 @@ Twiin::plan (const Dstring& stage_str,
             const Model::Product& p = ((is_speed && is_higher) ?
                Model::Product (Model::Product::SPEED_HIGHER) : product);
 
-            const vector<Dtime>& valid_time_vector =
+            const bool is_hrit = (p.enumeration == Model::Product::IR1) ||
+                                 (p.enumeration == Model::Product::IR2) ||
+                                 (p.enumeration == Model::Product::IR3) ||
+                                 (p.enumeration == Model::Product::IR4) ||
+                                 (p.enumeration == Model::Product::VIS);
+
+            const vector<Dtime>& valid_time_vector = is_hrit ?
+               hrit.get_valid_time_vector (time_set) :
                stage.get_valid_time_vector (product, level, time_set);
 
             #pragma omp parallel for
@@ -511,7 +518,15 @@ Twiin::plan (const Dstring& stage_str,
             const Real end_tau = track.get_end_tau ();
 
             const Level surface ("Surface");
-            const vector<Dtime>& valid_time_vector =
+
+            const bool is_hrit = (product.enumeration == Model::Product::IR1) ||
+                                 (product.enumeration == Model::Product::IR2) ||
+                                 (product.enumeration == Model::Product::IR3) ||
+                                 (product.enumeration == Model::Product::IR4) ||
+                                 (product.enumeration == Model::Product::VIS);
+
+            const vector<Dtime>& valid_time_vector = is_hrit ?
+               hrit.get_valid_time_vector (time_set) :
                stage.get_valid_time_vector (product, surface, time_set);
 
             for (auto l = valid_time_vector.begin ();
@@ -1555,6 +1570,7 @@ main (int argc,
          case 'O':
          {
             location_str = (Dstring (optarg));
+            break;
          }
 
          case 'o':
