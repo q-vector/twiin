@@ -130,6 +130,7 @@ namespace twiin
                const Dstring& format,
                const Tokens& title_tokens,
                const Dstring& filename,
+               const bool no_color_bar,
                const bool no_stage,
                const bool no_wind_barb,
                const bool is_bludge) const;
@@ -146,6 +147,7 @@ namespace twiin
                const Dstring& format,
                const Tokens& title_tokens,
                const Dstring& filename,
+               const bool no_color_bar,
                const bool no_stage,
                const bool no_wind_barb,
                const bool is_bludge) const;
@@ -195,6 +197,7 @@ namespace twiin
                     const Tokens& title_tokens,
                     const Dstring& filename,
                     const bool ignore_pressure,
+                    const bool no_nwp,
                     const bool is_bludge) const;
 
          void

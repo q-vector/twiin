@@ -950,24 +950,27 @@ Model::Stage::evaluate (const Met_Element& met_element,
 
       case TD:
       {
-         const Real q = evaluate_raw ("qsair", i, j, l);
-         const Real mslp = evaluate_raw ("mslp", i, j, l);
-         const Real topography = get_topography (i, j);
-         const Real surface_p = mslp - 11.76 * topography;
-         const Real r = q / (1 - q);
-         datum = Thermo_Point::p_r_s (surface_p, r).get_t () + K;
+         datum = evaluate_raw ("dewpt", i, j, l);
          break;
+         //const Real q = evaluate_raw ("qsair", i, j, l);
+         //const Real mslp = evaluate_raw ("mslp", i, j, l);
+         //const Real topography = get_topography (i, j);
+         //const Real surface_p = mslp - 11.76 * topography;
+         //const Real r = q / (1 - q);
+         //datum = Thermo_Point::p_r_s (surface_p, r).get_t () + K;
+         //break;
       };
 
       case RH:
       {
          const Real t = evaluate_raw ("temp", i, j, l);
-         const Real q = evaluate_raw ("qsair", i, j, l);
-         const Real mslp = evaluate_raw ("mslp", i, j, l);
-         const Real topography = get_topography (i, j);
-         const Real surface_p = mslp - 11.76 * topography;
-         const Real r = q / (1 - q);
-         const Real t_d = Thermo_Point::p_r_s (surface_p, r).get_t () + K;
+         const Real t_d = evaluate_raw ("dewpt", i, j, l);
+         //const Real q = evaluate_raw ("qsair", i, j, l);
+         //const Real mslp = evaluate_raw ("mslp", i, j, l);
+         //const Real topography = get_topography (i, j);
+         //const Real surface_p = mslp - 11.76 * topography;
+         //const Real r = q / (1 - q);
+         //const Real t_d = Thermo_Point::p_r_s (surface_p, r).get_t () + K;
          datum = Moisture::get_rh (t - K, t_d - K, WATER);
          break;
       };
@@ -3384,9 +3387,15 @@ Model::Stage::get_trajectory (Lat_Long lat_long,
    {
 
       if (out_of_bounds (lat_long)) { break; }
-
       const Real topography = get_topography (lat_long);
+
       if (level.type == Level::SURFACE) { level.value = topography; }
+      if (level.type == Level::MAGL)
+      {
+         level.value += topography;
+         level.type == Level::HEIGHT;
+      }
+
       const Dtime& epoch = trajectory.get_epoch ();
       const Real tau = dtime.t - epoch.t;
 

@@ -242,7 +242,8 @@ namespace twiin
                            const Model::Stage& stage,
                            const Aws::Repository& aws_repository,
                            const Location& location,
-                           const bool ignore_pressure);
+                           const bool ignore_pressure,
+                           const bool no_nwp);
 
          static void
          render_vertical_profile (const RefPtr<Context>& cr,

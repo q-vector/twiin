@@ -232,6 +232,7 @@ Twiin::plan (const Dstring& stage_str,
              const Dstring& format,
              const Tokens& title_tokens,
              const Dstring& filename,
+             const bool no_color_bar,
              const bool no_stage,
              const bool no_wind_barb,
              const bool is_bludge) const
@@ -413,7 +414,11 @@ Twiin::plan (const Dstring& stage_str,
 
                   Display::render_annotations (cr, transform, annotation_tokens);
                   Display::render_scale_bar (cr, transform, size_2d);
-                  Display::render_color_bar (cr, size_2d, p);
+
+                  if (!no_color_bar)
+                  {
+                     Display::render_color_bar (cr, size_2d, p);
+                  }
 
                   if (format == "png") { surface->write_to_png (file_path); }
 
@@ -446,6 +451,7 @@ Twiin::plan (const Dstring& stage_str,
              const Dstring& format,
              const Tokens& title_tokens,
              const Dstring& filename,
+             const bool no_color_bar,
              const bool no_stage,
              const bool no_wind_barb,
              const bool is_bludge) const
@@ -636,7 +642,11 @@ Twiin::plan (const Dstring& stage_str,
                   Display::render_annotations (cr, transform,
                      annotation_tokens);
                   Display::render_scale_bar (cr, transform, size_2d);
-                  Display::render_color_bar (cr, size_2d, p);
+
+                  if (!no_color_bar)
+                  {
+                     Display::render_color_bar (cr, size_2d, p);
+                  }
 
                   if (format == "png") { surface->write_to_png (file_path); }
 
@@ -1048,6 +1058,7 @@ Twiin::meteogram (const Dstring& stage_str,
                   const Tokens& title_tokens,
                   const Dstring& filename,
                   const bool ignore_pressure,
+                  const bool no_nwp,
                   const bool is_bludge) const
 {
 
@@ -1089,7 +1100,7 @@ Twiin::meteogram (const Dstring& stage_str,
             RefPtr<Context> cr = denise::get_cr (surface);
 
             Display::render_meteogram (cr, size_2d, stage,
-               aws_repository, location, ignore_pressure);
+               aws_repository, location, ignore_pressure, no_nwp);
 
             if (title_tokens.size () == 0)
             {
@@ -1374,6 +1385,7 @@ main (int argc,
    {
       { "annotation",                   1, 0, 'a' },
       { "bludge",                       0, 0, 'b' },
+      { "no-color-bar",                 0, 0, 'C' },
       { "config",                       1, 0, 'c' },
       { "filename",                     1, 0, 'F' },
       { "format",                       1, 0, 'f' },
@@ -1388,6 +1400,7 @@ main (int argc,
       { "track-map",                    1, 0, 'M' },
       { "trajectory-map",               1, 0, 'M' },
       { "meteogram",                    1, 0, 'm' },
+      { "no-nwp",                       0, 0, 'N' },
       { "output-dir",                   1, 0, 'o' },
       { "ignore-pressure",              0, 0, 'P' },
       { "product",                      1, 0, 'p' },
@@ -1425,8 +1438,10 @@ main (int argc,
    bool is_meteogram = false;
    bool lagrangian = false;
    bool ignore_pressure = false;
+   bool no_nwp = false;
    bool no_stage = false;
    bool no_wind_barb = false;
+   bool no_color_bar = false;
    bool is_vertical_profile = false;
    Real u_bg = 0;
    Real distance = 100e3;
@@ -1440,7 +1455,7 @@ main (int argc,
 
    int c;
    int option_index = 0;
-   char optstring[] = "a:bc:d:F:f:Gg:h:IiJ:j:Ll:M:mO:o:Pp:Ss:T:t:u:vVWXxz:";
+   char optstring[] = "a:bCc:d:F:f:Gg:h:IiJ:j:Ll:M:mNO:o:Pp:Ss:T:t:u:vVWXxz:";
    while ((c = getopt_long (argc, argv, optstring,
           long_options, &option_index)) != -1)
    {
@@ -1457,6 +1472,12 @@ main (int argc,
          case 'b':
          {
             is_bludge = true;
+            break;
+         }
+
+         case 'C':
+         {
+            no_color_bar = true;
             break;
          }
 
@@ -1564,6 +1585,12 @@ main (int argc,
             is_gui = false;
             is_interactive = false;
             is_meteogram = true;
+            break;
+         }
+
+         case 'N':
+         {
+            no_nwp = true;
             break;
          }
 
@@ -1735,7 +1762,8 @@ main (int argc,
             if (location_specified)
             {
                twiin.meteogram (stage_str, location_str, time_str,
-                  format, title_tokens, filename, ignore_pressure, is_bludge);
+                  format, title_tokens, filename, ignore_pressure,
+                  no_nwp, is_bludge);
             }
          }
          else
@@ -1759,15 +1787,15 @@ main (int argc,
                twiin.plan (stage_str, product_str, level_str, time_str,
                   zoom_str, track_id_str, track_id_initial, track_map,
                   annotation_tokens, format, title_tokens, filename,
-                  no_stage, no_wind_barb, is_bludge);
+                  no_color_bar, no_stage, no_wind_barb, is_bludge);
             }
             else
             if (track_specified)
             {
                twiin.plan (stage_str, product_str, time_str, zoom_str,
                   track_id_str, track_id_initial, track_map, annotation_tokens,
-                  format, title_tokens, filename, no_stage, no_wind_barb,
-                  is_bludge);
+                  format, title_tokens, filename, no_color_bar, no_stage,
+                  no_wind_barb, is_bludge);
             }
          }
       }

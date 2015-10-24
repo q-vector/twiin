@@ -1151,7 +1151,8 @@ Display::render_meteogram (const RefPtr<Context>& cr,
                            const Model::Stage& stage, 
                            const Aws::Repository& aws_repository,
                            const Location& location,
-                           const bool ignore_pressure)
+                           const bool ignore_pressure,
+                           const bool no_nwp)
 {
 
    cr->save ();
@@ -1252,14 +1253,22 @@ Display::render_meteogram (const RefPtr<Context>& cr,
 
    if (aws_repository_ptr != NULL)
    {
+      // draw aws
+      //const bool faint = !no_nwp;
+      const bool faint = true;
       render_meteogram (cr, transform_temperature, transform_direction,
-         transform_speed, transform_pressure, *aws_repository_ptr, true,
+         transform_speed, transform_pressure, *aws_repository_ptr, faint,
          ignore_pressure);
    }
 
-   render_meteogram (cr, transform_temperature, transform_direction,
-      transform_speed, transform_pressure, *model_aws_repository_ptr, false,
-      ignore_pressure);
+   if (!no_nwp)
+   {
+      // draw nwp
+      const bool faint = false;
+      render_meteogram (cr, transform_temperature, transform_direction,
+         transform_speed, transform_pressure, *model_aws_repository_ptr,
+         faint, ignore_pressure);
+   }
 
    delete aws_repository_ptr;
    delete model_aws_repository_ptr;
