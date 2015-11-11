@@ -41,6 +41,8 @@ namespace twiin
 
          Data (const Config_File& config_file);
 
+         ~Data ();
+
          const Model&
          get_model () const;
 

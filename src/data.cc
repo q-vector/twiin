@@ -42,6 +42,10 @@ Data::Data (const Config_File& config_file)
 
 }
 
+Data::~Data ()
+{
+}
+
 const Model&
 Data::get_model () const
 {

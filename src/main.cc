@@ -191,7 +191,6 @@ Twiin::gui (const Dstring& stage_str,
             const Dstring& time_str,
             const Tokens& journey_tokens) const
 {
-cout << "gui a " << endl;
 
    const Tokens stage_tokens (stage_str, ":");
    const Tokens product_tokens (product_str, ":");
@@ -200,9 +199,7 @@ cout << "gui a " << endl;
    const Dstring stage (stage_tokens[0]);
    const Model::Product product (product_tokens[0]);
    const Level level (level_tokens[0]);
-cout << "time_str = " << time_str << endl;
    const Dtime dtime (time_str);
-cout << "dtime = " << dtime << endl;
 
    const Data data (config_file);
 
@@ -864,6 +861,7 @@ Twiin::cross_section (const Dstring& stage_str,
 
                typedef Geodesy G;
                const Lat_Long& ll = track.get_lat_long (dtime);
+               const Real z = track.get_datum ("z", dtime);
                const Motion& motion = track.get_motion (dtime);
                const Real direction = motion.get_direction ();
                const Real speed = motion.get_speed ();
@@ -905,6 +903,13 @@ Twiin::cross_section (const Dstring& stage_str,
 
                   Display::render_cross_section (cr, transform, box_2d,
                      domain_z, stage, product, dtime, journey, u_bg);
+
+                  cr->save ();
+                  cr->set_line_width (4);
+                  Color::black (0.2).cairo (cr);
+                  Ring (10).cairo (cr, transform.transform (distance, z));
+                  cr->stroke ();
+                  cr->restore ();
 
                   Display::render_color_bar (cr, size_2d, p);
 
@@ -2143,18 +2148,14 @@ Twiin::twiin_time_series_aws (const Tokens& arguments)
 
    }
 
-cout << time_span.get_start () << " " << time_span.get_end () << " " << station_ituple << " " << product_tokens << endl;
    for (auto s = station_ituple.begin (); s != station_ituple.end (); s++)
    {
 
       const Integer station_id = *(s);
-cout << station_id << " a" << endl;
       const Aws::Repository* ar_ptr =
          aws_repository.get_aws_repository_ptr (station_id, time_span);
-cout << station_id << " b" << endl;
       const Aws::Repository& ar = *ar_ptr;
 
-cout << station_id << " c " << ar.size () << endl;
       for (auto o = ar.begin (); o != ar.end (); o++)
       {
 
@@ -2167,7 +2168,6 @@ cout << station_id << " c " << ar.size () << endl;
          cout << products << endl;
 
       }
-cout << station_id << " d" << endl;
 
       delete ar_ptr;
 

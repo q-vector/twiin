@@ -162,6 +162,9 @@ namespace twiin
                const Model&
                model;
 
+               const Dstring
+               stage_str;
+
                Tuple
                tuple_latitude;
 
@@ -229,6 +232,8 @@ namespace twiin
                Stage (const Model& model,
                       const Dstring& stage_str,
                       const Config_File& config_file);
+
+               ~Stage ();
 
                virtual void
                ingest (const Dstring& varname,
@@ -758,13 +763,15 @@ namespace twiin
                                   const Product& product,
                                   const Level& level) const;
 
-               class Map : public map<Dstring, Model::Stage>
+               class Map : public map<Dstring, Model::Stage*>
                {
 
                   public:
 
                      Map (const Model& model,
                           const Config_File& config_file);
+
+                     ~Map ();
 
                };
 

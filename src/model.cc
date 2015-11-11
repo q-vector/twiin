@@ -671,7 +671,8 @@ Model::Stage::fill_sounding (Sounding& sounding,
 Model::Stage::Stage (const Model& model,
                      const Dstring& stage_str,
                      const Config_File& config_file)
-   : model (model)
+   : model (model),
+     stage_str (stage_str)
 {
 
    for (auto iterator = config_file.begin ();
@@ -701,6 +702,18 @@ Model::Stage::Stage (const Model& model,
    }
 
    fill_valid_time ();
+
+}
+
+Model::Stage::~Stage ()
+{
+
+   for (auto iterator = nc_file_ptr_map.begin ();
+        iterator != nc_file_ptr_map.end (); iterator++)
+   {
+      Nc_File* nc_file_ptr = iterator->second;
+      delete nc_file_ptr;
+   }
 
 }
 
@@ -2310,8 +2323,9 @@ Model::Stage::get_color (const Model::Product& product,
          const Real x = atan (deviate / 1);
          const Real odd = (Integer (floor ((datum-K) / 1)) % 2);
          const Real fluctuation = (odd ? 0.03 : -0.03);
-         const Domain_1D d1d (-M_PI_2, M_PI_2);
-         const Real brightness = d1d.normalize (x) * 0.5 + 0.45;
+         //const Domain_1D d1d (-M_PI_2, M_PI_2);
+         //const Real brightness = d1d.normalize (x) * 0.5 + 0.45;
+         const Real brightness = 0.75;
          return Color::hsb (0.0, 0.0, brightness + fluctuation);
       }
 
@@ -3393,7 +3407,7 @@ Model::Stage::get_trajectory (Lat_Long lat_long,
       if (level.type == Level::MAGL)
       {
          level.value += topography;
-         level.type == Level::HEIGHT;
+         level.type = Level::HEIGHT;
       }
 
       const Dtime& epoch = trajectory.get_epoch ();
@@ -3871,9 +3885,18 @@ Model::Stage::Map::Map (const Model& model,
         iterator != stage_tokens.end (); iterator++)
    {
       const Dstring s (*iterator);
-      insert (make_pair (s, Model::Stage (model, s, config_file)));
+      insert (make_pair (s, new Model::Stage (model, s, config_file)));
    }
 
+}
+
+Model::Stage::Map::~Map ()
+{
+   for (auto iterator = begin (); iterator != end (); iterator++)
+   {
+      Model::Stage* stage_ptr = iterator->second;
+      delete stage_ptr;
+   }
 }
 
 Dstring
@@ -4006,6 +4029,6 @@ Model::get_basetime () const
 const Model::Stage&
 Model::get_stage (const Dstring& stage) const
 {
-   return stage_map.at (stage);
+   return *(stage_map.at (stage));
 }
 
