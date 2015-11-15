@@ -168,7 +168,7 @@ Twiin::get_file_path (const Dstring& format,
                       const Location& location) const
 {
    const Dstring& location_str = location.get_str ();
-   const Dstring& file_name = stage + "_" + location_str + "." + format;
+   const Dstring& file_name = stage + "-" + location_str + "." + format;
    return output_dir + "/" + file_name;
 }
 
@@ -1067,7 +1067,6 @@ Twiin::meteogram (const Dstring& stage_str,
                   const bool is_bludge) const
 {
 
-   const Dtime::Set time_set (time_str);
    const Tokens stage_tokens (stage_str, ":");
    const Tokens location_tokens (location_str, ":");
 
@@ -1090,6 +1089,7 @@ Twiin::meteogram (const Dstring& stage_str,
       {
 
          const Location location (*j, station_map);
+         if (stage.out_of_bounds (location)) { continue; }
 
          const Dstring& file_path = (filename == "") ?
             get_file_path (format, s, location) :
@@ -1104,8 +1104,8 @@ Twiin::meteogram (const Dstring& stage_str,
                size_2d, format, file_path);
             RefPtr<Context> cr = denise::get_cr (surface);
 
-            Display::render_meteogram (cr, size_2d, stage,
-               aws_repository, location, ignore_pressure, no_nwp);
+            Display::render_meteogram (cr, size_2d, stage, aws_repository,
+               location, time_str, ignore_pressure, no_nwp);
 
             if (title_tokens.size () == 0)
             {

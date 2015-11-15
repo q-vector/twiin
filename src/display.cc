@@ -1151,6 +1151,7 @@ Display::render_meteogram (const RefPtr<Context>& cr,
                            const Model::Stage& stage, 
                            const Aws::Repository& aws_repository,
                            const Location& location,
+                           const Dstring& time_str,
                            const bool ignore_pressure,
                            const bool no_nwp)
 {
@@ -1159,12 +1160,18 @@ Display::render_meteogram (const RefPtr<Context>& cr,
    Color::white ().cairo (cr);
    cr->paint ();
 
+   const Dtime::Span ts (time_str);
+   const Dtime& st = ts.get_start ();
+   const Dtime& et = ts.get_end ();
+
    const Aws::Repository* model_aws_repository_ptr =
-      stage.get_aws_repository_ptr (location);
+      stage.get_aws_repository_ptr (location, ts);
    const Aws::Repository& model_aws_repository = *model_aws_repository_ptr;
 
-   const Dtime& start_time = stage.get_basetime ();
-   const Dtime& end_time = model_aws_repository.rbegin ()->first.dtime;
+   const Dtime& model_start_time = stage.get_basetime ();
+   const Dtime& model_end_time = model_aws_repository.rbegin ()->first.dtime;
+   const Dtime start_time (std::max (model_start_time.t, st.t));
+   const Dtime end_time (std::min (model_end_time.t, et.t));
    const Domain_1D domain_t (start_time.t, end_time.t);
 
    const Integer station_id = location.get_station_id ();

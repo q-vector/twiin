@@ -3620,7 +3620,8 @@ Model::Stage::get_aws_obs (const Lat_Long& lat_long,
 }
 
 const Aws::Repository*
-Model::Stage::get_aws_repository_ptr (const Lat_Long& lat_long) const
+Model::Stage::get_aws_repository_ptr (const Lat_Long& lat_long,
+                                      const Dtime::Set& time_set) const
 {
 
    Aws::Repository* aws_repository_ptr = new Aws::Repository ();
@@ -3631,7 +3632,7 @@ Model::Stage::get_aws_repository_ptr (const Lat_Long& lat_long) const
    {
 
       const Dtime& dtime = *(iterator);
-      //if (!time_set.match (dtime)) { continue; }
+      if (!time_set.match (dtime)) { continue; }
 
       const Aws::Key key (-1, dtime);
       const Aws::Obs& obs = get_aws_obs (lat_long, dtime);

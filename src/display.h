@@ -242,6 +242,7 @@ namespace twiin
                            const Model::Stage& stage,
                            const Aws::Repository& aws_repository,
                            const Location& location,
+                           const Dstring& time_str,
                            const bool ignore_pressure,
                            const bool no_nwp);
 

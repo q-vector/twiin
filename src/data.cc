@@ -77,6 +77,13 @@ Data::get_aws_repository_ptr (const Integer station_id,
    return aws_repository.get_aws_repository_ptr (station_id, time_span);
 }
 
+const Aws::Repository*
+Data::get_aws_repository_ptr (const Integer station_id,
+                              const Dtime::Set& time_set) const
+{
+   return aws_repository.get_aws_repository_ptr (station_id, time_set);
+}
+
 Lat_Long
 Data::get_lat_long (const Dstring& location_str) const
 {

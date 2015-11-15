@@ -608,7 +608,7 @@ Aws::Repository::get_valid_time_set () const
 
 const Aws::Repository*
 Aws::Repository::get_aws_repository_ptr (const Integer station_id,
-                                         const Dtime::Span& time_span) const
+                                         const Dtime::Set& time_set) const
 {
 
    Aws::Repository* aws_repository_ptr = new Aws::Repository ();
@@ -621,7 +621,7 @@ Aws::Repository::get_aws_repository_ptr (const Integer station_id,
       if (station_id != key.station_id) { continue; }
 
       const Dtime& dtime = key.dtime;
-      if (!time_span.match (dtime)) { continue; }
+      if (!time_set.match (dtime)) { continue; }
 
       const Aws::Obs& obs = iterator->second;
       aws_repository.insert (key, obs);
@@ -633,7 +633,7 @@ Aws::Repository::get_aws_repository_ptr (const Integer station_id,
 }
 
 Domain_1D
-Aws::Repository::get_temperature_domain () const
+Aws::Repository::get_temperature_domain (const Dtime::Set& time_set) const
 {
 
    Domain_1D temperature_domain (GSL_POSINF, GSL_NEGINF);
@@ -661,7 +661,7 @@ Aws::Repository::get_temperature_domain () const
 }
 
 Domain_1D
-Aws::Repository::get_dew_point_domain () const
+Aws::Repository::get_dew_point_domain (const Dtime::Set& time_set) const
 {
 
    Domain_1D dew_point_domain (GSL_POSINF, GSL_NEGINF);
@@ -689,7 +689,7 @@ Aws::Repository::get_dew_point_domain () const
 }
 
 Domain_1D
-Aws::Repository::get_wind_speed_domain () const
+Aws::Repository::get_wind_speed_domain (const Dtime::Set& time_set) const
 {
 
    Domain_1D wind_speed_domain (GSL_POSINF, GSL_NEGINF);
@@ -717,7 +717,7 @@ Aws::Repository::get_wind_speed_domain () const
 }
 
 Domain_1D
-Aws::Repository::get_mslp_domain () const
+Aws::Repository::get_mslp_domain (const Dtime::Set& time_set) const
 {
 
    Domain_1D mslp_domain (GSL_POSINF, GSL_NEGINF);
@@ -745,7 +745,7 @@ Aws::Repository::get_mslp_domain () const
 }
 
 Domain_1D
-Aws::Repository::get_station_p_domain () const
+Aws::Repository::get_station_p_domain (const Dtime::Set& time_set) const
 {
 
    Domain_1D station_p_domain (GSL_POSINF, GSL_NEGINF);

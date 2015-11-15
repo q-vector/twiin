@@ -746,7 +746,8 @@ namespace twiin
                             const Dtime& dtime) const;
 
                const Aws::Repository*
-               get_aws_repository_ptr (const Lat_Long& lat_long) const;
+               get_aws_repository_ptr (const Lat_Long& lat_long,
+                                       const Dtime::Set& time_set = Dtime::Set ()) const;
 
                Sounding*
                get_sounding_ptr (const Lat_Long& lat_long,

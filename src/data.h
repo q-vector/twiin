@@ -57,7 +57,11 @@ namespace twiin
 
          const Aws::Repository*
          get_aws_repository_ptr (const Integer station_id,
-                                 const Dtime::Span& time_Span) const;
+                                 const Dtime::Span& time_span) const;
+
+         const Aws::Repository*
+         get_aws_repository_ptr (const Integer station_id,
+                                 const Dtime::Set& time_set) const;
 
          Lat_Long
          get_lat_long (const Dstring& location_str) const;

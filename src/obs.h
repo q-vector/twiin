@@ -237,22 +237,22 @@ namespace twiin
 
                const Aws::Repository*
                get_aws_repository_ptr (const Integer station_id,
-                                       const Dtime::Span& time_span) const;
+                                       const Dtime::Set& time_set) const;
 
                Domain_1D
-               get_temperature_domain () const;
+               get_temperature_domain (const Dtime::Set& time_set = Dtime::Set ()) const;
 
                Domain_1D
-               get_dew_point_domain () const;
+               get_dew_point_domain (const Dtime::Set& time_set = Dtime::Set ()) const;
 
                Domain_1D
-               get_wind_speed_domain () const;
+               get_wind_speed_domain (const Dtime::Set& time_set = Dtime::Set ()) const;
 
                Domain_1D
-               get_station_p_domain () const;
+               get_station_p_domain (const Dtime::Set& time_set = Dtime::Set ()) const;
 
                Domain_1D
-               get_mslp_domain () const;
+               get_mslp_domain (const Dtime::Set& time_set = Dtime::Set ()) const;
 
          };
 
