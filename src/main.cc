@@ -189,7 +189,8 @@ Twiin::gui (const Dstring& stage_str,
             const Dstring& product_str,
             const Dstring& level_str,
             const Dstring& time_str,
-            const Tokens& journey_tokens) const
+            const Tokens& journey_tokens,
+            const Dstring& zoom_str) const
 {
 
    const Tokens stage_tokens (stage_str, ":");
@@ -199,13 +200,15 @@ Twiin::gui (const Dstring& stage_str,
    const Dstring stage (stage_tokens[0]);
    const Model::Product product (product_tokens[0]);
    const Level level (level_tokens[0]);
-   const Dtime dtime (time_str);
+
+   const Dtime::Set time_set (time_str);
+   const Dtime& dtime = time_set.get_start ();
 
    const Data data (config_file);
 
    Gtk::Window gtk_window;
-   Console console (gtk_window, size_2d, config_file,
-      data, stage, product, level, dtime, journey_tokens);
+   Console console (gtk_window, size_2d, config_file, data,
+      stage, product, level, dtime, journey_tokens, zoom_str);
    gtk_window.add (console);
    gtk_window.show_all_children ();
    gtk_window.show ();
@@ -229,7 +232,8 @@ Twiin::plan (const Dstring& stage_str,
              const Dstring& format,
              const Tokens& title_tokens,
              const Dstring& filename,
-             const bool no_color_bar,
+             const Dstring& color_bar_str,
+             const Dstring& scale_bar_str,
              const bool no_stage,
              const bool no_wind_barb,
              const bool is_bludge) const
@@ -409,13 +413,11 @@ Twiin::plan (const Dstring& stage_str,
                   }
                   title.cairo (cr);
 
-                  Display::render_annotations (cr, transform, annotation_tokens);
-                  Display::render_scale_bar (cr, transform, size_2d);
+                  Display::render_annotations (cr, transform,
+                     annotation_tokens, station_map);
+                  Display::render_scale_bar (cr, transform, size_2d, scale_bar_str);
 
-                  if (!no_color_bar)
-                  {
-                     Display::render_color_bar (cr, size_2d, p);
-                  }
+                  Display::render_color_bar (cr, size_2d, p, color_bar_str);
 
                   if (format == "png") { surface->write_to_png (file_path); }
 
@@ -448,7 +450,8 @@ Twiin::plan (const Dstring& stage_str,
              const Dstring& format,
              const Tokens& title_tokens,
              const Dstring& filename,
-             const bool no_color_bar,
+             const Dstring& color_bar_str,
+             const Dstring& scale_bar_str,
              const bool no_stage,
              const bool no_wind_barb,
              const bool is_bludge) const
@@ -637,13 +640,9 @@ Twiin::plan (const Dstring& stage_str,
                   cr->restore ();
 
                   Display::render_annotations (cr, transform,
-                     annotation_tokens);
-                  Display::render_scale_bar (cr, transform, size_2d);
-
-                  if (!no_color_bar)
-                  {
-                     Display::render_color_bar (cr, size_2d, p);
-                  }
+                     annotation_tokens, station_map);
+                  Display::render_scale_bar (cr, transform, size_2d, scale_bar_str);
+                  Display::render_color_bar (cr, size_2d, p, color_bar_str);
 
                   if (format == "png") { surface->write_to_png (file_path); }
 
@@ -1390,7 +1389,7 @@ main (int argc,
    {
       { "annotation",                   1, 0, 'a' },
       { "bludge",                       0, 0, 'b' },
-      { "no-color-bar",                 0, 0, 'C' },
+      { "color-bar",                    1, 0, 'C' },
       { "config",                       1, 0, 'c' },
       { "filename",                     1, 0, 'F' },
       { "format",                       1, 0, 'f' },
@@ -1401,6 +1400,7 @@ main (int argc,
       { "journey",                      0, 0, 'J' },
       { "track",                        0, 0, 'j' },
       { "trajectory",                   0, 0, 'j' },
+      { "scale-bar",                    1, 0, 'K' },
       { "level",                        1, 0, 'l' },
       { "track-map",                    1, 0, 'M' },
       { "trajectory-map",               1, 0, 'M' },
@@ -1446,7 +1446,8 @@ main (int argc,
    bool no_nwp = false;
    bool no_stage = false;
    bool no_wind_barb = false;
-   bool no_color_bar = false;
+   Dstring color_bar_str = "r:10";
+   Dstring scale_bar_str = "lb:10";
    bool is_vertical_profile = false;
    Real u_bg = 0;
    Real distance = 100e3;
@@ -1460,7 +1461,7 @@ main (int argc,
 
    int c;
    int option_index = 0;
-   char optstring[] = "a:bCc:d:F:f:Gg:h:IiJ:j:Ll:M:mNO:o:Pp:Ss:T:t:u:vVWXxz:";
+   char optstring[] = "a:bC:c:d:F:f:Gg:h:IiJ:j:K:Ll:M:mNO:o:Pp:Ss:T:t:u:vVWXxz:";
    while ((c = getopt_long (argc, argv, optstring,
           long_options, &option_index)) != -1)
    {
@@ -1482,7 +1483,7 @@ main (int argc,
 
          case 'C':
          {
-            no_color_bar = true;
+            color_bar_str = Dstring (optarg);
             break;
          }
 
@@ -1557,6 +1558,12 @@ main (int argc,
          case 'j':
          {
             track_id_str = Dstring (optarg);
+            break;
+         }
+
+         case 'K':
+         {
+            scale_bar_str = Dstring (optarg);
             break;
          }
 
@@ -1726,11 +1733,11 @@ main (int argc,
       if (is_gui)
       {
 #ifndef ENABLE_GTKMM
-         cerr << "Interactive mode not available" << endl;
+         cerr << "GUI mode not available" << endl;
 #else /* ENABLE_GTKMM */
          Gtk::Main gtk_main (argc, argv);
-         twiin.gui (stage_str, product_str, (level_specified ?
-            level_str : "Surface"), time_str, journey_tokens);
+         twiin.gui (stage_str, product_str, (level_specified ? level_str
+            : "Surface"), time_str, journey_tokens, zoom_str);
 #endif /* ENABLE_GTKMM */
       }
       else
@@ -1792,15 +1799,16 @@ main (int argc,
                twiin.plan (stage_str, product_str, level_str, time_str,
                   zoom_str, track_id_str, track_id_initial, track_map,
                   annotation_tokens, format, title_tokens, filename,
-                  no_color_bar, no_stage, no_wind_barb, is_bludge);
+                  color_bar_str, scale_bar_str, no_stage, no_wind_barb,
+                  is_bludge);
             }
             else
             if (track_specified)
             {
                twiin.plan (stage_str, product_str, time_str, zoom_str,
                   track_id_str, track_id_initial, track_map, annotation_tokens,
-                  format, title_tokens, filename, no_color_bar, no_stage,
-                  no_wind_barb, is_bludge);
+                  format, title_tokens, filename, color_bar_str, scale_bar_str,
+                  no_stage, no_wind_barb, is_bludge);
             }
          }
       }
@@ -2052,8 +2060,8 @@ Twiin::twiin_surface_plan (const Dstring& surface_identifier,
       Gtp::get_geodetic_transform_ptr (geodetic_transform_identifier, centre);
    const Geodetic_Transform& geodetic_transform = *geodetic_transform_ptr;
 
-   bool no_color_bar = true;
-   bool no_scale_bar = true;
+   Dstring color_bar_str = "r:10";
+   Dstring scale_bar_str = "lb:10";
    bool no_stage = true;
    bool no_wind_barb = true;
 
@@ -2064,8 +2072,8 @@ Twiin::twiin_surface_plan (const Dstring& surface_identifier,
       const Dstring& option = tokens[0];
       const Dstring& value = tokens[1];
       const bool is_yes = (value == "yes" || value == "y" || value == "true");
-      if (option == "color_bar") { no_color_bar = !is_yes; }
-      if (option == "scale_bar") { no_scale_bar = !is_yes; }
+      if (option == "color_bar") { color_bar_str = value; }
+      if (option == "scale_bar") { scale_bar_str = value; }
       if (option == "stage")     { no_stage = !is_yes; }
       if (option == "wind_barb") { no_wind_barb = !is_yes; }
    }
@@ -2081,8 +2089,8 @@ Twiin::twiin_surface_plan (const Dstring& surface_identifier,
    Display::render (cr, geodetic_transform, size_2d, model, hrit,
       station_map, dtime, level, stage, product, no_stage, no_wind_barb);
 
-   if (!no_scale_bar) { D::render_scale_bar (cr, geodetic_transform, size_2d); }
-   if (!no_color_bar) { D::render_color_bar (cr, size_2d, product); }
+   D::render_scale_bar (cr, geodetic_transform, size_2d, scale_bar_str);
+   D::render_color_bar (cr, size_2d, product, color_bar_str);
 
    delete geodetic_transform_ptr;
 

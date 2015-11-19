@@ -114,7 +114,8 @@ namespace twiin
               const Dstring& product_str,
               const Dstring& level_str,
               const Dstring& time_str,
-              const Tokens& journey_tokens) const;
+              const Tokens& journey_tokens,
+              const Dstring& zoom_str) const;
 #endif /* ENABLE_GTKMM */
 
          void
@@ -130,7 +131,8 @@ namespace twiin
                const Dstring& format,
                const Tokens& title_tokens,
                const Dstring& filename,
-               const bool no_color_bar,
+               const Dstring& color_bar_str,
+               const Dstring& scale_bar_str,
                const bool no_stage,
                const bool no_wind_barb,
                const bool is_bludge) const;
@@ -147,7 +149,8 @@ namespace twiin
                const Dstring& format,
                const Tokens& title_tokens,
                const Dstring& filename,
-               const bool no_color_bar,
+               const Dstring& color_bar_str,
+               const Dstring& scale_bar_str,
                const bool no_stage,
                const bool no_wind_barb,
                const bool is_bludge) const;

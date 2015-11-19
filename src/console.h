@@ -108,7 +108,8 @@ namespace twiin
                   const Model::Product& product,
                   const Level& level,
                   const Dtime& dtime,
-                  const Tokens& journey_tokens);
+                  const Tokens& journey_tokens,
+                  const Dstring& zoom_str = "");
 
          ~Console ();
 

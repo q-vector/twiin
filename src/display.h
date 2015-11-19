@@ -106,7 +106,8 @@ namespace twiin
          static void
          render_scale_bar (const RefPtr<Context>& cr,
                            const Geodetic_Transform& transform,
-                           const Size_2D& size_2d);
+                           const Size_2D& size_2d,
+                           const Dstring& scale_bar_str = "lb:10");
 
          static void
          render_color_bar (const RefPtr<Context>& cr,
@@ -118,23 +119,28 @@ namespace twiin
          static void
          render_color_bar (const RefPtr<Context>& cr,
                            const Size_2D& size_2d,
-                           const Model::Product& product);
+                           const Model::Product& product,
+                           const Dstring& color_bar_str = "r:10");
 
          static void
          render_annotation_point (const RefPtr<Context>& cr,
                                   const Geodetic_Transform& transform,
                                   const Lat_Long& lat_long,
-                                  const Dstring& str);
+                                  const Dstring& str,
+                                  const char h_align = 'h',
+                                  const char v_align = 'c');
 
          static void
          render_annotation (const RefPtr<Context>& cr,
                             const Geodetic_Transform& transform,
-                            const Dstring& annotation_str);
+                            const Dstring& annotation_str,
+                            const Station::Map& station_map);
 
          static void
          render_annotations (const RefPtr<Context>& cr,
                              const Geodetic_Transform& transform,
-                             const Tokens& annotation_tokens);
+                             const Tokens& annotation_tokens,
+                             const Station::Map& station_map);
 
          static void
          render (const RefPtr<Context>& cr,
@@ -173,6 +179,16 @@ namespace twiin
                                       const Dtime& dtime,
                                       const Journey& journey,
                                       const Real u_bg = 0);
+
+         static void
+         render_cross_section_lic (const RefPtr<Context>& cr,
+                                   const Transform_2D& transform,
+                                   const Box_2D& box_2d,
+                                   const Model::Stage& stage,
+                                   const Model::Product& product,
+                                   const Dtime& dtime,
+                                   const Journey& journey,
+                                   const Real u_bg = 0);
 
          static void
          render_cross_section (const RefPtr<Context>& cr,

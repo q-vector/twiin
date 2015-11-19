@@ -197,7 +197,8 @@ Console::Console (Gtk::Window& gtk_window,
                   const Model::Product& product,
                   const Level& level,
                   const Dtime& dtime,
-                  const Tokens& journey_tokens)
+                  const Tokens& journey_tokens,
+                  const Dstring& zoom_str)
    : Map_Console (gtk_window, size_2d, config_file),
      Time_Canvas (*this, 12),
      Level_Canvas (*this, 12),
@@ -207,6 +208,12 @@ Console::Console (Gtk::Window& gtk_window,
      product (product),
      level (level)
 {
+
+   if (zoom_str != "")
+   {
+      const Geodetic_Transform::Data gtd (zoom_str);
+      set_geodetic_transform_data (gtd);
+   }
 
    time_chooser.get_signal ().connect (
       sigc::mem_fun (*this, &Console::render_queue_draw));
