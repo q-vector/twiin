@@ -181,16 +181,6 @@ namespace twiin
                                       const Real u_bg = 0);
 
          static void
-         render_cross_section_lic (const RefPtr<Context>& cr,
-                                   const Transform_2D& transform,
-                                   const Box_2D& box_2d,
-                                   const Model::Stage& stage,
-                                   const Model::Product& product,
-                                   const Dtime& dtime,
-                                   const Journey& journey,
-                                   const Real u_bg = 0);
-
-         static void
          render_cross_section (const RefPtr<Context>& cr,
                                const Transform_2D& transform,
                                const Box_2D& box_2d,
