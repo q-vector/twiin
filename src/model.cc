@@ -131,7 +131,7 @@ Model::Product::get_description () const
       case Product::THETA:          return "Potential Temperature";
       case Product::Q:              return "Specific Humidity";
       case Product::THETA_E:        return "Equivalent Potential Temperature";
-      case Product::THETA_V:        return "Virtual Temperature";
+      case Product::THETA_V:        return "Virtual Potential Temperature";
       case Product::RHO:            return "Density";
       case Product::WIND:           return "Wind";
       case Product::SPEED:          return "Speed";
