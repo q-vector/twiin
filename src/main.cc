@@ -1395,6 +1395,7 @@ main (int argc,
       { "format",                       1, 0, 'f' },
       { "geometry",                     1, 0, 'g' },
       { "gui",                          0, 0, 'G' },
+      { "height",                       1, 0, 'h' },
       { "plot-first-char-of-track-id",  0, 0, 'I' },
       { "interactive",                  0, 0, 'i' },
       { "journey",                      0, 0, 'J' },
@@ -1404,7 +1405,7 @@ main (int argc,
       { "level",                        1, 0, 'l' },
       { "track-map",                    1, 0, 'M' },
       { "trajectory-map",               1, 0, 'M' },
-      { "meteogram",                    1, 0, 'm' },
+      { "meteogram",                    0, 0, 'm' },
       { "no-nwp",                       0, 0, 'N' },
       { "output-dir",                   1, 0, 'o' },
       { "ignore-pressure",              0, 0, 'P' },
@@ -1414,12 +1415,12 @@ main (int argc,
       { "title",                        1, 0, 'T' },
       { "time",                         1, 0, 't' },
       { "u_bg",                         1, 0, 'u' },
-      { "vertical-profile-along-track", 0, 0, 'V' },
       { "vertical-profile",             1, 0, 'v' },
       { "no-wind-barb",                 0, 0, 'W' },
       { "time-cross",                   0, 0, 'X' },
       { "cross-section",                0, 0, 'x' },
       { "zoom",                         1, 0, 'z' },
+      { "help",                         0, 0, '?' },
       { NULL, 0, 0, 0 }
    };
 
@@ -1461,7 +1462,7 @@ main (int argc,
 
    int c;
    int option_index = 0;
-   char optstring[] = "a:bC:c:d:F:f:Gg:h:IiJ:j:K:Ll:M:mNO:o:Pp:Ss:T:t:u:vVWXxz:";
+   char optstring[] = "a:bC:c:d:F:f:Gg:h:IiJ:j:K:Ll:M:mNO:o:Pp:Ss:T:t:u:vVWXxz:?";
    while ((c = getopt_long (argc, argv, optstring,
           long_options, &option_index)) != -1)
    {
@@ -1668,14 +1669,6 @@ main (int argc,
             break;
          }
 
-         case 'V':
-         {
-            is_gui = false;
-            is_interactive = false;
-            is_vertical_profile = true;
-            break;
-         }
-
          case 'W':
          {
             no_wind_barb = true;
@@ -1701,6 +1694,13 @@ main (int argc,
          case 'z':
          {
             zoom_str = (Dstring (optarg));
+            break;
+         }
+
+         case '?':
+         {
+            usage ();
+            exit (0);
             break;
          }
 
@@ -2224,6 +2224,64 @@ Twiin::parse (const Tokens& tokens)
    }
 
    andrea::Andrea::parse (tokens);
+
+}
+
+void
+twiin::usage ()
+{
+
+   cout << endl;
+   cout << "twiin, twiin is ink initially" << endl;
+   cout << "Usage: twiin [ long options ] [ option ]" << endl;
+   cout << endl;
+   cout << "Options:" << endl;
+   cout << "  -?  --help                         display this help and exit" << endl;
+   cout << "  -a  --annotation=STR               display this help and exit" << endl;
+   cout << "  -b  --bludge                       display this help and exit" << endl;
+   cout << "  -C  --color-bar=r:10               display this help and exit" << endl;
+   cout << "  -c  --config=CONFIG_FILE           display this help and exit" << endl;
+   cout << "  -F  --filename=FILENAME            display this help and exit" << endl;
+   cout << "  -f  --format=eps|pdf|png           display this help and exit" << endl;
+   cout << "  -g  --geometry=HEIGHTxWIDTH        display this help and exit" << endl;
+   cout << "  -G  --gui                          display this help and exit" << endl;
+   cout << "  -h  --height=STR                   display this help and exit" << endl;
+   cout << "  -I  --plot-first-char-of-track-id  display this help and exit" << endl;
+   cout << "  -i  --interactive                  display this help and exit" << endl;
+   cout << "  -J  --journey=JOURNEY_STR          display this help and exit" << endl;
+   cout << "  -j  --track=IDENTIFIER             display this help and exit" << endl;
+   cout << "  -j  --trajectory=IDENTIFIER        display this help and exit" << endl;
+   cout << "  -K  --scale-bar=lb:10              display this help and exit" << endl;
+   cout << "  -l  --level=LEVEL_STR              display this help and exit" << endl;
+   cout << "  -M  --track-map=FILENAME           display this help and exit" << endl;
+   cout << "  -M  --trajectory-map=FILENAME      display this help and exit" << endl;
+   cout << "  -m  --meteogram                    display this help and exit" << endl;
+   cout << "  -N  --no-nwp                       display this help and exit" << endl;
+   cout << "  -o  --output-dirSTR                display this help and exit" << endl;
+   cout << "  -P  --ignore-pressure              display this help and exit" << endl;
+   cout << "  -p  --product=PRODUCT_STR          display this help and exit" << endl;
+   cout << "  -S  --no-stage                     display this help and exit" << endl;
+   cout << "  -s  --stage=STAGE_STR              display this help and exit" << endl;
+   cout << "  -T  --title=STR                    display this help and exit" << endl;
+   cout << "  -t  --time=YYYYMMDDHHMM            display this help and exit" << endl;
+   cout << "  -u  --u_bg=NUMBER                  display this help and exit" << endl;
+   cout << "  -v  --vertical-profile=STR         display this help and exit" << endl;
+   cout << "  -W  --no-wind-barb                 display this help and exit" << endl;
+   cout << "  -X  --time-cross                   display this help and exit" << endl;
+   cout << "  -x  --cross-section                display this help and exit" << endl;
+   cout << "  -z  --zoom=ZOOM_STR                display this help and exit" << endl;
+   cout << endl;
+   cout << "Examples:" << endl;
+   cout << endl;
+   cout << "  Plan Visualization:" << endl;
+   cout << "    twiin -s STAGE4 -p Q -l Surface:1800m -t 201310170000-201310170600 -z LAMBERT_CONIC_SOUTH:850:-34.5918,149.1288" << endl;
+   cout << "    twiin -s STAGE4 -p Q -l Surface -a " << endl;
+   cout << endl;
+   cout << "  Vertical Cross Section:" << endl;
+   cout << endl;
+   cout << "    twiin -g 1024x300 -L -h 3000m -d 120e3 -s STAGE4 -p Q:THETA -t 201310170000 -x -J -35.2378,144.8571@-37.9481,148.9278" << endl;
+   cout << "    twiin -g 1024x300 -L -h 4000m -d 180e3 -s STAGE4 -p THETA:W -t 201310170000 -x -j X:Y:Z -M whatever_file.trajector.gz" << endl;
+   cout << endl;
 
 }
 

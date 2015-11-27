@@ -280,6 +280,9 @@ namespace twiin
 
    };
 
+   void
+   usage ();
+
 };
 
 #endif /* MAIN_H */
