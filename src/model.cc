@@ -20,47 +20,56 @@ Model::Product::Product (const Product& product)
 
 Model::Product::Product (const Dstring& str)
 {
-        if (str == "TERRAIN")        { enumeration = Product::TERRAIN; }
-   else if (str == "TERRAIN_WATER")  { enumeration = Product::TERRAIN_WATER; }
-   else if (str == "P_THETA")        { enumeration = Product::P_THETA; }
-   else if (str == "P_RHO")          { enumeration = Product::P_RHO; }
-   else if (str == "ALONG_SPEED")    { enumeration = Product::ALONG_SPEED; }
-   else if (str == "NORMAL_SPEED")   { enumeration = Product::NORMAL_SPEED; }
-   else if (str == "BRUNT_VAISALA")  { enumeration = Product::BRUNT_VAISALA; }
-   else if (str == "SCORER")         { enumeration = Product::SCORER; }
-   else if (str == "T")              { enumeration = Product::T; }
-   else if (str == "TD")             { enumeration = Product::TD; }
-   else if (str == "RH")             { enumeration = Product::RH; }
-   else if (str == "THETA")          { enumeration = Product::THETA; }
-   else if (str == "Q")              { enumeration = Product::Q; }
-   else if (str == "THETA_E")        { enumeration = Product::THETA_E; }
-   else if (str == "THETA_V")        { enumeration = Product::THETA_V; }
-   else if (str == "RHO")            { enumeration = Product::RHO; }
-   else if (str == "WIND")           { enumeration = Product::WIND; }
-   else if (str == "SPEED")          { enumeration = Product::SPEED; }
-   else if (str == "SPEED_HIGHER")   { enumeration = Product::SPEED_HIGHER; }
-   else if (str == "VORTICITY")      { enumeration = Product::VORTICITY; }
-   else if (str == "W")              { enumeration = Product::W; }
-   else if (str == "W_TRANSLUCENT")  { enumeration = Product::W_TRANSLUCENT; }
-   else if (str == "Q_TENDENCY")     { enumeration = Product::Q_TENDENCY; }
-   else if (str == "Q_L_TENDENCY")   { enumeration = Product::Q_L_TENDENCY; }
-   else if (str == "Q_ADVECTION")    { enumeration = Product::Q_ADVECTION; }
-   else if (str == "Q_H_ADVECTION")  { enumeration = Product::Q_H_ADVECTION; }
-   else if (str == "Q_V_ADVECTION")  { enumeration = Product::Q_V_ADVECTION; }
-   else if (str == "Q_S_ADVECTION")  { enumeration = Product::Q_S_ADVECTION; }
-   else if (str == "Q_N_ADVECTION")  { enumeration = Product::Q_N_ADVECTION; }
-   else if (str == "Q_SV_ADVECTION") { enumeration = Product::Q_SV_ADVECTION; }
-   else if (str == "Q_NV_ADVECTION") { enumeration = Product::Q_NV_ADVECTION; }
-   else if (str == "FFDI")           { enumeration = Product::FFDI; }
-   else if (str == "MSLP")           { enumeration = Product::MSLP; }
-   else if (str == "PRECIP_RATE")    { enumeration = Product::PRECIP_RATE; }
-   else if (str == "IR1")            { enumeration = Product::IR1; }
-   else if (str == "IR2")            { enumeration = Product::IR2; }
-   else if (str == "IR3")            { enumeration = Product::IR3; }
-   else if (str == "IR4")            { enumeration = Product::IR4; }
-   else if (str == "VIS")            { enumeration = Product::VIS; }
-   else if (str == "Pseudo")         { enumeration = Product::Pseudo; }
-   else                              { enumeration = Product::NIL; }
+        if (str == "TERRAIN")            { enumeration = Product::TERRAIN; }
+   else if (str == "TERRAIN_WATER")      { enumeration = Product::TERRAIN_WATER; }
+   else if (str == "P_THETA")            { enumeration = Product::P_THETA; }
+   else if (str == "P_RHO")              { enumeration = Product::P_RHO; }
+   else if (str == "ALONG_SPEED")        { enumeration = Product::ALONG_SPEED; }
+   else if (str == "NORMAL_SPEED")       { enumeration = Product::NORMAL_SPEED; }
+   else if (str == "BRUNT_VAISALA")      { enumeration = Product::BRUNT_VAISALA; }
+   else if (str == "SCORER")             { enumeration = Product::SCORER; }
+   else if (str == "T")                  { enumeration = Product::T; }
+   else if (str == "TD")                 { enumeration = Product::TD; }
+   else if (str == "RH")                 { enumeration = Product::RH; }
+   else if (str == "THETA")              { enumeration = Product::THETA; }
+   else if (str == "Q")                  { enumeration = Product::Q; }
+   else if (str == "THETA_E")            { enumeration = Product::THETA_E; }
+   else if (str == "THETA_V")            { enumeration = Product::THETA_V; }
+   else if (str == "RHO")                { enumeration = Product::RHO; }
+   else if (str == "WIND")               { enumeration = Product::WIND; }
+   else if (str == "SPEED")              { enumeration = Product::SPEED; }
+   else if (str == "SPEED_HIGHER")       { enumeration = Product::SPEED_HIGHER; }
+   else if (str == "VORTICITY")          { enumeration = Product::VORTICITY; }
+   else if (str == "W")                  { enumeration = Product::W; }
+   else if (str == "W_TRANSLUCENT")      { enumeration = Product::W_TRANSLUCENT; }
+   else if (str == "Q_TENDENCY")         { enumeration = Product::Q_TENDENCY; }
+   else if (str == "Q_L_TENDENCY")       { enumeration = Product::Q_L_TENDENCY; }
+   else if (str == "Q_ADVECTION")        { enumeration = Product::Q_ADVECTION; }
+   else if (str == "Q_H_ADVECTION")      { enumeration = Product::Q_H_ADVECTION; }
+   else if (str == "Q_V_ADVECTION")      { enumeration = Product::Q_V_ADVECTION; }
+   else if (str == "Q_S_ADVECTION")      { enumeration = Product::Q_S_ADVECTION; }
+   else if (str == "Q_N_ADVECTION")      { enumeration = Product::Q_N_ADVECTION; }
+   else if (str == "Q_SV_ADVECTION")     { enumeration = Product::Q_SV_ADVECTION; }
+   else if (str == "Q_NV_ADVECTION")     { enumeration = Product::Q_NV_ADVECTION; }
+   else if (str == "THETA_TENDENCY")     { enumeration = Product::THETA_TENDENCY; }
+   else if (str == "THETA_L_TENDENCY")   { enumeration = Product::THETA_L_TENDENCY; }
+   else if (str == "THETA_ADVECTION")    { enumeration = Product::THETA_ADVECTION; }
+   else if (str == "THETA_H_ADVECTION")  { enumeration = Product::THETA_H_ADVECTION; }
+   else if (str == "THETA_V_ADVECTION")  { enumeration = Product::THETA_V_ADVECTION; }
+   else if (str == "THETA_S_ADVECTION")  { enumeration = Product::THETA_S_ADVECTION; }
+   else if (str == "THETA_N_ADVECTION")  { enumeration = Product::THETA_N_ADVECTION; }
+   else if (str == "THETA_SV_ADVECTION") { enumeration = Product::THETA_SV_ADVECTION; }
+   else if (str == "THETA_NV_ADVECTION") { enumeration = Product::THETA_NV_ADVECTION; }
+   else if (str == "FFDI")               { enumeration = Product::FFDI; }
+   else if (str == "MSLP")               { enumeration = Product::MSLP; }
+   else if (str == "PRECIP_RATE")        { enumeration = Product::PRECIP_RATE; }
+   else if (str == "IR1")                { enumeration = Product::IR1; }
+   else if (str == "IR2")                { enumeration = Product::IR2; }
+   else if (str == "IR3")                { enumeration = Product::IR3; }
+   else if (str == "IR4")                { enumeration = Product::IR4; }
+   else if (str == "VIS")                { enumeration = Product::VIS; }
+   else if (str == "Pseudo")             { enumeration = Product::Pseudo; }
+   else                                  { enumeration = Product::NIL; }
 }
 
 Dstring
@@ -68,47 +77,56 @@ Model::Product::get_string () const
 {
    switch (enumeration)
    {
-      case Product::TERRAIN:        return "TERRAIN";
-      case Product::TERRAIN_WATER:  return "TERRAIN_WATER";
-      case Product::P_THETA:        return "P_THETA";
-      case Product::P_RHO:          return "P_RHO";
-      case Product::ALONG_SPEED:    return "ALONG_SPEED";
-      case Product::NORMAL_SPEED:   return "NORMAL_SPEED";
-      case Product::BRUNT_VAISALA:  return "BRUNT_VAISALA";
-      case Product::SCORER:         return "SCORER";
-      case Product::T:              return "T";
-      case Product::TD:             return "TD";
-      case Product::RH:             return "RH";
-      case Product::THETA:          return "THETA";
-      case Product::Q:              return "Q";
-      case Product::THETA_E:        return "THETA_E";
-      case Product::THETA_V:        return "THETA_V";
-      case Product::RHO:            return "RHO";
-      case Product::WIND:           return "WIND";
-      case Product::SPEED:          return "SPEED";
-      case Product::SPEED_HIGHER:   return "SPEED_HIGHER";
-      case Product::VORTICITY:      return "VORTICITY";
-      case Product::W:              return "W";
-      case Product::W_TRANSLUCENT:  return "W_TRANSLUCENT";
-      case Product::Q_TENDENCY:     return "Q_TENDENCY";
-      case Product::Q_L_TENDENCY:   return "Q_L_TENDENCY";
-      case Product::Q_ADVECTION:    return "Q_ADVECTION";
-      case Product::Q_H_ADVECTION:  return "Q_H_ADVECTION";
-      case Product::Q_V_ADVECTION:  return "Q_V_ADVECTION";
-      case Product::Q_S_ADVECTION:  return "Q_S_ADVECTION";
-      case Product::Q_N_ADVECTION:  return "Q_N_ADVECTION";
-      case Product::Q_SV_ADVECTION: return "Q_SV_ADVECTION";
-      case Product::Q_NV_ADVECTION: return "Q_NV_ADVECTION";
-      case Product::FFDI:           return "FFDI";
-      case Product::MSLP:           return "MSLP";
-      case Product::PRECIP_RATE:    return "PRECIP_RATE";
-      case Product::IR1:            return "IR1";
-      case Product::IR2:            return "IR2";
-      case Product::IR3:            return "IR3";
-      case Product::IR4:            return "IR4";
-      case Product::VIS:            return "VIS";
-      case Product::Pseudo:         return "Pseudo";
-      default:                      return "";
+      case Product::TERRAIN:            return "TERRAIN";
+      case Product::TERRAIN_WATER:      return "TERRAIN_WATER";
+      case Product::P_THETA:            return "P_THETA";
+      case Product::P_RHO:              return "P_RHO";
+      case Product::ALONG_SPEED:        return "ALONG_SPEED";
+      case Product::NORMAL_SPEED:       return "NORMAL_SPEED";
+      case Product::BRUNT_VAISALA:      return "BRUNT_VAISALA";
+      case Product::SCORER:             return "SCORER";
+      case Product::T:                  return "T";
+      case Product::TD:                 return "TD";
+      case Product::RH:                 return "RH";
+      case Product::THETA:              return "THETA";
+      case Product::Q:                  return "Q";
+      case Product::THETA_E:            return "THETA_E";
+      case Product::THETA_V:            return "THETA_V";
+      case Product::RHO:                return "RHO";
+      case Product::WIND:               return "WIND";
+      case Product::SPEED:              return "SPEED";
+      case Product::SPEED_HIGHER:       return "SPEED_HIGHER";
+      case Product::VORTICITY:          return "VORTICITY";
+      case Product::W:                  return "W";
+      case Product::W_TRANSLUCENT:      return "W_TRANSLUCENT";
+      case Product::Q_TENDENCY:         return "Q_TENDENCY";
+      case Product::Q_L_TENDENCY:       return "Q_L_TENDENCY";
+      case Product::Q_ADVECTION:        return "Q_ADVECTION";
+      case Product::Q_H_ADVECTION:      return "Q_H_ADVECTION";
+      case Product::Q_V_ADVECTION:      return "Q_V_ADVECTION";
+      case Product::Q_S_ADVECTION:      return "Q_S_ADVECTION";
+      case Product::Q_N_ADVECTION:      return "Q_N_ADVECTION";
+      case Product::Q_SV_ADVECTION:     return "Q_SV_ADVECTION";
+      case Product::Q_NV_ADVECTION:     return "Q_NV_ADVECTION";
+      case Product::THETA_TENDENCY:     return "THETA_TENDENCY";
+      case Product::THETA_L_TENDENCY:   return "THETA_L_TENDENCY";
+      case Product::THETA_ADVECTION:    return "THETA_ADVECTION";
+      case Product::THETA_H_ADVECTION:  return "THETA_H_ADVECTION";
+      case Product::THETA_V_ADVECTION:  return "THETA_V_ADVECTION";
+      case Product::THETA_S_ADVECTION:  return "THETA_S_ADVECTION";
+      case Product::THETA_N_ADVECTION:  return "THETA_N_ADVECTION";
+      case Product::THETA_SV_ADVECTION: return "THETA_SV_ADVECTION";
+      case Product::THETA_NV_ADVECTION: return "THETA_NV_ADVECTION";
+      case Product::FFDI:               return "FFDI";
+      case Product::MSLP:               return "MSLP";
+      case Product::PRECIP_RATE:        return "PRECIP_RATE";
+      case Product::IR1:                return "IR1";
+      case Product::IR2:                return "IR2";
+      case Product::IR3:                return "IR3";
+      case Product::IR4:                return "IR4";
+      case Product::VIS:                return "VIS";
+      case Product::Pseudo:             return "Pseudo";
+      default:                          return "";
    }
 }
 
@@ -117,46 +135,55 @@ Model::Product::get_description () const
 {
    switch (enumeration)
    {
-      case Product::TERRAIN:        return "Terrain";
-      case Product::TERRAIN_WATER:  return "Terrain Water";
-      case Product::P_THETA:        return "P_\u03b8";
-      case Product::P_RHO:          return "P_\u03c1";
-      case Product::ALONG_SPEED:    return "Along Speed";
-      case Product::NORMAL_SPEED:   return "Normal Speed";
-      case Product::BRUNT_VAISALA:  return "Brunt-V\u00e4IS\u00e4L\u00e4";
-      case Product::SCORER:         return "Scorer's Parameter";
-      case Product::T:              return "Temperature";
-      case Product::TD:             return "Dew Point";
-      case Product::RH:             return "Relative Humidity";
-      case Product::THETA:          return "Potential Temperature";
-      case Product::Q:              return "Specific Humidity";
-      case Product::THETA_E:        return "Equivalent Potential Temperature";
-      case Product::THETA_V:        return "Virtual Potential Temperature";
-      case Product::RHO:            return "Density";
-      case Product::WIND:           return "Wind";
-      case Product::SPEED:          return "Speed";
-      case Product::SPEED_HIGHER:   return "Higher Speed";
-      case Product::VORTICITY:      return "Vertical Vorticity";
-      case Product::W:              return "Vertical Velocity";
-      case Product::W_TRANSLUCENT:  return "Vertical Velocity";
-      case Product::Q_TENDENCY:     return "Q Tendency";
-      case Product::Q_L_TENDENCY:   return "Q Lagrangian Tendency";
-      case Product::Q_ADVECTION:    return "Q Advection";
-      case Product::Q_H_ADVECTION:  return "Horizontal Q Advection";
-      case Product::Q_V_ADVECTION:  return "Vertical Q Advection";
-      case Product::Q_S_ADVECTION:  return "Stream Q Advection";
-      case Product::Q_N_ADVECTION:  return "Normal Q Advection";
-      case Product::Q_SV_ADVECTION: return "Stream + Vertical Q Advection";
-      case Product::Q_NV_ADVECTION: return "Normal + Vertical Q Advection";
-      case Product::FFDI:           return "FFDI";
-      case Product::MSLP:           return "MSLP";
-      case Product::PRECIP_RATE:    return "Precipitation Rate";
-      case Product::IR1:            return "IR1";
-      case Product::IR2:            return "IR2";
-      case Product::IR3:            return "IR3";
-      case Product::IR4:            return "IR4";
-      case Product::VIS:            return "VIS";
-      case Product::Pseudo:         return "Pseudo";
+      case Product::TERRAIN:            return "Terrain";
+      case Product::TERRAIN_WATER:      return "Terrain Water";
+      case Product::P_THETA:            return "P_\u03b8";
+      case Product::P_RHO:              return "P_\u03c1";
+      case Product::ALONG_SPEED:        return "Along Speed";
+      case Product::NORMAL_SPEED:       return "Normal Speed";
+      case Product::BRUNT_VAISALA:      return "Brunt-V\u00e4IS\u00e4L\u00e4";
+      case Product::SCORER:             return "Scorer's Parameter";
+      case Product::T:                  return "Temperature";
+      case Product::TD:                 return "Dew Point";
+      case Product::RH:                 return "Relative Humidity";
+      case Product::THETA:              return "Potential Temperature";
+      case Product::Q:                  return "Specific Humidity";
+      case Product::THETA_E:            return "Equivalent Potential Temperature";
+      case Product::THETA_V:            return "Virtual Potential Temperature";
+      case Product::RHO:                return "Density";
+      case Product::WIND:               return "Wind";
+      case Product::SPEED:              return "Speed";
+      case Product::SPEED_HIGHER:       return "Higher Speed";
+      case Product::VORTICITY:          return "Vertical Vorticity";
+      case Product::W:                  return "Vertical Velocity";
+      case Product::W_TRANSLUCENT:      return "Vertical Velocity";
+      case Product::Q_TENDENCY:         return "Q Tendency";
+      case Product::Q_L_TENDENCY:       return "Q Lagrangian Tendency";
+      case Product::Q_ADVECTION:        return "Q Advection";
+      case Product::Q_H_ADVECTION:      return "Horizontal Q Advection";
+      case Product::Q_V_ADVECTION:      return "Vertical Q Advection";
+      case Product::Q_S_ADVECTION:      return "Stream Q Advection";
+      case Product::Q_N_ADVECTION:      return "Normal Q Advection";
+      case Product::Q_SV_ADVECTION:     return "Stream + Vertical Q Advection";
+      case Product::Q_NV_ADVECTION:     return "Normal + Vertical Q Advection";
+      case Product::THETA_TENDENCY:     return "THETA Tendency";
+      case Product::THETA_L_TENDENCY:   return "THETA Lagrangian Tendency";
+      case Product::THETA_ADVECTION:    return "THETA Advection";
+      case Product::THETA_H_ADVECTION:  return "Horizontal THETA Advection";
+      case Product::THETA_V_ADVECTION:  return "Vertical THETA Advection";
+      case Product::THETA_S_ADVECTION:  return "Stream THETA Advection";
+      case Product::THETA_N_ADVECTION:  return "Normal THETA Advection";
+      case Product::THETA_SV_ADVECTION: return "Stream + Vertical THETA Advection";
+      case Product::THETA_NV_ADVECTION: return "Normal + Vertical THETA Advection";
+      case Product::FFDI:               return "FFDI";
+      case Product::MSLP:               return "MSLP";
+      case Product::PRECIP_RATE:        return "Precipitation Rate";
+      case Product::IR1:                return "IR1";
+      case Product::IR2:                return "IR2";
+      case Product::IR3:                return "IR3";
+      case Product::IR4:                return "IR4";
+      case Product::VIS:                return "VIS";
+      case Product::Pseudo:             return "Pseudo";
    }
 }
 
@@ -165,32 +192,41 @@ Model::Product::get_met_element () const
 {
    switch (enumeration)
    {
-      case Product::T:              return denise::T;
-      case Product::TD:             return denise::TD;
-      case Product::RH:             return denise::RH;
-      case Product::THETA:          return denise::THETA;
-      case Product::Q:              return denise::Q;
-      case Product::THETA_E:        return denise::THETA_E;
-      case Product::THETA_V:        return denise::THETA_V;
-      case Product::RHO:            return denise::RHO;
-      case Product::WIND:           return denise::WIND_DIRECTION;
-      case Product::SPEED:          return denise::WIND_SPEED;
-      case Product::SPEED_HIGHER:   return denise::WIND_SPEED;
-      case Product::VORTICITY:      return denise::RELATIVE_VORTICITY;
-      case Product::W:              return denise::W;
-      case Product::W_TRANSLUCENT:  return denise::W;
-      case Product::Q_TENDENCY:     return denise::Q_TENDENCY;
-      case Product::Q_L_TENDENCY:   return denise::Q_L_TENDENCY;
-      case Product::Q_ADVECTION:    return denise::Q_ADVECTION;
-      case Product::Q_H_ADVECTION:  return denise::Q_H_ADVECTION;
-      case Product::Q_V_ADVECTION:  return denise::Q_V_ADVECTION;
-      case Product::Q_S_ADVECTION:  return denise::Q_S_ADVECTION;
-      case Product::Q_N_ADVECTION:  return denise::Q_N_ADVECTION;
-      case Product::Q_SV_ADVECTION: return denise::Q_SV_ADVECTION;
-      case Product::Q_NV_ADVECTION: return denise::Q_NV_ADVECTION;
-      case Product::FFDI:           return denise::FFDI;
-      case Product::MSLP:           return denise::MSLP;
-      case Product::PRECIP_RATE:    return denise::PRECIP_RATE;
+      case Product::T:                  return denise::T;
+      case Product::TD:                 return denise::TD;
+      case Product::RH:                 return denise::RH;
+      case Product::THETA:              return denise::THETA;
+      case Product::Q:                  return denise::Q;
+      case Product::THETA_E:            return denise::THETA_E;
+      case Product::THETA_V:            return denise::THETA_V;
+      case Product::RHO:                return denise::RHO;
+      case Product::WIND:               return denise::WIND_DIRECTION;
+      case Product::SPEED:              return denise::WIND_SPEED;
+      case Product::SPEED_HIGHER:       return denise::WIND_SPEED;
+      case Product::VORTICITY:          return denise::RELATIVE_VORTICITY;
+      case Product::W:                  return denise::W;
+      case Product::W_TRANSLUCENT:      return denise::W;
+      case Product::Q_TENDENCY:         return denise::Q_TENDENCY;
+      case Product::Q_L_TENDENCY:       return denise::Q_L_TENDENCY;
+      case Product::Q_ADVECTION:        return denise::Q_ADVECTION;
+      case Product::Q_H_ADVECTION:      return denise::Q_H_ADVECTION;
+      case Product::Q_V_ADVECTION:      return denise::Q_V_ADVECTION;
+      case Product::Q_S_ADVECTION:      return denise::Q_S_ADVECTION;
+      case Product::Q_N_ADVECTION:      return denise::Q_N_ADVECTION;
+      case Product::Q_SV_ADVECTION:     return denise::Q_SV_ADVECTION;
+      case Product::Q_NV_ADVECTION:     return denise::Q_NV_ADVECTION;
+      case Product::THETA_TENDENCY:     return denise::THETA_TENDENCY;
+      case Product::THETA_L_TENDENCY:   return denise::THETA_L_TENDENCY;
+      case Product::THETA_ADVECTION:    return denise::THETA_ADVECTION;
+      case Product::THETA_H_ADVECTION:  return denise::THETA_H_ADVECTION;
+      case Product::THETA_V_ADVECTION:  return denise::THETA_V_ADVECTION;
+      case Product::THETA_S_ADVECTION:  return denise::THETA_S_ADVECTION;
+      case Product::THETA_N_ADVECTION:  return denise::THETA_N_ADVECTION;
+      case Product::THETA_SV_ADVECTION: return denise::THETA_SV_ADVECTION;
+      case Product::THETA_NV_ADVECTION: return denise::THETA_NV_ADVECTION;
+      case Product::FFDI:               return denise::FFDI;
+      case Product::MSLP:               return denise::MSLP;
+      case Product::PRECIP_RATE:        return denise::PRECIP_RATE;
    }
 }
 
@@ -199,37 +235,46 @@ Model::Product::get_unit () const
 {
    switch (enumeration)
    {
-      case Product::T:              return "\u00b0C";
-      case Product::TD:             return "\u00b0C";
-      case Product::RH:             return "%%";
-      case Product::THETA:          return "\u00b0C";
-      case Product::THETA_V:        return "\u00b0C";
-      case Product::THETA_E:        return "\u00b0C";
-      case Product::Q:              return "g kg\u207b\u00b9";
-      case Product::RHO:            return "kgm\u207b\u00b9";
-      case Product::W:              return "ms\u207b\u00b9";
-      case Product::W_TRANSLUCENT:  return "ms\u207b\u00b9";
-      case Product::Q_TENDENCY:     return "g kg\u207b\u00b9s\u207b\u00b9";
-      case Product::Q_L_TENDENCY:   return "g kg\u207b\u00b9s\u207b\u00b9";
-      case Product::Q_ADVECTION:    return "g kg\u207b\u00b9s\u207b\u00b9";
-      case Product::Q_H_ADVECTION:  return "g kg\u207b\u00b9s\u207b\u00b9";
-      case Product::Q_V_ADVECTION:  return "g kg\u207b\u00b9s\u207b\u00b9";
-      case Product::Q_S_ADVECTION:  return "g kg\u207b\u00b9s\u207b\u00b9";
-      case Product::Q_N_ADVECTION:  return "g kg\u207b\u00b9s\u207b\u00b9";
-      case Product::Q_SV_ADVECTION: return "g kg\u207b\u00b9s\u207b\u00b9";
-      case Product::Q_NV_ADVECTION: return "g kg\u207b\u00b9s\u207b\u00b9";
-      case Product::SPEED_HIGHER:   return "knots";
-      case Product::SPEED:          return "knots";
-      case Product::ALONG_SPEED:    return "knots";
-      case Product::NORMAL_SPEED:   return "knots";
-      case Product::VORTICITY:      return "10\u207b\u00b3 s\u207b\u00b9";
-      case Product::FFDI:           return "";
-      case Product::MSLP:           return "hPa";
-      case Product::PRECIP_RATE:    return "mm hr\u207b\u00b9";
-      case Product::WIND:           return "degree";
-      case Product::TERRAIN:        return "m";
-      case Product::BRUNT_VAISALA:  return "s\u207b\u00b9";
-      default:                      return "";
+      case Product::T:                  return "\u00b0C";
+      case Product::TD:                 return "\u00b0C";
+      case Product::RH:                 return "%%";
+      case Product::THETA:              return "\u00b0C";
+      case Product::THETA_V:            return "\u00b0C";
+      case Product::THETA_E:            return "\u00b0C";
+      case Product::Q:                  return "g kg\u207b\u00b9";
+      case Product::RHO:                return "kgm\u207b\u00b9";
+      case Product::W:                  return "ms\u207b\u00b9";
+      case Product::W_TRANSLUCENT:      return "ms\u207b\u00b9";
+      case Product::Q_TENDENCY:         return "g kg\u207b\u00b9s\u207b\u00b9";
+      case Product::Q_L_TENDENCY:       return "g kg\u207b\u00b9s\u207b\u00b9";
+      case Product::Q_ADVECTION:        return "g kg\u207b\u00b9s\u207b\u00b9";
+      case Product::Q_H_ADVECTION:      return "g kg\u207b\u00b9s\u207b\u00b9";
+      case Product::Q_V_ADVECTION:      return "g kg\u207b\u00b9s\u207b\u00b9";
+      case Product::Q_S_ADVECTION:      return "g kg\u207b\u00b9s\u207b\u00b9";
+      case Product::Q_N_ADVECTION:      return "g kg\u207b\u00b9s\u207b\u00b9";
+      case Product::Q_SV_ADVECTION:     return "g kg\u207b\u00b9s\u207b\u00b9";
+      case Product::Q_NV_ADVECTION:     return "g kg\u207b\u00b9s\u207b\u00b9";
+      case Product::THETA_TENDENCY:     return "K s\u207b\u00b9";
+      case Product::THETA_L_TENDENCY:   return "K s\u207b\u00b9";
+      case Product::THETA_ADVECTION:    return "K s\u207b\u00b9";
+      case Product::THETA_H_ADVECTION:  return "K s\u207b\u00b9";
+      case Product::THETA_V_ADVECTION:  return "K s\u207b\u00b9";
+      case Product::THETA_S_ADVECTION:  return "K s\u207b\u00b9";
+      case Product::THETA_N_ADVECTION:  return "K s\u207b\u00b9";
+      case Product::THETA_SV_ADVECTION: return "K s\u207b\u00b9";
+      case Product::THETA_NV_ADVECTION: return "K s\u207b\u00b9";
+      case Product::SPEED_HIGHER:       return "knots";
+      case Product::SPEED:              return "knots";
+      case Product::ALONG_SPEED:        return "knots";
+      case Product::NORMAL_SPEED:       return "knots";
+      case Product::VORTICITY:          return "10\u207b\u00b3 s\u207b\u00b9";
+      case Product::FFDI:               return "";
+      case Product::MSLP:               return "hPa";
+      case Product::PRECIP_RATE:        return "mm hr\u207b\u00b9";
+      case Product::WIND:               return "degree";
+      case Product::TERRAIN:            return "m";
+      case Product::BRUNT_VAISALA:      return "s\u207b\u00b9";
+      default:                          return "";
    }
 }
 
@@ -282,6 +327,19 @@ Model::Product::get_tick_tuple () const
       case Model::Product::Q_NV_ADVECTION:
       {
          return Tuple ("1e-7:3.2e-7:1e-6:3.2e-6:1e-5");
+      }
+
+      case Model::Product::THETA_TENDENCY:
+      case Model::Product::THETA_L_TENDENCY:
+      case Model::Product::THETA_ADVECTION:
+      case Model::Product::THETA_H_ADVECTION:
+      case Model::Product::THETA_V_ADVECTION:
+      case Model::Product::THETA_S_ADVECTION:
+      case Model::Product::THETA_N_ADVECTION:
+      case Model::Product::THETA_SV_ADVECTION:
+      case Model::Product::THETA_NV_ADVECTION:
+      {
+         return Tuple ("1e-2:2e-2:3e-2:4e-2:5e-2");
       }
 
       case Model::Product::RHO:
@@ -846,6 +904,15 @@ Model::Stage::get_valid_time_set (const Product& product,
       case Product::THETA:
       case Product::THETA_E:
       case Product::THETA_V:
+      case Product::THETA_ADVECTION:
+      case Product::THETA_H_ADVECTION:
+      case Product::THETA_V_ADVECTION:
+      case Product::THETA_S_ADVECTION:
+      case Product::THETA_N_ADVECTION:
+      case Product::THETA_SV_ADVECTION:
+      case Product::THETA_NV_ADVECTION:
+      case Product::TD:
+      case Product::RH:
       {
          if (level.type == Level::SURFACE)
          {
@@ -2406,6 +2473,25 @@ Model::Stage::get_color (const Model::Product& product,
          return Color::hsb (hue, saturation, 1);
       }
 
+      case Model::Product::THETA_TENDENCY:
+      case Model::Product::THETA_L_TENDENCY:
+      case Model::Product::THETA_ADVECTION:
+      case Model::Product::THETA_H_ADVECTION:
+      case Model::Product::THETA_V_ADVECTION:
+      case Model::Product::THETA_S_ADVECTION:
+      case Model::Product::THETA_N_ADVECTION:
+      case Model::Product::THETA_SV_ADVECTION:
+      case Model::Product::THETA_NV_ADVECTION:
+      {
+         if (!gsl_finite (datum)) { return Color::gray (0.5); }
+         const Real min = 5e-2;
+         const Real max = 0.1e-2;
+         const Real hue = (datum < 0 ? 0.67 : 0.00);
+         const Real d = log (fabs (datum));
+         const Real saturation = Domain_1D (min, max).normalize (d);
+         return Color::hsb (hue, saturation, 1);
+      }
+
       case Model::Product::SPEED_HIGHER:
       {
          const Real knots = datum * 3.6/1.852;
@@ -2720,6 +2806,19 @@ Model::Stage::get_color (const Product& product,
          return get_color (product, datum);
       }
 
+      case Product::THETA_TENDENCY:
+      {
+         const Real datum = evaluate_tendency (THETA, lat_long, l);
+         return get_color (product, datum);
+      }
+
+      case Product::THETA_ADVECTION:
+      case Product::THETA_H_ADVECTION:
+      {
+         const Real datum = evaluate_h_advection (THETA, lat_long, l);
+         return get_color (product, datum);
+      }
+
       default:
       {
          const Met_Element met_element = product.get_met_element ();
@@ -2782,6 +2881,32 @@ Model::Stage::get_color (const Product& product,
       case Product::Q_V_ADVECTION:
       {
          const Real datum = evaluate_v_advection (Q, lat_long, level, l);
+         return get_color (product, datum);
+      }
+
+      case Product::THETA_TENDENCY:
+      {
+         const Real datum = evaluate_tendency (THETA, lat_long, level, l);
+         return get_color (product, datum);
+      }
+
+      case Product::THETA_ADVECTION:
+      {
+         const Real h = evaluate_h_advection (THETA, lat_long, level, l);
+         const Real v = evaluate_v_advection (THETA, lat_long, level, l);
+         const Real datum = h + v;
+         return get_color (product, datum);
+      }
+
+      case Product::THETA_H_ADVECTION:
+      {
+         const Real datum = evaluate_h_advection (THETA, lat_long, level, l);
+         return get_color (product, datum);
+      }
+
+      case Product::THETA_V_ADVECTION:
+      {
+         const Real datum = evaluate_v_advection (THETA, lat_long, level, l);
          return get_color (product, datum);
       }
 
@@ -3137,6 +3262,75 @@ Model::Stage::get_cross_section_raster_ptr (const Box_2D& box_2d,
                   break;
                }
 
+               case Model::Product::THETA_TENDENCY:
+               {
+                  const Real azimuth = journey.get_azimuth_forward (x, geodesy);
+                  size_t i, j;
+                  const Real datum = evaluate_s_tendency (
+                     THETA, azimuth, lat_long, level, l, u_bg);
+                  color = get_color (p, datum);
+                  break;
+               }
+
+               case Model::Product::THETA_ADVECTION:
+               {
+                  const Real h = evaluate_h_advection (THETA, ll, level, l);
+                  const Real v = evaluate_v_advection (THETA, ll, level, l);
+                  const Real datum = h + v;
+                  color = get_color (p, datum);
+                  break;
+               }
+
+               case Model::Product::THETA_H_ADVECTION:
+               {
+                  const Real datum = evaluate_h_advection (THETA, ll, level, l);
+                  color = get_color (p, datum);
+                  break;
+               }
+
+               case Model::Product::THETA_V_ADVECTION:
+               {
+                  const Real datum = evaluate_v_advection (THETA, ll, level, l);
+                  color = get_color (p, datum);
+                  break;
+               }
+
+               case Model::Product::THETA_S_ADVECTION:
+               {
+                  const Real azimuth = journey.get_azimuth_forward (x, geodesy);
+                  const Real datum = evaluate_s_advection (THETA, azimuth, ll, level, l, u_bg);
+                  color = get_color (p, datum);
+                  break;
+               }
+
+               case Model::Product::THETA_N_ADVECTION:
+               {
+                  const Real azimuth = journey.get_azimuth_forward (x, geodesy);
+                  const Real datum = evaluate_n_advection (THETA, azimuth, ll, level, l);
+                  color = get_color (p, datum);
+                  break;
+               }
+
+               case Model::Product::THETA_SV_ADVECTION:
+               {
+                  const Real azimuth = journey.get_azimuth_forward (x, geodesy);
+                  const Real s = evaluate_s_advection (THETA, azimuth, ll, level, l, u_bg);
+                  const Real v = evaluate_v_advection (THETA, ll, level, l);
+                  const Real datum = s + v;
+                  color = get_color (p, datum);
+                  break;
+               }
+
+               case Model::Product::THETA_NV_ADVECTION:
+               {
+                  const Real azimuth = journey.get_azimuth_forward (x, geodesy);
+                  const Real n = evaluate_n_advection (THETA, azimuth, ll, level, l);
+                  const Real v = evaluate_v_advection (THETA, ll, level, l);
+                  const Real datum = n + v;
+                  color = get_color (p, datum);
+                  break;
+               }
+
                default:
                {
                   const Met_Element met_element = product.get_met_element ();
@@ -3325,6 +3519,76 @@ Model::Stage::get_time_cross_raster_ptr (const Box_2D& box_2d,
                {
                   const Real v = evaluate_v_advection (Q, i, j, level, l);
                   const Real n = evaluate_n_advection (Q,
+                     motion.get_direction (), i, j, level, l);
+                  const Real datum = n + v;
+                  color = get_color (p, datum);
+                  break;
+               }
+
+               case Model::Product::THETA_TENDENCY:
+               {
+                  const Real u_bg = (lagrangian ? motion.get_speed () : 0);
+                  const Real datum = evaluate_s_tendency (
+                     THETA, motion.get_direction (), i, j, level, l, u_bg);
+                  color = get_color (p, datum);
+                  break;
+               }
+
+               case Model::Product::THETA_ADVECTION:
+               {
+                  const Real h = evaluate_h_advection (THETA, i, j, level, l);
+                  const Real v = evaluate_v_advection (THETA, i, j, level, l);
+                  const Real datum = h + v;
+                  color = get_color (p, datum);
+                  break;
+               }
+
+               case Model::Product::THETA_H_ADVECTION:
+               {
+                  const Real datum = evaluate_h_advection (THETA, i, j, level, l);
+                  color = get_color (p, datum);
+                  break;
+               }
+
+               case Model::Product::THETA_V_ADVECTION:
+               {
+                  const Real datum = evaluate_v_advection (THETA, i, j, level, l);
+                  color = get_color (p, datum);
+                  break;
+               }
+
+               case Model::Product::THETA_S_ADVECTION:
+               {
+                  const Real u_bg = (lagrangian ? motion.get_speed () : 0);
+                  const Real datum = evaluate_s_advection (THETA,
+                     motion.get_direction (), i, j, level, l, u_bg);
+                  color = get_color (p, datum);
+                  break;
+               }
+
+               case Model::Product::THETA_N_ADVECTION:
+               {
+                  const Real datum = evaluate_n_advection (THETA,
+                     motion.get_direction (), i, j, level, l);
+                  color = get_color (p, datum);
+                  break;
+               }
+
+               case Model::Product::THETA_SV_ADVECTION:
+               {
+                  const Real u_bg = (lagrangian ? motion.get_speed () : 0);
+                  const Real v = evaluate_v_advection (THETA, i, j, level, l);
+                  const Real s = evaluate_s_advection (THETA,
+                     motion.get_direction (), i, j, level, l, u_bg);
+                  const Real datum = s + v;
+                  color = get_color (p, datum);
+                  break;
+               }
+
+               case Model::Product::THETA_NV_ADVECTION:
+               {
+                  const Real v = evaluate_v_advection (THETA, i, j, level, l);
+                  const Real n = evaluate_n_advection (THETA,
                      motion.get_direction (), i, j, level, l);
                   const Real datum = n + v;
                   color = get_color (p, datum);
@@ -3580,6 +3844,47 @@ Model::Stage::survey_trajectory (Track& trajectory,
                {
                   const Integer l = get_uppers_l (dtime);
                   datum = evaluate_v_advection (Q, lat_long, level, l);
+               }
+               break;
+            }
+
+            case Product::THETA_TENDENCY:
+            {
+               if (is_surface)
+               {
+                  const Integer l = get_surface_l (dtime);
+                  datum = evaluate_tendency (THETA, lat_long, l);
+               }
+               else
+               {
+                  const Integer l = get_uppers_l (dtime);
+                  datum = evaluate_tendency (THETA, lat_long, level, l);
+               }
+               break;
+            }
+
+            case Product::THETA_H_ADVECTION:
+            {
+               if (is_surface)
+               {
+                  const Integer l = get_surface_l (dtime);
+                  datum = evaluate_h_advection (THETA, lat_long, l);
+               }
+               else
+               {
+                  const Integer l = get_uppers_l (dtime);
+                  datum = evaluate_h_advection (THETA, lat_long, level, l);
+               }
+               break;
+            }
+
+            case Product::THETA_V_ADVECTION:
+            {
+               if (is_surface) { datum = 0; }
+               else
+               {
+                  const Integer l = get_uppers_l (dtime);
+                  datum = evaluate_v_advection (THETA, lat_long, level, l);
                }
                break;
             }

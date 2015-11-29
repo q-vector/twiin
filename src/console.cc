@@ -240,10 +240,6 @@ Console::Console (Gtk::Window& gtk_window,
    product_panel.add_product ("Thermo", Model::Product ("THETA"));
    product_panel.add_product ("Thermo", Model::Product ("THETA_V"));
    product_panel.add_product ("Thermo", Model::Product ("Q"));
-   product_panel.add_product ("Thermo", Model::Product ("Q_TENDENCY"));
-   product_panel.add_product ("Thermo", Model::Product ("Q_ADVECTION"));
-   product_panel.add_product ("Thermo", Model::Product ("Q_H_ADVECTION"));
-   product_panel.add_product ("Thermo", Model::Product ("Q_V_ADVECTION"));
    product_panel.add_product ("Thermo", Model::Product ("TD"));
    product_panel.add_product ("Thermo", Model::Product ("RH"));
    product_panel.add_product ("Thermo", Model::Product ("THETA_E"));
@@ -255,6 +251,14 @@ Console::Console (Gtk::Window& gtk_window,
    product_panel.add_product ("Dynamic", Model::Product ("W"));
    //product_panel.add_product ("Dynamic", Model::Product ("W_TRANSLUCENT"));
    product_panel.add_product ("Dynamic", Model::Product ("VORTICITY"));
+   product_panel.add_product ("Derivatives", Model::Product ("Q_TENDENCY"));
+   product_panel.add_product ("Derivatives", Model::Product ("Q_ADVECTION"));
+   product_panel.add_product ("Derivatives", Model::Product ("Q_H_ADVECTION"));
+   product_panel.add_product ("Derivatives", Model::Product ("Q_V_ADVECTION"));
+   product_panel.add_product ("Derivatives", Model::Product ("THETA_TENDENCY"));
+   product_panel.add_product ("Derivatives", Model::Product ("THETA_ADVECTION"));
+   product_panel.add_product ("Derivatives", Model::Product ("THETA_H_ADVECTION"));
+   product_panel.add_product ("Derivatives", Model::Product ("THETA_V_ADVECTION"));
    product_panel.add_product ("Fire", Model::Product ("FFDI"));
    product_panel.add_product ("Misc", Model::Product ("PRECIP_RATE"));
    product_panel.add_product ("Misc", Model::Product ("MSLP"));
