@@ -1,3 +1,4 @@
+#include <denise/streamline.h>
 #include "display.h"
 #include "hrit.h"
 #include "model.h"
@@ -314,11 +315,19 @@ Display::render_wind_barbs (const RefPtr<Context>& cr,
 void
 Display::render_scale_bar (const RefPtr<Context>& cr,
                            const Geodetic_Transform& geodetic_transform,
-                           const Size_2D& size_2d)
+                           const Size_2D& size_2d,
+                           const Dstring& scale_bar_str)
 {
 
+   if (scale_bar_str == "no") { return; }
+
+   const Tokens tokens (scale_bar_str, ":");
+   const char h_align = tokens[0][0];
+   const char v_align = tokens[0][1];
+   const Real margin = (tokens.size () > 1 ? stof (tokens[1]) : 10);
+
+   const Real title_height = 40;
    const Real bar_height = 6;
-   const Real margin = 10;
    const Real font_size = 10;
    const Real scale = geodetic_transform.data.scale;
 
@@ -330,43 +339,63 @@ Display::render_scale_bar (const RefPtr<Context>& cr,
    const Real bar_length = mantissa * exp10 (exponent + 2);
 
    const Real pixels = bar_length / scale;
+   const Real bar_width = 2 * pixels;
    const Real box_height = bar_height + font_size*2 + margin*2;
-   const Point_2D point (2*margin, size_2d.j - 2*margin - box_height / 2);
+   const Real box_width = bar_width + 2 * margin;
+
+   const Real lx = margin;
+   const Real rx = size_2d.i - margin - box_width;
+   const Real cx = (size_2d.i - box_width) / 2;
+
+   const Real ty = title_height + margin;
+   const Real by = size_2d.j - margin - box_height;
+   const Real cy = (size_2d.j - box_height) / 2;
+
+   const Real x = h_align == 'l' ? lx : (h_align == 'r' ? rx : cx);
+   const Real y = v_align == 't' ? ty : (v_align == 'b' ? by : cy);
+
+   const Point_2D point (x, y);
 
    cr->save ();
    cr->set_line_width (1);
    cr->set_font_size (font_size);
 
+   // Bounding Box
    Color::white (0.7).cairo (cr);
-   Rect (point - Point_2D (margin, bar_height/2 + font_size + margin),
-      2 * (pixels + margin), bar_height + 2 * (font_size + margin)).cairo (cr);
+   Rect (point, box_width, box_height).cairo (cr);
    cr->fill ();
 
+   cr->translate (point.x + box_width / 2, point.y + box_height / 2);
+
+   // Scale Bar itself
    Color::black ().cairo (cr);
-   Rect (point - Point_2D (0, bar_height/2), 2 * pixels, bar_height).cairo (cr);
+   cr->translate (-bar_width / 2, -bar_height / 2);
+   Rect (Point_2D (0, 0), bar_width, bar_height).cairo (cr);
+   cr->translate (bar_width / 2, bar_height / 2);
    cr->stroke ();
 
+   // Chackered Segments
    const Real tick = pixels/5;
    for (Integer i = 0; i < 5; i += 2)
    {
-      const Real x = point.x + i * tick;
-      Rect (Point_2D (x, point.y - bar_height/2), tick, bar_height).cairo (cr);
+      const Real x = -(i + 1) * tick;
+      Rect (Point_2D (x, -bar_height/2), tick, bar_height).cairo (cr);
       cr->fill ();
    }
 
-   for (Integer i = 0; i < 5; i++)
+   // Tick Labels
+   for (Integer i = 0; i < 6; i++)
    {
-      const Real x = point.x + i * tick;
-      const Real tick_length = fabs ((bar_length - i * bar_length/5) * 1e-3);
+      const Real x = -i * tick;
+      const Real tick_length = i * bar_length/5 * 1e-3;
       const Dstring& str = Dstring::render ("%.0f", tick_length);
-      Label (str, Point_2D (x, point.y), 'c', 't', bar_height*1.5).cairo (cr);
+      Label (str, Point_2D (x, 0), 'c', 't', bar_height*1.5).cairo (cr);
    }
 
-   const Point_2D p (point.x + pixels, point.y);
-   Label ("0", p, 'c', 't', bar_height * 1.5).cairo (cr);
-   Label (Dstring::render ("%.0f", bar_length*1e-3),
-      point + Point_2D (2 * pixels, 0), 'c', 't', bar_height*1.5).cairo (cr);
-   Label ("kilometres", p, 'c', 'b', bar_height*1.5).cairo (cr);
+   // Other Labels
+   const Dstring& str = Dstring::render ("%.0f", bar_length * 1e-3);
+   Label ("kilometres", Point_2D (0, 0), 'c', 'b', font_size).cairo (cr);
+   Label (str, Point_2D (bar_length, 0), 'c', 't', font_size).cairo (cr);
 
    cr->restore ();
 
@@ -398,6 +427,7 @@ Display::render_color_bar (const RefPtr<Context>& cr,
                         product.enumeration == Model::Product::Q_SV_ADVECTION ||
                         product.enumeration == Model::Product::Q_NV_ADVECTION ||
                         product.enumeration == Model::Product::PRECIP_RATE ||
+                        product.enumeration == Model::Product::SCORER ||
                         product.enumeration == Model::Product::BRUNT_VAISALA);
 
    const Real start_value = tick_tuple.front ();
@@ -444,20 +474,29 @@ Display::render_color_bar (const RefPtr<Context>& cr,
 void
 Display::render_color_bar (const RefPtr<Context>& cr,
                            const Size_2D& size_2d,
-                           const Model::Product& product)
+                           const Model::Product& product,
+                           const Dstring& color_bar_str)
 {
+
+   if (color_bar_str == "no") { return; }
+
+   const Tokens tokens (color_bar_str, ":");
+   const char h_align = tokens[0][0];
+   const Real margin = (tokens.size () > 1 ? stof (tokens[1]) : 10);
 
    const Dstring& unit = product.get_unit ();
    const Tuple& tick_tuple = product.get_tick_tuple ();
    if (tick_tuple.size () < 2) { return; }
 
    const Real title_height = 40;
-   const Real margin = 10;
    const Real font_size = 12;
 
    const Real box_width = 80;
    const Real box_height = size_2d.j - title_height - 2*margin;
-   const Real box_x = size_2d.i - box_width - margin;
+
+   const Real lx = margin;
+   const Real rx = size_2d.i - margin - box_width;
+   const Real box_x = h_align == 'l' ? lx : rx;
    const Real box_y = title_height + margin;
    const Point_2D box_point (box_x, box_y);
 
@@ -489,7 +528,8 @@ Display::render_color_bar (const RefPtr<Context>& cr,
        product.enumeration == Model::Product::THETA_S_ADVECTION ||
        product.enumeration == Model::Product::THETA_N_ADVECTION ||
        product.enumeration == Model::Product::THETA_SV_ADVECTION ||
-       product.enumeration == Model::Product::THETA_NV_ADVECTION)
+       product.enumeration == Model::Product::THETA_NV_ADVECTION ||
+       product.enumeration == Model::Product::SCORER)
    {
       const Index_2D p_index_2d (bar_x, bar_y);
       const Index_2D n_index_2d (bar_x, bar_y + bar_height / 2);
@@ -522,7 +562,9 @@ void
 Display::render_annotation_point (const RefPtr<Context>& cr,
                                   const Geodetic_Transform& transform,
                                   const Lat_Long& lat_long,
-                                  const Dstring& str)
+                                  const Dstring& str,
+                                  const char h_align,
+                                  const char v_align)
 {
 
    const Real ring_size = 4;
@@ -531,6 +573,7 @@ Display::render_annotation_point (const RefPtr<Context>& cr,
    cr->set_font_size (font_size);
 
    const Point_2D& point = transform.transform (lat_long);
+   const Point_2D shadow_point (point.x + 2, point.y + 2);
    ring.cairo (cr, point);
 
    Color::green (0.8).cairo (cr);
@@ -540,16 +583,17 @@ Display::render_annotation_point (const RefPtr<Context>& cr,
 
    const Point_2D anchor (point.x, point.y);
    Color::gray (0.8).cairo (cr);
-   Label (str, point + Point_2D (2, 2), 'r', 'c', font_size/2).cairo (cr);
+   Label (str, shadow_point, h_align, v_align, font_size/2).cairo (cr);
    Color::gray (0.2).cairo (cr);
-   Label (str, point, 'r', 'c', font_size/2).cairo (cr);
+   Label (str, point, h_align, v_align, font_size/2).cairo (cr);
 
 }
 
 void
 Display::render_annotation (const RefPtr<Context>& cr,
                             const Geodetic_Transform& transform,
-                            const Dstring& annotation_str)
+                            const Dstring& annotation_str,
+                            const Station::Map& station_map)
 {
 
    const Tokens tokens (annotation_str, ":");
@@ -559,9 +603,11 @@ Display::render_annotation (const RefPtr<Context>& cr,
        genre == "lat_long" ||
        genre == "l")
    {
-      const Location location (tokens[1]);
+      const Location location (tokens[1], station_map);
       const Dstring& str = (tokens.size () > 2 ? tokens[2] : Dstring (""));
-      render_annotation_point (cr, transform, location, str);
+      const char& h_align = (tokens.size () > 3 ? tokens[3][0] : 'r');
+      const char& v_align = (tokens.size () > 4 ? tokens[4][0] : 'c');
+      render_annotation_point (cr, transform, location, str, h_align, v_align);
    }
    else
    if (genre == "journey" ||
@@ -585,7 +631,8 @@ Display::render_annotation (const RefPtr<Context>& cr,
 void
 Display::render_annotations (const RefPtr<Context>& cr,
                              const Geodetic_Transform& transform,
-                             const Tokens& annotation_tokens)
+                             const Tokens& annotation_tokens,
+                             const Station::Map& station_map)
 {
 
    cr->save ();
@@ -595,7 +642,7 @@ Display::render_annotations (const RefPtr<Context>& cr,
         iterator != annotation_tokens.end (); iterator++)
    {
       const Dstring& annotation_str = *(iterator);
-      render_annotation (cr, transform, annotation_str);
+      render_annotation (cr, transform, annotation_str, station_map);
    }
 
    cr->restore ();
@@ -772,7 +819,6 @@ Display::render_cross_section_arrows (const RefPtr<Context>& cr,
 
    }
 
-
 }
 
 void
@@ -807,6 +853,9 @@ Display::render_cross_section (const RefPtr<Context>& cr,
 
    render_cross_section_arrows (cr, transform, box_2d, stage,
       product, dtime, journey, u_bg);
+
+   //render_cross_section_streamlines (cr, transform, box_2d, stage,
+   //   product, dtime, journey, u_bg);
 
    if (u_bg != 0)
    {
@@ -930,7 +979,7 @@ Display::render_time_cross (const RefPtr<Context>& cr,
    if (product.enumeration == Model::Product::RHO ||
        product.enumeration == Model::Product::THETA)
    {
-      render_time_cross_w (cr, transform, box_2d, stage, track);
+      //render_time_cross_w (cr, transform, box_2d, stage, track);
    }
 
    const Real start_t = track.get_start_time ().t;
@@ -1077,15 +1126,15 @@ Display::render_meteogram (const RefPtr<Context>& cr,
                            const Transform_2D& t_speed,
                            const Transform_2D& t_pressure,
                            const Aws::Repository& aws_repository,
-                           const bool faint,
+                           const Real alpha,
+                           const Real ring_size,
+                           const bool fill,
                            const bool ignore_pressure)
 {
 
    cr->save ();
    cr->set_line_width (0.2);
 
-   const Real alpha = faint ? 0.04 : 1.0;
-   const Real ring_size = faint ? 4.0 : 2.0;
    const Ring ring (ring_size);
 
    for (auto iterator = aws_repository.begin ();
@@ -1102,7 +1151,7 @@ Display::render_meteogram (const RefPtr<Context>& cr,
       const Point_2D& tp_temperature = t_temperature.transform (p_temperature);
       ring.cairo (cr, tp_temperature);
       Color::hsb (0.000, 0.00, 0.40, alpha).cairo (cr);
-      if (faint) { cr->fill (); }
+      if (fill) { cr->fill (); }
       else { cr->fill_preserve (); Color::black ().cairo (cr); cr->stroke (); }
 
       const Real dew_point = obs.dew_point;
@@ -1110,7 +1159,7 @@ Display::render_meteogram (const RefPtr<Context>& cr,
       const Point_2D& tp_dew_point = t_temperature.transform (p_dew_point);
       ring.cairo (cr, tp_dew_point);
       Color::hsb (0.000, 0.80, 0.80, alpha).cairo (cr);
-      if (faint) { cr->fill (); }
+      if (fill) { cr->fill (); }
       else { cr->fill_preserve (); Color::black ().cairo (cr); cr->stroke (); }
 
       const Real direction = obs.wind_direction;
@@ -1118,7 +1167,7 @@ Display::render_meteogram (const RefPtr<Context>& cr,
       const Point_2D& tp_direction = t_direction.transform (p_direction);
       ring.cairo (cr, tp_direction);
       Color::hsb (0.167, 0.80, 0.60, alpha).cairo (cr);
-      if (faint) { cr->fill (); }
+      if (fill) { cr->fill (); }
       else { cr->fill_preserve (); Color::black ().cairo (cr); cr->stroke (); }
 
       const Real speed = obs.wind_speed;
@@ -1127,14 +1176,14 @@ Display::render_meteogram (const RefPtr<Context>& cr,
       const Point_2D& tp_speed = t_speed.transform (p_speed);
       ring.cairo (cr, tp_speed);
       Color::hsb (0.333, 0.80, 0.80, alpha).cairo (cr);
-      if (faint) { cr->fill (); }
+      if (fill) { cr->fill (); }
       else { cr->fill_preserve (); Color::black ().cairo (cr); cr->stroke (); }
 
       const Point_2D p_gust (dtime.t, gust);
       const Point_2D& tp_gust = t_speed.transform (p_gust);
       ring.cairo (cr, tp_gust);
       Color::hsb (0.500, 0.80, 0.80, alpha).cairo (cr);
-      if (faint) { cr->fill (); }
+      if (fill) { cr->fill (); }
       else { cr->fill_preserve (); Color::black ().cairo (cr); cr->stroke (); }
 
       if (ignore_pressure) { continue; }
@@ -1144,7 +1193,7 @@ Display::render_meteogram (const RefPtr<Context>& cr,
       const Point_2D& tp_mslp = t_pressure.transform (p_mslp);
       ring.cairo (cr, tp_mslp);
       Color::hsb (0.833, 0.80, 0.80, alpha).cairo (cr);
-      if (faint) { cr->fill (); }
+      if (fill) { cr->fill (); }
       else { cr->fill_preserve (); Color::black ().cairo (cr); cr->stroke (); }
 
    }
@@ -1265,24 +1314,30 @@ Display::render_meteogram (const RefPtr<Context>& cr,
       domain_direction, domain_speed, domain_pressure,
       transform_temperature, transform_direction,
       transform_speed, transform_pressure, ignore_pressure);
-
+ 
+   // aws data
    if (aws_repository_ptr != NULL)
    {
       // draw aws
       //const bool faint = !no_nwp;
-      const bool faint = true;
+      const Real alpha = 0.9;
+      const Real ring_size = 1.0;
+      const bool fill = true;
       render_meteogram (cr, transform_temperature, transform_direction,
-         transform_speed, transform_pressure, *aws_repository_ptr, faint,
-         ignore_pressure);
+         transform_speed, transform_pressure, *aws_repository_ptr, alpha,
+         ring_size, fill, ignore_pressure);
    }
 
+   // nwp data
    if (!no_nwp)
    {
       // draw nwp
-      const bool faint = false;
+      const Real alpha = 0.2;
+      const Real ring_size = 3.0;
+      const bool fill = false;
       render_meteogram (cr, transform_temperature, transform_direction,
          transform_speed, transform_pressure, *model_aws_repository_ptr,
-         faint, ignore_pressure);
+         alpha, ring_size, fill, ignore_pressure);
    }
 
    delete aws_repository_ptr;

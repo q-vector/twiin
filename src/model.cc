@@ -274,6 +274,7 @@ Model::Product::get_unit () const
       case Product::WIND:               return "degree";
       case Product::TERRAIN:            return "m";
       case Product::BRUNT_VAISALA:      return "s\u207b\u00b9";
+      case Product::SCORER:             return "m\u207b\u00b2";
       default:                          return "";
    }
 }
@@ -339,7 +340,7 @@ Model::Product::get_tick_tuple () const
       case Model::Product::THETA_SV_ADVECTION:
       case Model::Product::THETA_NV_ADVECTION:
       {
-         return Tuple ("1e-2:2e-2:3e-2:4e-2:5e-2");
+         return Tuple ("0:1e-3:2e-3:3e-3:4e-3:5e-3");
       }
 
       case Model::Product::RHO:
@@ -406,6 +407,11 @@ Model::Product::get_tick_tuple () const
       case Model::Product::BRUNT_VAISALA:
       {
          return Tuple ("1e-3:3.2e-3:1e-2:3.2e-2:1e-1");
+      }
+
+      case Model::Product::SCORER:
+      {
+         return Tuple ("1e-6:3.2e-6:1e-5");
       }
 
       default:
@@ -606,6 +612,25 @@ Model::Stage::acquire_k (size_t& k,
 
          const Real z = level.value;
          const Real topography = get_topography (i, j);
+         if (z < topography) { k = -1; return; }
+
+         const bool is_w = (met_element == W);
+         const bool is_theta = Model::is_theta (met_element);
+         const Tuple& A = model.vertical_coefficients.get_A (is_theta);
+         const Tuple& B = model.vertical_coefficients.get_B (is_theta);
+         if (z > A.back ()) { k = -1; return; }
+
+         const bool surface = (z < 0);
+         k = surface ? -1 : model.get_k (z, topography, A, B);
+         break;
+
+      }
+
+      case Level::MAGL:
+      {
+
+         const Real topography = get_topography (i, j);
+         const Real z = level.value + topography;
          if (z < topography) { k = -1; return; }
 
          const bool is_w = (met_element == W);
@@ -898,12 +923,15 @@ Model::Stage::get_valid_time_set (const Product& product,
       case Product::ALONG_SPEED:
       case Product::NORMAL_SPEED:
       case Product::BRUNT_VAISALA:
+      case Product::SCORER:
       case Product::W:
       case Product::W_TRANSLUCENT:
       case Product::VORTICITY:
       case Product::THETA:
       case Product::THETA_E:
       case Product::THETA_V:
+      case Product::THETA_TENDENCY:
+      case Product::THETA_L_TENDENCY:
       case Product::THETA_ADVECTION:
       case Product::THETA_H_ADVECTION:
       case Product::THETA_V_ADVECTION:
@@ -911,15 +939,14 @@ Model::Stage::get_valid_time_set (const Product& product,
       case Product::THETA_N_ADVECTION:
       case Product::THETA_SV_ADVECTION:
       case Product::THETA_NV_ADVECTION:
-      case Product::TD:
-      case Product::RH:
       {
          if (level.type == Level::SURFACE)
          {
             return get_valid_surface_time_set ();
          }
          else
-         if (level.type == Level::HEIGHT)
+         if ((level.type == Level::HEIGHT) ||
+             (level.type == Level::MAGL))
          {
             return get_valid_uppers_time_set ();
          }
@@ -2082,16 +2109,17 @@ Model::Stage::evaluate_s_advection (const Met_Element& met_element,
    if (k_rho < 0 || k_rho > 69) { return GSL_NAN; }
 
    const Real theta = azimuth * DEGREE_TO_RADIAN;
+   const Real st = sin (theta);
+   const Real ct = cos (theta);
 
    const Real u = evaluate (U, i, j, k_rho, l);
    const Real v = evaluate (V, i, j, k_rho, l);
-   const Real s = u * sin (theta) + v * cos (theta) - u_bg;
-
    const Real ddx = evaluate_dx (met_element, i, j, level, l);
    const Real ddy = evaluate_dy (met_element, i, j, level, l);
-   const Real dds = ddx * sin (theta) + ddy * cos (theta);
 
-   return -s * dds;
+   const Real s = u * st + v * ct;
+   const Real dds = ddx * st + ddy * ct;
+   return -(s - u_bg) * dds;
 
 }
 
@@ -2125,15 +2153,16 @@ Model::Stage::evaluate_n_advection (const Met_Element& met_element,
    if (k_rho < 0 || k_rho > 69) { return GSL_NAN; }
 
    const Real theta = azimuth * DEGREE_TO_RADIAN;
+   const Real st = sin (theta);
+   const Real ct = cos (theta);
 
    const Real u = evaluate (U, i, j, k_rho, l);
    const Real v = evaluate (V, i, j, k_rho, l);
-   const Real n = v * sin (theta) - u * cos (theta);
-
    const Real ddx = evaluate_dx (met_element, i, j, level, l);
    const Real ddy = evaluate_dy (met_element, i, j, level, l);
-   const Real ddn = ddy * sin (theta) - ddx * cos (theta);
 
+   const Real n = v * st - u * ct;
+   const Real ddn = ddy * st - ddx * ct;
    return -n * ddn;
 
 }
@@ -2385,7 +2414,7 @@ Model::Stage::get_color (const Model::Product& product,
       case Model::Product::THETA:
       case Model::Product::THETA_V:
       {
-         /*
+/*
          const Real jump = 28+K;
          const Real deviate = datum - jump;
          const Real x = atan (deviate / 1);
@@ -2395,7 +2424,7 @@ Model::Stage::get_color (const Model::Product& product,
          //const Real brightness = d1d.normalize (x) * 0.5 + 0.45;
          const Real brightness = 0.75;
          return Color::hsb (0.0, 0.0, brightness + fluctuation);
-         */
+*/
          const Real fluc_mag = 0.2;
          const Real celsius = datum - K;
          //const Real odd = (Integer (floor (celsius / 1)) % 2);
@@ -2484,11 +2513,12 @@ Model::Stage::get_color (const Model::Product& product,
       case Model::Product::THETA_NV_ADVECTION:
       {
          if (!gsl_finite (datum)) { return Color::gray (0.5); }
-         const Real min = 5e-2;
-         const Real max = 0.1e-2;
+         const Real min = 5e-3;
+         const Real max = 0.1e-3;
          const Real hue = (datum < 0 ? 0.67 : 0.00);
-         const Real d = log (fabs (datum));
-         const Real saturation = Domain_1D (min, max).normalize (d);
+         //const Real d = log (fabs (datum));
+         const Real d = fabs (datum);
+         const Real saturation = Domain_1D (max, min).normalize (d);
          return Color::hsb (hue, saturation, 1);
       }
 
@@ -2711,6 +2741,17 @@ Model::Stage::get_color (const Model::Product& product,
          const Real x = std::max (std::min (e / 2.0, 1.0), 0.0);
          const Real hue = 0.2 + (floor (e / 0.5)) * 0.10;
          return Color::hsb (hue, x, 1.0 - x * 0.5);
+      }
+
+      case Model::Product::SCORER:
+      {
+         if (!gsl_finite (datum)) { return Color::gray (0.5); }
+         const Real min = log (1e-6);
+         const Real max = log (1e-4);
+         const Real hue = (datum < 0 ? 0.50 : 0.83);
+         const Real d = log (fabs (datum));
+         const Real saturation = Domain_1D (min, max).normalize (d);
+         return Color::hsb (hue, saturation, 1);
       }
 
       default:
@@ -3387,7 +3428,8 @@ Model::Stage::get_time_cross_raster_ptr (const Box_2D& box_2d,
       if (dtime < start_time || dtime > end_time) { continue; }
 
       const size_t l = get_uppers_l (dtime);
-      dtime = valid_uppers_time_vector[l];
+//      dtime = valid_uppers_time_vector[l];
+//      if (dtime < start_time || dtime > end_time) { continue; }
 
       const Lat_Long& lat_long = track.get_lat_long (dtime);
       const Lat_Long& ll = lat_long;

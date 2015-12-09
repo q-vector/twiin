@@ -186,6 +186,7 @@ namespace twiin
                      const Dstring& product_str,
                      const Dstring& track_id_str,
                      const Track::Map& track_map,
+                     const Real height,
                      const Dstring& format,
                      const Tokens& title_tokens,
                      const Dstring& filename,
