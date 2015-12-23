@@ -2739,7 +2739,7 @@ Model::Stage::get_color (const Model::Product& product,
          if (!gsl_finite (datum)) { return Color::white (); }
          const Real e = log10 (datum) - (-3.0);
          const Real x = std::max (std::min (e / 2.0, 1.0), 0.0);
-         const Real hue = 0.2 + (floor (e / 0.5)) * 0.10;
+         const Real hue = 0.2 + (floor (e / 0.5)) * 0.25;
          return Color::hsb (hue, x, 1.0 - x * 0.5);
       }
 
