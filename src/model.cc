@@ -28,6 +28,8 @@ Model::Product::Product (const Dstring& str)
    else if (str == "NORMAL_SPEED")       { enumeration = Product::NORMAL_SPEED; }
    else if (str == "BRUNT_VAISALA")      { enumeration = Product::BRUNT_VAISALA; }
    else if (str == "SCORER")             { enumeration = Product::SCORER; }
+   else if (str == "SCORER_A")           { enumeration = Product::SCORER_A; }
+   else if (str == "SCORER_B")           { enumeration = Product::SCORER_B; }
    else if (str == "T")                  { enumeration = Product::T; }
    else if (str == "TD")                 { enumeration = Product::TD; }
    else if (str == "RH")                 { enumeration = Product::RH; }
@@ -85,6 +87,8 @@ Model::Product::get_string () const
       case Product::NORMAL_SPEED:       return "NORMAL_SPEED";
       case Product::BRUNT_VAISALA:      return "BRUNT_VAISALA";
       case Product::SCORER:             return "SCORER";
+      case Product::SCORER_A:           return "SCORER_A";
+      case Product::SCORER_B:           return "SCORER_B";
       case Product::T:                  return "T";
       case Product::TD:                 return "TD";
       case Product::RH:                 return "RH";
@@ -141,8 +145,10 @@ Model::Product::get_description () const
       case Product::P_RHO:              return "P_\u03c1";
       case Product::ALONG_SPEED:        return "Along Speed";
       case Product::NORMAL_SPEED:       return "Normal Speed";
-      case Product::BRUNT_VAISALA:      return "Brunt-V\u00e4IS\u00e4L\u00e4";
+      case Product::BRUNT_VAISALA:      return "Brunt-V\u00e4is\u00e4L\u00e4";
       case Product::SCORER:             return "Scorer's Parameter";
+      case Product::SCORER_A:           return "Scorer's Parameter Term A";
+      case Product::SCORER_B:           return "Scorer's Parameter Term B";
       case Product::T:                  return "Temperature";
       case Product::TD:                 return "Dew Point";
       case Product::RH:                 return "Relative Humidity";
@@ -275,6 +281,8 @@ Model::Product::get_unit () const
       case Product::TERRAIN:            return "m";
       case Product::BRUNT_VAISALA:      return "s\u207b\u00b9";
       case Product::SCORER:             return "m\u207b\u00b2";
+      case Product::SCORER_A:           return "m\u207b\u00b2";
+      case Product::SCORER_B:           return "m\u207b\u00b2";
       default:                          return "";
    }
 }
@@ -410,6 +418,8 @@ Model::Product::get_tick_tuple () const
       }
 
       case Model::Product::SCORER:
+      case Model::Product::SCORER_A:
+      case Model::Product::SCORER_B:
       {
          return Tuple ("1e-6:3.2e-6:1e-5");
       }
@@ -924,6 +934,8 @@ Model::Stage::get_valid_time_set (const Product& product,
       case Product::NORMAL_SPEED:
       case Product::BRUNT_VAISALA:
       case Product::SCORER:
+      case Product::SCORER_A:
+      case Product::SCORER_B:
       case Product::W:
       case Product::W_TRANSLUCENT:
       case Product::VORTICITY:
@@ -2312,6 +2324,122 @@ Model::Stage::evaluate_scorer (const Real azimuth,
 }
 
 Real
+Model::Stage::evaluate_scorer_a (const Real azimuth,
+                                 const Lat_Long& lat_long,
+                                 const Level& level,
+                                 const size_t l,
+                                 const Real u_bg) const
+{
+   size_t i, j;
+   acquire_ij (i, j, lat_long);
+   return evaluate_scorer_a (azimuth, i, j, level, l, u_bg);
+}
+
+Real
+Model::Stage::evaluate_scorer_a (const Real azimuth,
+                                 const size_t i,
+                                 const size_t j,
+                                 const Level& level,
+                                 const size_t l,
+                                 const Real u_bg) const
+{
+
+   size_t k_rho, k_theta;
+
+   acquire_k (k_rho, U, i, j, level);
+   if (k_rho <= 0 || k_rho >= 69) { return GSL_NAN; }
+
+   acquire_k (k_theta, THETA, i, j, level);
+   if (k_theta <= 0 || k_theta >= 69) { return GSL_NAN; }
+
+   const Real topography = get_topography (i, j);
+   const Tuple& A_theta = model.vertical_coefficients.get_A_theta ();
+   const Tuple& B_theta = model.vertical_coefficients.get_B_theta ();
+
+   const Integer k_theta_0 = k_theta - 1;
+   const Integer k_theta_1 = k_theta;
+   const Integer k_theta_2 = k_theta + 1;
+
+   const Real theta_0 = evaluate (THETA, i, j, k_theta_0, l);
+   const Real theta_1 = evaluate (THETA, i, j, k_theta_1, l);
+   const Real theta_2 = evaluate (THETA, i, j, k_theta_2, l);
+
+   const Real u = evaluate (U, i, j, k_rho, l);
+   const Real v = evaluate (V, i, j, k_rho, l);
+
+   const Real theta = azimuth * DEGREE_TO_RADIAN;
+   const Real along = u * sin (theta) + v * cos (theta) - u_bg;
+
+   const Real z_theta_0 = model.get_z (k_theta_0, topography, A_theta, B_theta);
+   const Real z_theta_1 = model.get_z (k_theta_1, topography, A_theta, B_theta);
+   const Real z_theta_2 = model.get_z (k_theta_2, topography, A_theta, B_theta);
+
+   typedef Differentiation D;
+   const Real dtheta_dz = D::d_1 (theta_0, theta_1,
+      theta_2, z_theta_0, z_theta_1, z_theta_2);
+
+   return (g / theta_1 * dtheta_dz ) / (along * along);
+
+}
+
+Real
+Model::Stage::evaluate_scorer_b (const Real azimuth,
+                                 const Lat_Long& lat_long,
+                                 const Level& level,
+                                 const size_t l,
+                                 const Real u_bg) const
+{
+   size_t i, j;
+   acquire_ij (i, j, lat_long);
+   return evaluate_scorer_b (azimuth, i, j, level, l, u_bg);
+}
+
+Real
+Model::Stage::evaluate_scorer_b (const Real azimuth,
+                                 const size_t i,
+                                 const size_t j,
+                                 const Level& level,
+                                 const size_t l,
+                                 const Real u_bg) const
+{
+
+   size_t k_rho;
+
+   acquire_k (k_rho, U, i, j, level);
+   if (k_rho <= 0 || k_rho >= 69) { return GSL_NAN; }
+
+   const Real topography = get_topography (i, j);
+   const Tuple& A_rho = model.vertical_coefficients.get_A_rho ();
+   const Tuple& B_rho = model.vertical_coefficients.get_B_rho ();
+
+   const Integer k_rho_0 = k_rho - 1;
+   const Integer k_rho_1 = k_rho;
+   const Integer k_rho_2 = k_rho + 1;
+
+   const Real u_0 = evaluate (U, i, j, k_rho_0, l);
+   const Real u_1 = evaluate (U, i, j, k_rho_1, l);
+   const Real u_2 = evaluate (U, i, j, k_rho_2, l);
+
+   const Real v_0 = evaluate (V, i, j, k_rho_0, l);
+   const Real v_1 = evaluate (V, i, j, k_rho_1, l);
+   const Real v_2 = evaluate (V, i, j, k_rho_2, l);
+
+   const Real theta = azimuth * DEGREE_TO_RADIAN;
+   const Real along_0 = u_0 * sin (theta) + v_0 * cos (theta) - u_bg;
+   const Real along_1 = u_1 * sin (theta) + v_1 * cos (theta) - u_bg;
+   const Real along_2 = u_2 * sin (theta) + v_2 * cos (theta) - u_bg;
+
+   const Real z_rho_0 = model.get_z (k_rho_0, topography, A_rho, B_rho);
+   const Real z_rho_1 = model.get_z (k_rho_1, topography, A_rho, B_rho);
+   const Real z_rho_2 = model.get_z (k_rho_2, topography, A_rho, B_rho);
+
+   typedef Differentiation D;
+   return -D::d2 (along_0, along_1, along_2, z_rho_0,
+      z_rho_1, z_rho_2) / along_1;
+
+}
+
+Real
 Model::Stage::evaluate_brunt_vaisala (const Lat_Long& lat_long,
                                       const Level& level,
                                       const size_t l) const
@@ -2739,11 +2867,13 @@ Model::Stage::get_color (const Model::Product& product,
          if (!gsl_finite (datum)) { return Color::white (); }
          const Real e = log10 (datum) - (-3.0);
          const Real x = std::max (std::min (e / 2.0, 1.0), 0.0);
-         const Real hue = 0.2 + (floor (e / 0.5)) * 0.25;
+         const Real hue = 0.2 + (floor (e / 0.5)) * 0.10;
          return Color::hsb (hue, x, 1.0 - x * 0.5);
       }
 
       case Model::Product::SCORER:
+      case Model::Product::SCORER_A:
+      case Model::Product::SCORER_B:
       {
          if (!gsl_finite (datum)) { return Color::gray (0.5); }
          const Real min = log (1e-6);
@@ -3216,6 +3346,24 @@ Model::Stage::get_cross_section_raster_ptr (const Box_2D& box_2d,
                   break;
                }
 
+               case Model::Product::SCORER_A:
+               {
+                  const Real azimuth = journey.get_azimuth_forward (x, geodesy);
+                  const Real datum = evaluate_scorer_a (
+                     azimuth, ll, level, l, u_bg);
+                  color = get_color (p, datum);
+                  break;
+               }
+
+               case Model::Product::SCORER_B:
+               {
+                  const Real azimuth = journey.get_azimuth_forward (x, geodesy);
+                  const Real datum = evaluate_scorer_b (
+                     azimuth, ll, level, l, u_bg);
+                  color = get_color (p, datum);
+                  break;
+               }
+
                case Model::Product::ALONG_SPEED:
                {
                   const Real azimuth = journey.get_azimuth_forward (x, geodesy);
@@ -3475,6 +3623,24 @@ Model::Stage::get_time_cross_raster_ptr (const Box_2D& box_2d,
                {
                   const Real u_bg = (lagrangian ? motion.get_speed () : 0);
                   const Real datum = evaluate_scorer (
+                     motion.get_direction (), i, j, level, l, u_bg);
+                  color = get_color (p, datum);
+                  break;
+               }
+
+               case Model::Product::SCORER_A:
+               {
+                  const Real u_bg = (lagrangian ? motion.get_speed () : 0);
+                  const Real datum = evaluate_scorer_a (
+                     motion.get_direction (), i, j, level, l, u_bg);
+                  color = get_color (p, datum);
+                  break;
+               }
+
+               case Model::Product::SCORER_B:
+               {
+                  const Real u_bg = (lagrangian ? motion.get_speed () : 0);
+                  const Real datum = evaluate_scorer_b (
                      motion.get_direction (), i, j, level, l, u_bg);
                   color = get_color (p, datum);
                   break;

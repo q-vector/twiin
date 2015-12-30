@@ -39,6 +39,8 @@ namespace twiin
                   NORMAL_SPEED,
                   BRUNT_VAISALA,
                   SCORER,
+                  SCORER_A,
+                  SCORER_B,
                   T,
                   TD,
                   RH,
@@ -658,6 +660,36 @@ namespace twiin
                                 const Level& level,
                                 const size_t l,
                                 const Real u_bg = 0) const;
+
+               Real
+               evaluate_scorer_a (const Real azimuth,
+                                  const size_t i,
+                                  const size_t j,
+                                  const Level& level,
+                                  const size_t l,
+                                  const Real u_bg = 0) const;
+
+               Real
+               evaluate_scorer_a (const Real azimuth,
+                                  const Lat_Long& lat_long,
+                                  const Level& level,
+                                  const size_t l,
+                                  const Real u_bg = 0) const;
+
+               Real
+               evaluate_scorer_b (const Real azimuth,
+                                  const size_t i,
+                                  const size_t j,
+                                  const Level& level,
+                                  const size_t l,
+                                  const Real u_bg = 0) const;
+
+               Real
+               evaluate_scorer_b (const Real azimuth,
+                                  const Lat_Long& lat_long,
+                                  const Level& level,
+                                  const size_t l,
+                                  const Real u_bg = 0) const;
 
                Real
                evaluate_brunt_vaisala (const size_t i,
