@@ -27,6 +27,7 @@ Model::Product::Product (const Dstring& str)
    else if (str == "ALONG_SPEED")        { enumeration = Product::ALONG_SPEED; }
    else if (str == "NORMAL_SPEED")       { enumeration = Product::NORMAL_SPEED; }
    else if (str == "BRUNT_VAISALA")      { enumeration = Product::BRUNT_VAISALA; }
+   else if (str == "RICHARDSON")         { enumeration = Product::RICHARDSON; }
    else if (str == "SCORER")             { enumeration = Product::SCORER; }
    else if (str == "SCORER_A")           { enumeration = Product::SCORER_A; }
    else if (str == "SCORER_B")           { enumeration = Product::SCORER_B; }
@@ -86,6 +87,7 @@ Model::Product::get_string () const
       case Product::ALONG_SPEED:        return "ALONG_SPEED";
       case Product::NORMAL_SPEED:       return "NORMAL_SPEED";
       case Product::BRUNT_VAISALA:      return "BRUNT_VAISALA";
+      case Product::RICHARDSON:         return "RICHARDSON";
       case Product::SCORER:             return "SCORER";
       case Product::SCORER_A:           return "SCORER_A";
       case Product::SCORER_B:           return "SCORER_B";
@@ -146,6 +148,7 @@ Model::Product::get_description () const
       case Product::ALONG_SPEED:        return "Along Speed";
       case Product::NORMAL_SPEED:       return "Normal Speed";
       case Product::BRUNT_VAISALA:      return "Brunt-V\u00e4is\u00e4L\u00e4";
+      case Product::RICHARDSON:         return "Richardson Number";
       case Product::SCORER:             return "Scorer's Parameter";
       case Product::SCORER_A:           return "Scorer's Parameter Term A";
       case Product::SCORER_B:           return "Scorer's Parameter Term B";
@@ -280,6 +283,7 @@ Model::Product::get_unit () const
       case Product::WIND:               return "degree";
       case Product::TERRAIN:            return "m";
       case Product::BRUNT_VAISALA:      return "s\u207b\u00b9";
+      case Product::RICHARDSON:         return "";
       case Product::SCORER:             return "m\u207b\u00b2";
       case Product::SCORER_A:           return "m\u207b\u00b2";
       case Product::SCORER_B:           return "m\u207b\u00b2";
@@ -415,6 +419,11 @@ Model::Product::get_tick_tuple () const
       case Model::Product::BRUNT_VAISALA:
       {
          return Tuple ("1e-3:3.2e-3:1e-2:3.2e-2:1e-1");
+      }
+
+      case Model::Product::RICHARDSON:
+      {
+         return Tuple ("0:0.25:0.5:0.75:1:1.25:1.5:1.75:2");
       }
 
       case Model::Product::SCORER:
@@ -933,6 +942,7 @@ Model::Stage::get_valid_time_set (const Product& product,
       case Product::ALONG_SPEED:
       case Product::NORMAL_SPEED:
       case Product::BRUNT_VAISALA:
+      case Product::RICHARDSON:
       case Product::SCORER:
       case Product::SCORER_A:
       case Product::SCORER_B:
@@ -2244,6 +2254,86 @@ Model::Stage::evaluate_along_speed (const Real azimuth,
 }
 
 Real
+Model::Stage::evaluate_richardson (const Real azimuth,
+                                   const Lat_Long& lat_long,
+                                   const Level& level,
+                                   const size_t l,
+                                   const Real u_bg) const
+{
+   size_t i, j;
+   acquire_ij (i, j, lat_long);
+   return evaluate_richardson (azimuth, i, j, level, l, u_bg);
+}
+
+Real
+Model::Stage::evaluate_richardson (const Real azimuth,
+                                   const size_t i,
+                                   const size_t j,
+                                   const Level& level,
+                                   const size_t l,
+                                   const Real u_bg) const
+{
+
+   size_t k_rho, k_theta;
+
+   acquire_k (k_rho, U, i, j, level);
+   if (k_rho <= 0 || k_rho >= 69) { return GSL_NAN; }
+
+   acquire_k (k_theta, THETA, i, j, level);
+   if (k_theta <= 0 || k_theta >= 69) { return GSL_NAN; }
+
+   const Real topography = get_topography (i, j);
+   const Tuple& A_rho = model.vertical_coefficients.get_A_rho ();
+   const Tuple& B_rho = model.vertical_coefficients.get_B_rho ();
+   const Tuple& A_theta = model.vertical_coefficients.get_A_theta ();
+   const Tuple& B_theta = model.vertical_coefficients.get_B_theta ();
+
+   const Integer k_rho_0 = k_rho - 1;
+   const Integer k_rho_1 = k_rho;
+   const Integer k_rho_2 = k_rho + 1;
+
+   const Integer k_theta_0 = k_theta - 1;
+   const Integer k_theta_1 = k_theta;
+   const Integer k_theta_2 = k_theta + 1;
+
+   const Real theta_0 = evaluate (THETA, i, j, k_theta_0, l);
+   const Real theta_1 = evaluate (THETA, i, j, k_theta_1, l);
+   const Real theta_2 = evaluate (THETA, i, j, k_theta_2, l);
+
+   const Real u_0 = evaluate (U, i, j, k_rho_0, l);
+   const Real u_1 = evaluate (U, i, j, k_rho_1, l);
+   const Real u_2 = evaluate (U, i, j, k_rho_2, l);
+
+   const Real v_0 = evaluate (V, i, j, k_rho_0, l);
+   const Real v_1 = evaluate (V, i, j, k_rho_1, l);
+   const Real v_2 = evaluate (V, i, j, k_rho_2, l);
+
+   const Real theta = azimuth * DEGREE_TO_RADIAN;
+   const Real along_0 = u_0 * sin (theta) + v_0 * cos (theta) - u_bg;
+   const Real along_1 = u_1 * sin (theta) + v_1 * cos (theta) - u_bg;
+   const Real along_2 = u_2 * sin (theta) + v_2 * cos (theta) - u_bg;
+
+   const Real z_theta_0 = model.get_z (k_theta_0, topography, A_theta, B_theta);
+   const Real z_theta_1 = model.get_z (k_theta_1, topography, A_theta, B_theta);
+   const Real z_theta_2 = model.get_z (k_theta_2, topography, A_theta, B_theta);
+
+   const Real z_rho_0 = model.get_z (k_rho_0, topography, A_rho, B_rho);
+   const Real z_rho_1 = model.get_z (k_rho_1, topography, A_rho, B_rho);
+   const Real z_rho_2 = model.get_z (k_rho_2, topography, A_rho, B_rho);
+
+   typedef Differentiation D;
+   const Real dtheta_dz = D::d_1 (theta_0, theta_1,
+      theta_2, z_theta_0, z_theta_1, z_theta_2);
+   const Real N2 = (g / theta_1 * dtheta_dz );
+
+   const Real du_dz = D::d_1 (along_0, along_1,
+      along_2, z_rho_0, z_rho_1, z_rho_2);
+
+   return N2 / (du_dz * du_dz);
+
+}
+
+Real
 Model::Stage::evaluate_scorer (const Real azimuth,
                                const Lat_Long& lat_long,
                                const Level& level,
@@ -2871,6 +2961,14 @@ Model::Stage::get_color (const Model::Product& product,
          return Color::hsb (hue, x, 1.0 - x * 0.5);
       }
 
+      case Model::Product::RICHARDSON:
+      {
+         const Real h = std::min (std::max (datum / 2.0, 0.0), 1.0);
+         const Real hue = 0.45 - h * 0.4;
+         const Real brightness = h * 0.3 + 0.2;
+         return Color::hsb (hue, 0.54, brightness);
+      }
+
       case Model::Product::SCORER:
       case Model::Product::SCORER_A:
       case Model::Product::SCORER_B:
@@ -3337,6 +3435,15 @@ Model::Stage::get_cross_section_raster_ptr (const Box_2D& box_2d,
                   break;
                }
 
+               case Model::Product::RICHARDSON:
+               {
+                  const Real azimuth = journey.get_azimuth_forward (x, geodesy);
+                  const Real datum = evaluate_richardson (
+                     azimuth, ll, level, l, u_bg);
+                  color = get_color (p, datum);
+                  break;
+               }
+
                case Model::Product::SCORER:
                {
                   const Real azimuth = journey.get_azimuth_forward (x, geodesy);
@@ -3615,6 +3722,15 @@ Model::Stage::get_time_cross_raster_ptr (const Box_2D& box_2d,
                case Model::Product::BRUNT_VAISALA:
                {
                   const Real datum = evaluate_brunt_vaisala (i, j, level, l);
+                  color = get_color (p, datum);
+                  break;
+               }
+
+               case Model::Product::RICHARDSON:
+               {
+                  const Real u_bg = (lagrangian ? motion.get_speed () : 0);
+                  const Real datum = evaluate_richardson (
+                     motion.get_direction (), i, j, level, l, u_bg);
                   color = get_color (p, datum);
                   break;
                }

@@ -38,6 +38,7 @@ namespace twiin
                   ALONG_SPEED,
                   NORMAL_SPEED,
                   BRUNT_VAISALA,
+                  RICHARDSON,
                   SCORER,
                   SCORER_A,
                   SCORER_B,
@@ -645,6 +646,21 @@ namespace twiin
                                      const Level& level,
                                      const size_t l,
                                      const Real u_bg = 0) const;
+
+               Real
+               evaluate_richardson (const Real azimuth,
+                                    const size_t i,
+                                    const size_t j,
+                                    const Level& level,
+                                    const size_t l,
+                                    const Real u_bg = 0) const;
+
+               Real
+               evaluate_richardson (const Real azimuth,
+                                    const Lat_Long& lat_long,
+                                    const Level& level,
+                                    const size_t l,
+                                    const Real u_bg = 0) const;
 
                Real
                evaluate_scorer (const Real azimuth,
