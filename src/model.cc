@@ -423,7 +423,7 @@ Model::Product::get_tick_tuple () const
 
       case Model::Product::RICHARDSON:
       {
-         return Tuple ("0:0.25:0.5:0.75:1:1.25:1.5:1.75:2");
+         return Tuple ("0:0.25:0.5:1:2:3:4:5");
       }
 
       case Model::Product::SCORER:
@@ -2257,12 +2257,11 @@ Real
 Model::Stage::evaluate_richardson (const Real azimuth,
                                    const Lat_Long& lat_long,
                                    const Level& level,
-                                   const size_t l,
-                                   const Real u_bg) const
+                                   const size_t l) const
 {
    size_t i, j;
    acquire_ij (i, j, lat_long);
-   return evaluate_richardson (azimuth, i, j, level, l, u_bg);
+   return evaluate_richardson (azimuth, i, j, level, l);
 }
 
 Real
@@ -2270,8 +2269,7 @@ Model::Stage::evaluate_richardson (const Real azimuth,
                                    const size_t i,
                                    const size_t j,
                                    const Level& level,
-                                   const size_t l,
-                                   const Real u_bg) const
+                                   const size_t l) const
 {
 
    size_t k_rho, k_theta;
@@ -2308,11 +2306,6 @@ Model::Stage::evaluate_richardson (const Real azimuth,
    const Real v_1 = evaluate (V, i, j, k_rho_1, l);
    const Real v_2 = evaluate (V, i, j, k_rho_2, l);
 
-   const Real theta = azimuth * DEGREE_TO_RADIAN;
-   const Real along_0 = u_0 * sin (theta) + v_0 * cos (theta) - u_bg;
-   const Real along_1 = u_1 * sin (theta) + v_1 * cos (theta) - u_bg;
-   const Real along_2 = u_2 * sin (theta) + v_2 * cos (theta) - u_bg;
-
    const Real z_theta_0 = model.get_z (k_theta_0, topography, A_theta, B_theta);
    const Real z_theta_1 = model.get_z (k_theta_1, topography, A_theta, B_theta);
    const Real z_theta_2 = model.get_z (k_theta_2, topography, A_theta, B_theta);
@@ -2325,11 +2318,10 @@ Model::Stage::evaluate_richardson (const Real azimuth,
    const Real dtheta_dz = D::d_1 (theta_0, theta_1,
       theta_2, z_theta_0, z_theta_1, z_theta_2);
    const Real N2 = (g / theta_1 * dtheta_dz );
+   const Real du_dz = D::d_1 (u_0, u_1, u_2, z_rho_0, z_rho_1, z_rho_2);
+   const Real dv_dz = D::d_1 (v_0, v_1, v_2, z_rho_0, z_rho_1, z_rho_2);
 
-   const Real du_dz = D::d_1 (along_0, along_1,
-      along_2, z_rho_0, z_rho_1, z_rho_2);
-
-   return N2 / (du_dz * du_dz);
+   return N2 / ((du_dz * du_dz) + (dv_dz * dv_dz));
 
 }
 
@@ -2647,7 +2639,7 @@ Model::Stage::get_color (const Model::Product& product,
          const Real celsius = datum - K;
          //const Real odd = (Integer (floor (celsius / 1)) % 2);
          //const Real fluctuation = (odd ? fluc_mag : -fluc_mag);
-         const Real hue = (60 - celsius) / 60;
+         const Real hue = modulo ((60 - celsius) / 60, 1);
          const Real fluctuation = fluc_mag * sin (celsius * M_PI);
          const Real brightness = 0.75;
          return Color::hsb (hue, 0.2, brightness + fluctuation);
@@ -2957,16 +2949,20 @@ Model::Stage::get_color (const Model::Product& product,
          if (!gsl_finite (datum)) { return Color::white (); }
          const Real e = log10 (datum) - (-3.0);
          const Real x = std::max (std::min (e / 2.0, 1.0), 0.0);
-         const Real hue = 0.2 + (floor (e / 0.5)) * 0.10;
+         const Real hue = 0.2 + (floor (e / 0.5)) * 0.18;
          return Color::hsb (hue, x, 1.0 - x * 0.5);
       }
 
       case Model::Product::RICHARDSON:
       {
-         const Real h = std::min (std::max (datum / 2.0, 0.0), 1.0);
-         const Real hue = 0.45 - h * 0.4;
-         const Real brightness = h * 0.3 + 0.2;
-         return Color::hsb (hue, 0.54, brightness);
+         if (datum <= 0.01) { return Color::transparent (); }
+         const Real jump = 0.25;
+         const Real deviate = datum - jump;
+         const Real x = tanh (deviate / 0.05) * 0.2;
+         const Real brightness = 0.75 + x;
+         const Real h = std::min (std::max (datum / 5.0, 0.0), 1.0);
+         const Real hue = 0.7 - h * 0.5;
+         return Color::hsb (hue, 0.38, brightness);
       }
 
       case Model::Product::SCORER:
@@ -2976,7 +2972,7 @@ Model::Stage::get_color (const Model::Product& product,
          if (!gsl_finite (datum)) { return Color::gray (0.5); }
          const Real min = log (1e-6);
          const Real max = log (1e-4);
-         const Real hue = (datum < 0 ? 0.50 : 0.83);
+         const Real hue = (datum < 0 ? 0.62 : 0.83);
          const Real d = log (fabs (datum));
          const Real saturation = Domain_1D (min, max).normalize (d);
          return Color::hsb (hue, saturation, 1);
@@ -3439,7 +3435,7 @@ Model::Stage::get_cross_section_raster_ptr (const Box_2D& box_2d,
                {
                   const Real azimuth = journey.get_azimuth_forward (x, geodesy);
                   const Real datum = evaluate_richardson (
-                     azimuth, ll, level, l, u_bg);
+                     azimuth, ll, level, l);
                   color = get_color (p, datum);
                   break;
                }
@@ -3730,7 +3726,7 @@ Model::Stage::get_time_cross_raster_ptr (const Box_2D& box_2d,
                {
                   const Real u_bg = (lagrangian ? motion.get_speed () : 0);
                   const Real datum = evaluate_richardson (
-                     motion.get_direction (), i, j, level, l, u_bg);
+                     motion.get_direction (), i, j, level, l);
                   color = get_color (p, datum);
                   break;
                }

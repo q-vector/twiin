@@ -652,15 +652,13 @@ namespace twiin
                                     const size_t i,
                                     const size_t j,
                                     const Level& level,
-                                    const size_t l,
-                                    const Real u_bg = 0) const;
+                                    const size_t l) const;
 
                Real
                evaluate_richardson (const Real azimuth,
                                     const Lat_Long& lat_long,
                                     const Level& level,
-                                    const size_t l,
-                                    const Real u_bg = 0) const;
+                                    const size_t l) const;
 
                Real
                evaluate_scorer (const Real azimuth,
