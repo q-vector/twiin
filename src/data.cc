@@ -2,7 +2,6 @@
 #include <denise/gzstream.h>
 #include <denise/nwp.h>
 #include "data.h"
-#include "display.h"
 
 using namespace std;
 using namespace denise;

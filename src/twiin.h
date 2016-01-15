@@ -8,7 +8,7 @@
 #include <denise/geodesy.h>
 #include <denise/gtkmm.h>
 #include <andrea/andrea.h>
-#include "display.h"
+#include "data.h"
 
 using namespace std;
 using namespace denise;

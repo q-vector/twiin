@@ -3269,10 +3269,6 @@ Twiin::render_vertical_profile (const RefPtr<Context>& cr,
 
 }
 
-
-
-
-
 void
 Twiin::Gui::Product_Panel::emit (const Model::Product& product)
 {

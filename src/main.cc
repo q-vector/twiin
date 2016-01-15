@@ -7,7 +7,6 @@
 #ifndef ENABLE_GTKMM
 #else /* ENABLE_GTKMM */
 #include "cross_section.h"
-#include "console.h"
 #endif /* ENABLE_GTKMM */
 
 using namespace std;
