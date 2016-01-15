@@ -7,7 +7,6 @@
 #include <cairomm/surface.h>
 #include <denise/geodesy.h>
 #include <denise/gtkmm.h>
-#include "display.h"
 #include "data.h"
 
 using namespace std;
