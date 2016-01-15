@@ -2640,7 +2640,7 @@ Model::Stage::get_color (const Model::Product& product,
          //const Real odd = (Integer (floor (celsius / 1)) % 2);
          //const Real fluctuation = (odd ? fluc_mag : -fluc_mag);
          const Real hue = modulo ((60 - celsius) / 60, 1);
-         const Real fluctuation = fluc_mag * sin (celsius * M_PI);
+         const Real fluctuation = fluc_mag * sin (celsius * M_PI / 2);
          const Real brightness = 0.75;
          return Color::hsb (hue, 0.2, brightness + fluctuation);
       }
@@ -2949,7 +2949,7 @@ Model::Stage::get_color (const Model::Product& product,
          if (!gsl_finite (datum)) { return Color::white (); }
          const Real e = log10 (datum) - (-3.0);
          const Real x = std::max (std::min (e / 2.0, 1.0), 0.0);
-         const Real hue = 0.2 + (floor (e / 0.5)) * 0.18;
+         const Real hue = modulo (0.0 + (floor (e / 0.25)) * 0.15, 1);
          return Color::hsb (hue, x, 1.0 - x * 0.5);
       }
 

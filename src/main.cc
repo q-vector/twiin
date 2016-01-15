@@ -315,7 +315,6 @@ Twiin::plan (const Dstring& stage_str,
                hrit.get_valid_time_vector (time_set) :
                stage.get_valid_time_vector (product, level, time_set);
 
-            #pragma omp parallel for
             for (Integer l = 0; l < valid_time_vector.size (); l++)
             {
            
