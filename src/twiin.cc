@@ -1,10 +1,14 @@
 #include <getopt.h>
 #include <denise/dstring.h>
-#include "cross_section.h"
 #include "twiin.h"
 #include "hrit.h"
 #include "model.h"
 #include "obs.h"
+
+#ifndef ENABLE_GTKMM
+#else /* ENABLE_GTKMM */
+#include "cross_section.h"
+#endif /* ENABLE_GTKMM */
 
 using namespace std;
 using namespace denise;
@@ -3269,6 +3273,8 @@ Twiin::render_vertical_profile (const RefPtr<Context>& cr,
 
 }
 
+#ifndef ENABLE_GTKMM
+#else /* ENABLE_GTKMM */
 void
 Twiin::Gui::Product_Panel::emit (const Model::Product& product)
 {
@@ -3677,4 +3683,5 @@ Twiin::Gui::render_image_buffer (const RefPtr<Context>& cr)
    render_overlays (cr);
 
 }
+#endif /* ENABLE_GTKMM */
 

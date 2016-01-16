@@ -6,9 +6,13 @@
 #include <cairomm/context.h>
 #include <cairomm/surface.h>
 #include <denise/geodesy.h>
-#include <denise/gtkmm.h>
 #include <andrea/andrea.h>
 #include "data.h"
+
+#ifndef ENABLE_GTKMM
+#else  /* ENABLE_GTKMM */
+#include <denise/gtkmm.h>
+#endif /* ENABLE_GTKMM */
 
 using namespace std;
 using namespace denise;
@@ -541,6 +545,8 @@ namespace twiin
                                   const Dtime& dtime,
                                   const Lat_Long::List& lat_long_list);
 
+#ifndef ENABLE_GTKMM
+#else  /* ENABLE_GTKMM */
          class Gui : public Map_Console,
                      public Time_Canvas,
                      public Level_Canvas
@@ -654,6 +660,7 @@ namespace twiin
                render_image_buffer (const RefPtr<Context>& cr);
 
          };
+#endif /* ENABLE_GTKMM */
 
    };
 
