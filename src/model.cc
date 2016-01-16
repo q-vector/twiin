@@ -418,7 +418,7 @@ Model::Product::get_tick_tuple () const
 
       case Model::Product::BRUNT_VAISALA:
       {
-         return Tuple ("1e-3:3.2e-3:1e-2:3.2e-2:1e-1");
+         return Tuple ("1e-3:1.8e-3:3.2e-3:5.6e-3:1e-2:1.8e-2:3.2e-2:5.6e-2:1e-1");
       }
 
       case Model::Product::RICHARDSON:
@@ -2902,7 +2902,11 @@ Model::Stage::get_color (const Model::Product& product,
       case Model::Product::MSLP:
       {
          //const Real hue = Domain_1D (990e2, 1025e2).normalize (datum) * 0.833;
-         const Real brightness = (Integer (floor (datum/200)) % 2) ? 0.82:0.78;
+         //const Real brightness = (Integer (floor (datum/200)) % 2) ? 0.82:0.78;
+         const Real hPa = datum * 1e-2;
+         const Real fluc_mag = 0.2;
+         const Real fluctuation = fluc_mag * sin (hPa * M_PI / 1);
+         const Real brightness = 0.75 + fluctuation;
          return Color::hsb (0, 0, brightness);
       }
 
