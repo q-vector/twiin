@@ -430,7 +430,7 @@ Model::Product::get_tick_tuple () const
       case Model::Product::SCORER_A:
       case Model::Product::SCORER_B:
       {
-         return Tuple ("1e-6:3.2e-6:1e-5");
+         return Tuple ("1e-8:3.2e-8:1e-7:3.2e-7:3.2e-7:1e-6:3.2e-6:1e-5");
       }
 
       default:
@@ -2974,12 +2974,18 @@ Model::Stage::get_color (const Model::Product& product,
       case Model::Product::SCORER_B:
       {
          if (!gsl_finite (datum)) { return Color::gray (0.5); }
-         const Real min = log (1e-6);
-         const Real max = log (1e-4);
-         const Real hue = (datum < 0 ? 0.62 : 0.83);
+         const Real e = (log10 (fabs (datum)) - (-8.0));
+         const Integer fe = floor (e * 4) / 4;
+         const Real min = log (1e-8);
+         const Real max = log (1e-6);
+         const Real hue = (datum < 0 ? 0.4 - fe * 0.03 : 0.75 + fe * 0.03);
          const Real d = log (fabs (datum));
          const Real saturation = Domain_1D (min, max).normalize (d);
-         return Color::hsb (hue, saturation, 1);
+         const Real fluc_mag = 0.0;
+         //const Real fluctuation = fluc_mag * sin (e * M_PI / 1);
+         const Real fluctuation = 0;
+         const Real brightness = 0.95 + fluc_mag * fluctuation;
+         return Color::hsb (hue, saturation, brightness);
       }
 
       default:
