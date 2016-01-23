@@ -726,22 +726,25 @@ Model::Stage::fill_sounding (Sounding& sounding,
 
    size_t i, j;
    acquire_ij (i, j, lat_long);
+
    const Integer surface_l = get_surface_l (dtime);
    const Integer uppers_l = get_uppers_l (dtime);
-
-   const Real t = evaluate (T, i, j, surface_l);
-   const Real t_d = evaluate (TD, i, j, surface_l);
-   const Real u = evaluate (U, i, j, surface_l);
-   const Real v = evaluate (V, i, j, surface_l);
-
    const Real topography = get_topography (i, j);
-   const Real mslp = evaluate (MSLP, i, j, surface_l);
-   const Real surface_p = mslp - 11.76 * topography;
 
-   sounding.get_t_line ().add (surface_p, t - K);
-   sounding.get_t_d_line ().add (surface_p, t_d - K);
-   sounding.get_wind_profile ().add (surface_p, Wind (u, v));
-   sounding.get_height_profile ().add (surface_p, 0);
+   // surface points commented out because surface_p cannot be calculated accurately
+
+   //const Real t = evaluate (T, i, j, surface_l);
+   //const Real t_d = evaluate (TD, i, j, surface_l);
+   //const Real u = evaluate (U, i, j, surface_l);
+   //const Real v = evaluate (V, i, j, surface_l);
+
+   //const Real mslp = evaluate (MSLP, i, j, surface_l);
+   //const Real surface_p = mslp - 11.76 * topography;
+
+   //sounding.get_t_line ().add (surface_p, t - K);
+   //sounding.get_t_d_line ().add (surface_p, t_d - K);
+   //sounding.get_wind_profile ().add (surface_p, Wind (u, v));
+   //sounding.get_height_profile ().add (surface_p, 0);
 
    const Tuple& A_rho = model.vertical_coefficients.get_A_rho ();
    const Tuple& B_rho = model.vertical_coefficients.get_B_rho ();
