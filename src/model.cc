@@ -3719,6 +3719,7 @@ cout << "model stage azimuth " << azimuth << endl;
 
          case Model::Product::SCORER:
          {
+
             const Sounding* sounding_ptr = get_sounding_ptr (lat_long, dtime);
             const Real_Profile* scorer_profile_ptr =
                sounding_ptr->get_scorer_profile_ptr (azimuth);
@@ -3742,16 +3743,65 @@ cout << "model stage azimuth " << azimuth << endl;
             delete scorer_profile_ptr;
             delete sounding_ptr;
             break;
+
          }
 
          case Model::Product::SCORER_A:
          {
+
+            const Sounding* sounding_ptr = get_sounding_ptr (lat_long, dtime);
+            const Real_Profile* scorer_a_profile_ptr =
+               sounding_ptr->get_scorer_a_profile_ptr (azimuth);
+
+            for (Integer jj = index_2d.j; jj < index_2d.j + size_2d.j; jj++)
+            {
+
+               transform.reverse (t, z, Real (ii), Real (jj));
+
+               if (z < topography) { color = Color::black (); }
+               else
+               {
+                  const Real pressure = sounding_ptr->get_pressure (z);
+                  const Real datum = scorer_a_profile_ptr->get_ordinate (pressure);
+                  color = get_color (p, datum);
+                  raster_ptr->set_pixel (ii - index_2d.i, jj - index_2d.j, color);
+               }
+
+            }
+
+            delete scorer_a_profile_ptr;
+            delete sounding_ptr;
             break;
+
          }
 
          case Model::Product::SCORER_B:
          {
+
+            const Sounding* sounding_ptr = get_sounding_ptr (lat_long, dtime);
+            const Real_Profile* scorer_b_profile_ptr =
+               sounding_ptr->get_scorer_b_profile_ptr (azimuth);
+
+            for (Integer jj = index_2d.j; jj < index_2d.j + size_2d.j; jj++)
+            {
+
+               transform.reverse (t, z, Real (ii), Real (jj));
+
+               if (z < topography) { color = Color::black (); }
+               else
+               {
+                  const Real pressure = sounding_ptr->get_pressure (z);
+                  const Real datum = scorer_b_profile_ptr->get_ordinate (pressure);
+                  color = get_color (p, datum);
+                  raster_ptr->set_pixel (ii - index_2d.i, jj - index_2d.j, color);
+               }
+
+            }
+
+            delete scorer_b_profile_ptr;
+            delete sounding_ptr;
             break;
+
          }
 
          default:
