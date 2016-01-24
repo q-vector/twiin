@@ -8,15 +8,11 @@
 #include <denise/geodesy.h>
 #include <andrea/andrea.h>
 #include "data.h"
-<<<<<<< HEAD
-#include "model.h"
-=======
 
 #ifndef ENABLE_GTKMM
 #else  /* ENABLE_GTKMM */
 #include <denise/gtkmm.h>
 #endif /* ENABLE_GTKMM */
->>>>>>> 5fa20472beb086837a94d7ce59134be3755dac62
 
 using namespace std;
 using namespace denise;
