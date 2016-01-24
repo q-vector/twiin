@@ -75,6 +75,12 @@ namespace twiin
          get_file_path (const Dstring& format,
                         const Dstring& stage,
                         const Model::Product& product,
+                        const Location& location) const;
+
+         Dstring
+         get_file_path (const Dstring& format,
+                        const Dstring& stage,
+                        const Model::Product& product,
                         const Dstring& track_id,
                         const bool lagrangian) const;
 
@@ -182,6 +188,18 @@ namespace twiin
                         const Dstring& filename,
                         const bool lagrangian,
                         const bool is_bludge) const;
+
+         void
+         time_cross (const Dstring& stage_str,
+                     const Dstring& product_str,
+                     const Real azimuth,
+                     const Dstring& location_str,
+                     const Dstring& time_str,
+                     const Real height,
+                     const Dstring& format,
+                     const Tokens& title_tokens,
+                     const Dstring& filename,
+                     const bool is_bludge) const;
 
          void
          time_cross (const Dstring& stage_str,
@@ -328,6 +346,13 @@ namespace twiin
                     const Lat_Long& lat_long,
                     const Real distance,
                     const bool lagrangian);
+
+         static void
+         set_title (Title& title,
+                    const Dtime& basetime,
+                    const Dstring& stage_str,
+                    const Model::Product& product,
+                    const Location& location);
 
          static void
          set_title (Title& title,
@@ -484,6 +509,17 @@ namespace twiin
          render_time_cross_track (const RefPtr<Context>& cr,
                                   const Transform_2D& transform,
                                   const Track& track);
+
+         static void
+         render_time_cross (const RefPtr<Context>& cr,
+                            const Transform_2D& transform,
+                            const Box_2D& box_2d,
+                            const Domain_1D& domain_z,
+                            const Model::Stage& stage,
+                            const Model::Product& product,
+                            const Location& location,
+                            const Dtime::Span& time_span,
+                            const Real azimuth);
 
          static void
          render_time_cross (const RefPtr<Context>& cr,

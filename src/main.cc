@@ -21,6 +21,7 @@ main (int argc,
 
    static struct option long_options[] =
    {
+      { "azimuth",                      1, 0, 'A' },
       { "annotation",                   1, 0, 'a' },
       { "bludge",                       0, 0, 'b' },
       { "color-bar",                    1, 0, 'C' },
@@ -67,6 +68,7 @@ main (int argc,
    Dstring time_str;
    Dstring zoom_str ("");
    Dstring format ("png");
+   Real azimuth = 0;
    Tokens annotation_tokens;
 
    Dstring filename ("");
@@ -97,13 +99,19 @@ main (int argc,
 
    int c;
    int option_index = 0;
-   char optstring[] = "a:bC:c:d:F:f:Gg:h:IiJ:j:K:Ll:M:mNO:o:Pp:Ss:T:t:u:vVWXxz:?";
+   char optstring[] = "A:a:bC:c:d:F:f:Gg:h:IiJ:j:K:Ll:M:mNO:o:Pp:Ss:T:t:u:vVWXxz:?";
    while ((c = getopt_long (argc, argv, optstring,
           long_options, &option_index)) != -1)
    {
 
       switch (c)
       {
+
+         case 'A':
+         {
+            azimuth = stof (Dstring (optarg));
+            break;
+         }
 
          case 'a':
          {
@@ -397,6 +405,11 @@ main (int argc,
          else
          if (is_time_cross)
          {
+            if (location_specified)
+            {
+               twiin.time_cross (stage_str, product_str, azimuth, location_str,
+                  time_str, height, format, title_tokens, filename, is_bludge);
+            }
             if (track_specified)
             {
                twiin.time_cross (stage_str, product_str, track_id_str,

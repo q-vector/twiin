@@ -776,6 +776,14 @@ namespace twiin
                get_time_cross_raster_ptr (const Box_2D& box_2d,
                                           const Transform_2D& transform,
                                           const Model::Product& product,
+                                          const Location& location,
+                                          const Dtime::Span& time_span,
+                                          const Real azimuth = GSL_NAN) const;
+
+               Raster*
+               get_time_cross_raster_ptr (const Box_2D& box_2d,
+                                          const Transform_2D& transform,
+                                          const Model::Product& product,
                                           const Track& track,
                                           const bool lagrangian = false) const;
 
