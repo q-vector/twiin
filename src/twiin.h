@@ -6,10 +6,17 @@
 #include <cairomm/context.h>
 #include <cairomm/surface.h>
 #include <denise/geodesy.h>
-#include <denise/gtkmm.h>
 #include <andrea/andrea.h>
 #include "data.h"
+<<<<<<< HEAD
 #include "model.h"
+=======
+
+#ifndef ENABLE_GTKMM
+#else  /* ENABLE_GTKMM */
+#include <denise/gtkmm.h>
+#endif /* ENABLE_GTKMM */
+>>>>>>> 5fa20472beb086837a94d7ce59134be3755dac62
 
 using namespace std;
 using namespace denise;
@@ -67,6 +74,12 @@ namespace twiin
                         const Lat_Long& lat_long,
                         const Real distance,
                         const bool lagrangian) const;
+
+         Dstring
+         get_file_path (const Dstring& format,
+                        const Dstring& stage,
+                        const Model::Product& product,
+                        const Location& location) const;
 
          Dstring
          get_file_path (const Dstring& format,
@@ -179,6 +192,18 @@ namespace twiin
                         const Dstring& filename,
                         const bool lagrangian,
                         const bool is_bludge) const;
+
+         void
+         time_cross (const Dstring& stage_str,
+                     const Dstring& product_str,
+                     const Real azimuth,
+                     const Dstring& location_str,
+                     const Dstring& time_str,
+                     const Real height,
+                     const Dstring& format,
+                     const Tokens& title_tokens,
+                     const Dstring& filename,
+                     const bool is_bludge) const;
 
          void
          time_cross (const Dstring& stage_str,
@@ -325,6 +350,13 @@ namespace twiin
                     const Lat_Long& lat_long,
                     const Real distance,
                     const bool lagrangian);
+
+         static void
+         set_title (Title& title,
+                    const Dtime& basetime,
+                    const Dstring& stage_str,
+                    const Model::Product& product,
+                    const Location& location);
 
          static void
          set_title (Title& title,
@@ -489,6 +521,17 @@ namespace twiin
                             const Domain_1D& domain_z,
                             const Model::Stage& stage,
                             const Model::Product& product,
+                            const Location& location,
+                            const Dtime::Span& time_span,
+                            const Real azimuth);
+
+         static void
+         render_time_cross (const RefPtr<Context>& cr,
+                            const Transform_2D& transform,
+                            const Box_2D& box_2d,
+                            const Domain_1D& domain_z,
+                            const Model::Stage& stage,
+                            const Model::Product& product,
                             const Track& track,
                             const bool lagrangian = false);
 
@@ -542,6 +585,8 @@ namespace twiin
                                   const Dtime& dtime,
                                   const Lat_Long::List& lat_long_list);
 
+#ifndef ENABLE_GTKMM
+#else  /* ENABLE_GTKMM */
          class Gui : public Map_Console,
                      public Time_Canvas,
                      public Level_Canvas
@@ -655,6 +700,7 @@ namespace twiin
                render_image_buffer (const RefPtr<Context>& cr);
 
          };
+#endif /* ENABLE_GTKMM */
 
    };
 

@@ -1,7 +1,8 @@
 AM_CPPFLAGS        = -I$(top_builddir) -I$(top_srcdir)
 
 noinst_HEADERS  = data.h enhancement.h hrit.h nc_file.h model.h obs.h twiin.h
-bin_PROGRAMS    = twiin twiin_convert
+#bin_PROGRAMS    = twiin twiin_convert
+bin_PROGRAMS    = twiin
 
 #twiin_LDADD    = $(top_builddir)/twiin/libtwiin.la
 twiin_SOURCES	= data.cc enhancement.cc hrit.cc main.cc \

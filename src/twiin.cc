@@ -1,10 +1,14 @@
 #include <getopt.h>
 #include <denise/dstring.h>
-#include "cross_section.h"
 #include "twiin.h"
 #include "hrit.h"
 #include "model.h"
 #include "obs.h"
+
+#ifndef ENABLE_GTKMM
+#else /* ENABLE_GTKMM */
+#include "cross_section.h"
+#endif /* ENABLE_GTKMM */
 
 using namespace std;
 using namespace denise;
@@ -104,6 +108,18 @@ Twiin::get_file_path (const Dstring& format,
    const Dstring& where_str = ll_str + Dstring::render ("-%.0fkm", d);
    const Dstring& file_name = stage + "-" + product.get_string () + "-" +
       time_str + "-" + where_str + "-" + pov_str + + "." + format;
+   return output_dir + "/" + file_name;
+}
+
+Dstring
+Twiin::get_file_path (const Dstring& format,
+                      const Dstring& stage,
+                      const Model::Product& product,
+                      const Location& location) const
+{
+   const Dstring& location_str = location.get_str ();
+   const Dstring& file_name = stage + "-" + product.get_string () + "-" +
+      location_str + "." + format;
    return output_dir + "/" + file_name;
 }
 
@@ -927,6 +943,127 @@ Twiin::cross_section (const Dstring& stage_str,
 
             }
          }
+      }
+   }
+
+}
+
+void
+Twiin::time_cross (const Dstring& stage_str,
+                   const Dstring& product_str,
+                   const Real azimuth,
+                   const Dstring& location_str,
+                   const Dstring& time_str,
+                   const Real height,
+                   const Dstring& format,
+                   const Tokens& title_tokens,
+                   const Dstring& filename,
+                   const bool is_bludge) const
+{
+
+cout << "twiin::time_cross a " << endl;
+   const Level level ("100m");
+   const Dtime::Set time_set (time_str);
+   const Dtime::Span time_span = time_set.get_span ();
+   const Tokens stage_tokens (stage_str, ":");
+   const Tokens product_tokens (product_str, ":");
+   const Tokens location_tokens (location_str, ":");
+
+   const Domain_1D domain_z (0, height);
+
+   Title title (size_2d);
+   const Data data (config_file);
+   const Model& model = data.get_model ();
+   const Dtime& basetime = model.get_basetime ();
+   const Station::Map& station_map = data.get_station_map ();
+
+   const Real margin_l = 50;
+   const Real margin_r = 20 + 80;
+   const Real margin_t = title.get_height () + 10;
+   const Real margin_b = 40;
+   const Real w = size_2d.i - margin_l - margin_r;
+   const Real h = size_2d.j - margin_t - margin_b;
+
+   for (Tokens::const_iterator i = stage_tokens.begin ();
+        i != stage_tokens.end (); i++)
+   {
+
+      const Dstring s (*i);
+      const Model::Stage& stage = model.get_stage (s);
+
+      for (Tokens::const_iterator j = product_tokens.begin ();
+           j != product_tokens.end (); j++)
+      {
+
+         const Model::Product product (*j);
+
+         const bool is_speed = (product.enumeration == Model::Product::SPEED);
+         const Model::Product& p = (is_speed ?
+            Model::Product (Model::Product::SPEED_HIGHER) : product);
+
+         for (Tokens::const_iterator k = location_tokens.begin ();
+              k != location_tokens.end (); k++)
+         {
+
+            const Location location (*k, station_map);
+            if (stage.out_of_bounds (location)) { continue; }
+
+            const Real start_t = time_span.get_start ().t;
+            const Real end_t = time_span.get_end ().t;
+            const Domain_1D domain_t (start_t, end_t);
+
+            Affine_Transform_2D transform;
+            const Real span_t = domain_t.get_span ();
+            const Real span_z = domain_z.get_span ();
+            transform.scale (1, -1);
+            transform.translate (-start_t, 0);
+            transform.scale (w / span_t, h / span_z);
+            transform.translate (margin_l, size_2d.j - margin_b);
+
+            const Dstring& file_path = (filename == "") ?
+               get_file_path (format, s, product, location) :
+               output_dir + "/" + filename;
+            cout << file_path;
+            if (is_bludge) { cout << " will be made" << endl; continue; }
+
+            try
+            {
+
+               RefPtr<Surface> surface = denise::get_surface (
+                  size_2d, format, file_path);
+               RefPtr<Context> cr = denise::get_cr (surface);
+
+               const Index_2D i2d (margin_l, margin_t);
+               const Size_2D s2d (size_2d.i - margin_l - margin_r,
+                                  size_2d.j - margin_t - margin_b);
+               const Box_2D box_2d (i2d, s2d);
+
+               if (s2d.i < 0 || s2d.j < 0) { continue; }
+
+               Twiin::render_time_cross (cr, transform, box_2d,
+                  domain_z, stage, product, location, time_span, azimuth);
+
+               Twiin::render_color_bar (cr, size_2d, p);
+
+               if (title_tokens.size () == 0)
+               {
+                  Twiin::set_title (title, basetime, s, product, location);
+               }
+               else
+               {
+                  title.set (title_tokens);
+               }
+               title.cairo (cr);
+
+               if (format == "png") { surface->write_to_png (file_path); }
+
+               cout << " okay" << endl;
+
+            }
+            catch (...) { cout << " failed" << endl; }
+
+         }
+
       }
    }
 
@@ -1792,6 +1929,7 @@ Twiin::usage ()
    cout << endl;
    cout << "Options:" << endl;
    cout << "  -?  --help                         display this help and exit" << endl;
+   cout << "  -A  --azimuth=NUMBER               display this help and exit" << endl;
    cout << "  -a  --annotation=STR               display this help and exit" << endl;
    cout << "  -b  --bludge                       display this help and exit" << endl;
    cout << "  -C  --color-bar=r:10               display this help and exit" << endl;
@@ -1900,13 +2038,13 @@ Twiin::set_title (Title& title,
 
 void
 Twiin::set_title (Title& title,
-                    const Dtime& basetime,
-                    const Dstring& stage_str,
-                    const Model::Product& product,
-                    const Dtime& dtime,
-                    const Lat_Long& lat_long,
-                    const Real distance,
-                    const bool lagrangian)
+                  const Dtime& basetime,
+                  const Dstring& stage_str,
+                  const Model::Product& product,
+                  const Dtime& dtime,
+                  const Lat_Long& lat_long,
+                  const Real distance,
+                  const bool lagrangian)
 {
 
    const Real forecast_hour = dtime.t - basetime.t;
@@ -1932,11 +2070,24 @@ Twiin::set_title (Title& title,
 
 void
 Twiin::set_title (Title& title,
-                    const Dtime& basetime,
-                    const Dstring& stage_str,
-                    const Model::Product& product,
-                    const Dstring& track_id,
-                    const bool lagrangian)
+                  const Dtime& basetime,
+                  const Dstring& stage_str,
+                  const Model::Product& product,
+                  const Location& location)
+{
+   const Dstring& location_str = location.get_str ();
+   const Dstring& basetime_str = basetime.get_string ();
+   const Dstring stage_product = stage_str + " / " + product.get_description ();
+   title.set (location_str, "", stage_product, basetime_str, "");
+}
+
+void
+Twiin::set_title (Title& title,
+                  const Dtime& basetime,
+                  const Dstring& stage_str,
+                  const Model::Product& product,
+                  const Dstring& track_id,
+                  const bool lagrangian)
 {
    const Dstring pov_str (lagrangian ? "Lagrangian" : "Eulerian");
    const Dstring& basetime_str = basetime.get_string ();
@@ -1946,10 +2097,10 @@ Twiin::set_title (Title& title,
 
 void
 Twiin::set_title (Title& title,
-                    const Dtime& basetime,
-                    const Dstring& stage_str,
-                    const Dtime& dtime,
-                    const Location& location)
+                  const Dtime& basetime,
+                  const Dstring& stage_str,
+                  const Dtime& dtime,
+                  const Location& location)
 {
 
    const Real forecast_hour = dtime.t - basetime.t;
@@ -2797,13 +2948,44 @@ Twiin::render_time_cross_track (const RefPtr<Context>& cr,
 
 void
 Twiin::render_time_cross (const RefPtr<Context>& cr,
-                            const Transform_2D& transform,
-                            const Box_2D& box_2d,
-                            const Domain_1D& domain_z,
-                            const Model::Stage& stage,
-                            const Model::Product& product,
-                            const Track& track,
-                            const bool lagrangian)
+                          const Transform_2D& transform,
+                          const Box_2D& box_2d,
+                          const Domain_1D& domain_z,
+                          const Model::Stage& stage,
+                          const Model::Product& product,
+                          const Location& location,
+                          const Dtime::Span& time_span,
+                          const Real azimuth)
+{
+
+   cr->save ();
+
+   Color::white ().cairo (cr);
+   cr->paint ();
+
+   Raster* raster_ptr = stage.get_time_cross_raster_ptr (
+      box_2d, transform, product, location, time_span, azimuth);
+   raster_ptr->blit (cr);
+   delete raster_ptr;
+
+   const Real start_t = time_span.get_start ().t;
+   const Real end_t = time_span.get_end ().t;
+   const Domain_1D domain_t (start_t, end_t);
+   render_time_cross_mesh (cr, transform, domain_t, domain_z);
+
+   cr->restore ();
+
+}
+
+void
+Twiin::render_time_cross (const RefPtr<Context>& cr,
+                          const Transform_2D& transform,
+                          const Box_2D& box_2d,
+                          const Domain_1D& domain_z,
+                          const Model::Stage& stage,
+                          const Model::Product& product,
+                          const Track& track,
+                          const bool lagrangian)
 {
 
    cr->save ();
@@ -3269,10 +3451,8 @@ Twiin::render_vertical_profile (const RefPtr<Context>& cr,
 
 }
 
-
-
-
-
+#ifndef ENABLE_GTKMM
+#else /* ENABLE_GTKMM */
 void
 Twiin::Gui::Product_Panel::emit (const Model::Product& product)
 {
@@ -3681,4 +3861,5 @@ Twiin::Gui::render_image_buffer (const RefPtr<Context>& cr)
    render_overlays (cr);
 
 }
+#endif /* ENABLE_GTKMM */
 
