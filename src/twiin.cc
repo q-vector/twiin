@@ -1341,7 +1341,7 @@ Twiin::vertical_profile (const Dstring& stage_str,
                {
 
                   Sounding* sounding_ptr = stage.get_sounding_ptr (
-                     lat_long_list, dtime, tephigram);
+                     lat_long_list, dtime, GSL_POSINF, tephigram);
                   sounding_ptr->save (file_path);
                   delete sounding_ptr;
                }
@@ -3425,10 +3425,10 @@ Twiin::render_vertical_profile (const RefPtr<Context>& cr,
 
 void
 Twiin::render_vertical_profile (const RefPtr<Context>& cr,
-                                  const Thermo_Diagram& thermo_diagram,
-                                  const Model::Stage& stage,
-                                  const Dtime& dtime,
-                                  const Lat_Long::List& lat_long_list)
+                                const Thermo_Diagram& thermo_diagram,
+                                const Model::Stage& stage,
+                                const Dtime& dtime,
+                                const Lat_Long::List& lat_long_list)
 {
 
    cr->save ();
@@ -3437,7 +3437,7 @@ Twiin::render_vertical_profile (const RefPtr<Context>& cr,
    cr->paint ();
 
    const Sounding* sounding_ptr = stage.get_sounding_ptr (
-      lat_long_list, dtime, thermo_diagram);
+      lat_long_list, dtime, GSL_POSINF, thermo_diagram);
    const Sounding& sounding = *sounding_ptr;
 
    cr->set_line_width (1);

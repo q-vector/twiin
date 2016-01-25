@@ -720,7 +720,8 @@ Model::Stage::evaluate_raw (const Dstring& varname,
 void
 Model::Stage::fill_sounding (Sounding& sounding,
                              const Lat_Long& lat_long,
-                             const Dtime& dtime) const
+                             const Dtime& dtime,
+                             const Real ceiling) const
 {
 
 
@@ -754,12 +755,15 @@ Model::Stage::fill_sounding (Sounding& sounding,
    for (Integer k = 0; k < 70; k++)
    {
 
+      const Real z_rho = model.get_z (k, topography, A_rho, B_rho);
+      const Real z_theta = model.get_z (k, topography, A_theta, B_theta);
+
+      if (z_rho > ceiling || z_theta > ceiling) { continue; }
+
       const Real t = evaluate (T, i, j, k, uppers_l);
       const Real t_d = evaluate (TD, i, j, k, uppers_l);
       const Real u = evaluate (U, i, j, k, uppers_l);
       const Real v = evaluate (V, i, j, k, uppers_l);
-      const Real z_rho = model.get_z (k, topography, A_rho, B_rho);
-      const Real z_theta = model.get_z (k, topography, A_theta, B_theta);
       const Real p_rho = evaluate (P_RHO, i, j, k, uppers_l);
       const Real p_theta = evaluate (P_THETA, i, j, k, uppers_l);
 
@@ -2690,9 +2694,13 @@ Model::Stage::get_color (const Model::Product& product,
          const Real absolute = fabs (datum);
          const Real quantized = floor (absolute / 0.1) * 0.1;
          //const Real quantized = absolute;
-         const Real saturation = Domain_1D (0, 3.5).normalize (quantized) * 0.7;
+         const Real saturation = Domain_1D (0, 3.5).normalize (fabs (datum)) * 0.7;
+         //const Real saturation = Domain_1D (0, 3.5).normalize (quantized) * 0.7;
          //const Real saturation = Domain_1D (0, 0.5).normalize (quantized) * 0.7;
-         return Color::hsb (hue, saturation, 1.0);
+         const Real fluc_mag = 0.2;
+         const Real fluctuation = fluc_mag * cos (datum * M_PI / 0.5);
+         const Real brightness = 0.75 + fluctuation;
+         return Color::hsb (hue, saturation, brightness);
       }
 
       case Model::Product::W_TRANSLUCENT:
@@ -2992,10 +3000,10 @@ Model::Stage::get_color (const Model::Product& product,
          const Real hue = (datum < 0 ? 0.4 - fe * 0.03 : 0.75 + fe * 0.03);
          const Real d = log (fabs (datum));
          const Real saturation = Domain_1D (min, max).normalize (d);
-         const Real fluc_mag = 0.0;
-         //const Real fluctuation = fluc_mag * sin (e * M_PI / 1);
-         const Real fluctuation = 0;
-         const Real brightness = 0.95 + fluc_mag * fluctuation;
+         const Real fluc_mag = 0.2;
+         const Real fluctuation = fluc_mag * cos (e * M_PI / 0.5);
+         //const Real fluctuation = 0;
+         const Real brightness = 0.75 + fluctuation;
          return Color::hsb (hue, saturation, brightness);
       }
 
@@ -3402,7 +3410,7 @@ Model::Stage::get_cross_section_raster_ptr (const Box_2D& box_2d,
    const Model::Product& p = (is_speed ?
       Model::Product ("SPEED_HIGHER") : product);
 
-   Real x;
+   Real x, ceiling;
    Level level (Level::HEIGHT, GSL_NAN);
    Real& z = level.value;
 
@@ -3414,249 +3422,343 @@ Model::Stage::get_cross_section_raster_ptr (const Box_2D& box_2d,
    for (Integer i = index_2d.i; i < index_2d.i + size_2d.i; i++)
    {
 
-      transform.reverse (x, z, Real (i), 0);
+      const Integer ii = i - index_2d.i;
+      //transform.reverse (x, ceiling, Real (i), Real (index_2d.j));
+      transform.reverse (x, ceiling, Real (i), Real (0));
+
       if (x < 0 || x > distance) { continue; }
       const Lat_Long& lat_long = journey.get_lat_long (x, geodesy);
       const Lat_Long& ll = lat_long;
       if (out_of_bounds (ll)) { continue; }
 
       const Real topography = get_topography (ll);
+      const Real azimuth = journey.get_azimuth_forward (x, geodesy);
 
-      for (Integer j = index_2d.j; j < index_2d.j + size_2d.j; j++)
+      switch (product.enumeration)
       {
 
-         transform.reverse (x, z, Real (i), Real (j));
-
-         if (z < topography) { color = Color::black (); }
-         else
+         case Model::Product::SCORER:
          {
 
-            switch (product.enumeration)
+            const Sounding* sounding_ptr = get_sounding_ptr (
+               lat_long, dtime, ceiling);
+            const Real_Profile* profile_ptr =
+               sounding_ptr->get_scorer_profile_ptr (azimuth, u_bg);
+
+            for (Integer j = index_2d.j; j < index_2d.j + size_2d.j; j++)
             {
 
-               case Model::Product::WIND:
+               const Integer jj = j - index_2d.j;
+               transform.reverse (x, z, Real (i), Real (j));
+
+               if (z < topography) { color = Color::black (); }
+               else
                {
-                  const Real u = evaluate (U, ll, level, l);
-                  const Real v = evaluate (V, ll, level, l);
-                  const Wind wind (u, v);
-                  const Real direction = wind.get_direction ();
-                  const Real speed = wind.get_speed ();
-                  color = get_wind_color (direction, speed);
-                  break;
+                  const Real pressure = sounding_ptr->get_pressure (z);
+                  const Real datum = profile_ptr->get_ordinate (pressure);
+                  color = get_color (p, datum);
                }
 
-               case Model::Product::BRUNT_VAISALA:
+               raster_ptr->set_pixel (ii, jj, color);
+
+            }
+
+            delete profile_ptr;
+            delete sounding_ptr;
+            break;
+
+         };
+
+         case Model::Product::SCORER_A:
+         {
+
+            const Sounding* sounding_ptr = get_sounding_ptr (
+               lat_long, dtime, ceiling);
+            const Real_Profile* profile_ptr =
+               sounding_ptr->get_scorer_a_profile_ptr (azimuth, u_bg);
+
+            for (Integer j = index_2d.j; j < index_2d.j + size_2d.j; j++)
+            {
+
+               const Integer jj = j - index_2d.j;
+               transform.reverse (x, z, Real (i), Real (j));
+
+               if (z < topography) { color = Color::black (); }
+               else
                {
-                  const Real datum = evaluate_brunt_vaisala (ll, level, l);
+                  const Real pressure = sounding_ptr->get_pressure (z);
+                  const Real datum = profile_ptr->get_ordinate (pressure);
                   color = get_color (p, datum);
-                  break;
                }
 
-               case Model::Product::RICHARDSON:
+               raster_ptr->set_pixel (ii, jj, color);
+
+            }
+
+            delete profile_ptr;
+            delete sounding_ptr;
+            break;
+
+         };
+
+         case Model::Product::SCORER_B:
+         {
+
+            const Sounding* sounding_ptr = get_sounding_ptr (
+               lat_long, dtime, ceiling);
+            const Real_Profile* profile_ptr =
+               sounding_ptr->get_scorer_b_profile_ptr (azimuth, u_bg);
+
+            for (Integer j = index_2d.j; j < index_2d.j + size_2d.j; j++)
+            {
+
+               const Integer jj = j - index_2d.j;
+               transform.reverse (x, z, Real (i), Real (j));
+
+               if (z < topography) { color = Color::black (); }
+               else
                {
-                  const Real azimuth = journey.get_azimuth_forward (x, geodesy);
-                  const Real datum = evaluate_richardson (
-                     azimuth, ll, level, l);
+                  const Real pressure = sounding_ptr->get_pressure (z);
+                  const Real datum = profile_ptr->get_ordinate (pressure);
                   color = get_color (p, datum);
-                  break;
                }
 
-               case Model::Product::SCORER:
+               raster_ptr->set_pixel (ii, jj, color);
+
+            }
+
+            delete profile_ptr;
+            delete sounding_ptr;
+            break;
+
+         };
+
+         default:
+         {
+
+            for (Integer j = index_2d.j; j < index_2d.j + size_2d.j; j++)
+            {
+
+               transform.reverse (x, z, Real (i), Real (j));
+
+               if (z < topography) { color = Color::black (); }
+               else
                {
-                  const Real azimuth = journey.get_azimuth_forward (x, geodesy);
-                  const Real datum = evaluate_scorer (
-                     azimuth, ll, level, l, u_bg);
-                  color = get_color (p, datum);
-                  break;
+
+                  switch (product.enumeration)
+                  {
+
+                     case Model::Product::WIND:
+                     {
+                        const Real u = evaluate (U, ll, level, l);
+                        const Real v = evaluate (V, ll, level, l);
+                        const Wind wind (u, v);
+                        const Real direction = wind.get_direction ();
+                        const Real speed = wind.get_speed ();
+                        color = get_wind_color (direction, speed);
+                        break;
+                     }
+
+                     case Model::Product::BRUNT_VAISALA:
+                     {
+                        const Real datum = evaluate_brunt_vaisala (ll, level, l);
+                        color = get_color (p, datum);
+                        break;
+                     }
+
+                     case Model::Product::RICHARDSON:
+                     {
+                        const Real datum = evaluate_richardson (
+                           azimuth, ll, level, l);
+                        color = get_color (p, datum);
+                        break;
+                     }
+
+                     case Model::Product::SCORER:
+                     {
+                        const Real datum = evaluate_scorer (
+                           azimuth, ll, level, l, u_bg);
+                        color = get_color (p, datum);
+                        break;
+                     }
+
+                     case Model::Product::SCORER_A:
+                     {
+                        const Real datum = evaluate_scorer_a (
+                           azimuth, ll, level, l, u_bg);
+                        color = get_color (p, datum);
+                        break;
+                     }
+
+                     case Model::Product::SCORER_B:
+                     {
+                        const Real datum = evaluate_scorer_b (
+                           azimuth, ll, level, l, u_bg);
+                        color = get_color (p, datum);
+                        break;
+                     }
+
+                     case Model::Product::ALONG_SPEED:
+                     {
+                        const Real datum = evaluate_along_speed (
+                           azimuth, ll, level, l, u_bg);
+                        color = get_color (p, datum);
+                        break;
+                     }
+
+                     case Model::Product::NORMAL_SPEED:
+                     {
+                        const Real datum = evaluate_normal_speed (
+                           azimuth, lat_long, level, l);
+                        color = get_color (p, datum);
+                        break;
+                     }
+
+                     case Model::Product::Q_TENDENCY:
+                     {
+                        size_t i, j;
+                        const Real datum = evaluate_s_tendency (
+                           Q, azimuth, lat_long, level, l, u_bg);
+                        color = get_color (p, datum);
+                        break;
+                     }
+
+                     case Model::Product::Q_ADVECTION:
+                     {
+                        const Real h = evaluate_h_advection (Q, ll, level, l);
+                        const Real v = evaluate_v_advection (Q, ll, level, l);
+                        const Real datum = h + v;
+                        color = get_color (p, datum);
+                        break;
+                     }
+
+                     case Model::Product::Q_H_ADVECTION:
+                     {
+                        const Real datum = evaluate_h_advection (Q, ll, level, l);
+                        color = get_color (p, datum);
+                        break;
+                     }
+
+                     case Model::Product::Q_V_ADVECTION:
+                     {
+                        const Real datum = evaluate_v_advection (Q, ll, level, l);
+                        color = get_color (p, datum);
+                        break;
+                     }
+
+                     case Model::Product::Q_S_ADVECTION:
+                     {
+                        const Real datum = evaluate_s_advection (Q, azimuth, ll, level, l, u_bg);
+                        color = get_color (p, datum);
+                        break;
+                     }
+
+                     case Model::Product::Q_N_ADVECTION:
+                     {
+                        const Real datum = evaluate_n_advection (Q, azimuth, ll, level, l);
+                        color = get_color (p, datum);
+                        break;
+                     }
+
+                     case Model::Product::Q_SV_ADVECTION:
+                     {
+                        const Real s = evaluate_s_advection (Q, azimuth, ll, level, l, u_bg);
+                        const Real v = evaluate_v_advection (Q, ll, level, l);
+                        const Real datum = s + v;
+                        color = get_color (p, datum);
+                        break;
+                     }
+
+                     case Model::Product::Q_NV_ADVECTION:
+                     {
+                        const Real n = evaluate_n_advection (Q, azimuth, ll, level, l);
+                        const Real v = evaluate_v_advection (Q, ll, level, l);
+                        const Real datum = n + v;
+                        color = get_color (p, datum);
+                        break;
+                     }
+
+                     case Model::Product::THETA_TENDENCY:
+                     {
+                        size_t i, j;
+                        const Real datum = evaluate_s_tendency (
+                           THETA, azimuth, lat_long, level, l, u_bg);
+                        color = get_color (p, datum);
+                        break;
+                     }
+
+                     case Model::Product::THETA_ADVECTION:
+                     {
+                        const Real h = evaluate_h_advection (THETA, ll, level, l);
+                        const Real v = evaluate_v_advection (THETA, ll, level, l);
+                        const Real datum = h + v;
+                        color = get_color (p, datum);
+                        break;
+                     }
+
+                     case Model::Product::THETA_H_ADVECTION:
+                     {
+                        const Real datum = evaluate_h_advection (THETA, ll, level, l);
+                        color = get_color (p, datum);
+                        break;
+                     }
+
+                     case Model::Product::THETA_V_ADVECTION:
+                     {
+                        const Real datum = evaluate_v_advection (THETA, ll, level, l);
+                        color = get_color (p, datum);
+                        break;
+                     }
+
+                     case Model::Product::THETA_S_ADVECTION:
+                     {
+                        const Real datum = evaluate_s_advection (THETA, azimuth, ll, level, l, u_bg);
+                        color = get_color (p, datum);
+                        break;
+                     }
+
+                     case Model::Product::THETA_N_ADVECTION:
+                     {
+                        const Real datum = evaluate_n_advection (THETA, azimuth, ll, level, l);
+                        color = get_color (p, datum);
+                        break;
+                     }
+
+                     case Model::Product::THETA_SV_ADVECTION:
+                     {
+                        const Real s = evaluate_s_advection (THETA, azimuth, ll, level, l, u_bg);
+                        const Real v = evaluate_v_advection (THETA, ll, level, l);
+                        const Real datum = s + v;
+                        color = get_color (p, datum);
+                        break;
+                     }
+
+                     case Model::Product::THETA_NV_ADVECTION:
+                     {
+                        const Real n = evaluate_n_advection (THETA, azimuth, ll, level, l);
+                        const Real v = evaluate_v_advection (THETA, ll, level, l);
+                        const Real datum = n + v;
+                        color = get_color (p, datum);
+                        break;
+                     }
+
+                     default:
+                     {
+                        const Met_Element met_element = product.get_met_element ();
+                        const Real datum = evaluate (met_element, ll, level, l);
+                        color = get_color (p, datum);
+                        break;
+                     }
+
+                  }
+
                }
 
-               case Model::Product::SCORER_A:
-               {
-                  const Real azimuth = journey.get_azimuth_forward (x, geodesy);
-                  const Real datum = evaluate_scorer_a (
-                     azimuth, ll, level, l, u_bg);
-                  color = get_color (p, datum);
-                  break;
-               }
-
-               case Model::Product::SCORER_B:
-               {
-                  const Real azimuth = journey.get_azimuth_forward (x, geodesy);
-                  const Real datum = evaluate_scorer_b (
-                     azimuth, ll, level, l, u_bg);
-                  color = get_color (p, datum);
-                  break;
-               }
-
-               case Model::Product::ALONG_SPEED:
-               {
-                  const Real azimuth = journey.get_azimuth_forward (x, geodesy);
-                  const Real datum = evaluate_along_speed (
-                     azimuth, ll, level, l, u_bg);
-                  color = get_color (p, datum);
-                  break;
-               }
-
-               case Model::Product::NORMAL_SPEED:
-               {
-                  const Real azimuth = journey.get_azimuth_forward (x, geodesy);
-                  const Real datum = evaluate_normal_speed (
-                     azimuth, lat_long, level, l);
-                  color = get_color (p, datum);
-                  break;
-               }
-
-               case Model::Product::Q_TENDENCY:
-               {
-                  const Real azimuth = journey.get_azimuth_forward (x, geodesy);
-                  size_t i, j;
-                  const Real datum = evaluate_s_tendency (
-                     Q, azimuth, lat_long, level, l, u_bg);
-                  color = get_color (p, datum);
-                  break;
-               }
-
-               case Model::Product::Q_ADVECTION:
-               {
-                  const Real h = evaluate_h_advection (Q, ll, level, l);
-                  const Real v = evaluate_v_advection (Q, ll, level, l);
-                  const Real datum = h + v;
-                  color = get_color (p, datum);
-                  break;
-               }
-
-               case Model::Product::Q_H_ADVECTION:
-               {
-                  const Real datum = evaluate_h_advection (Q, ll, level, l);
-                  color = get_color (p, datum);
-                  break;
-               }
-
-               case Model::Product::Q_V_ADVECTION:
-               {
-                  const Real datum = evaluate_v_advection (Q, ll, level, l);
-                  color = get_color (p, datum);
-                  break;
-               }
-
-               case Model::Product::Q_S_ADVECTION:
-               {
-                  const Real azimuth = journey.get_azimuth_forward (x, geodesy);
-                  const Real datum = evaluate_s_advection (Q, azimuth, ll, level, l, u_bg);
-                  color = get_color (p, datum);
-                  break;
-               }
-
-               case Model::Product::Q_N_ADVECTION:
-               {
-                  const Real azimuth = journey.get_azimuth_forward (x, geodesy);
-                  const Real datum = evaluate_n_advection (Q, azimuth, ll, level, l);
-                  color = get_color (p, datum);
-                  break;
-               }
-
-               case Model::Product::Q_SV_ADVECTION:
-               {
-                  const Real azimuth = journey.get_azimuth_forward (x, geodesy);
-                  const Real s = evaluate_s_advection (Q, azimuth, ll, level, l, u_bg);
-                  const Real v = evaluate_v_advection (Q, ll, level, l);
-                  const Real datum = s + v;
-                  color = get_color (p, datum);
-                  break;
-               }
-
-               case Model::Product::Q_NV_ADVECTION:
-               {
-                  const Real azimuth = journey.get_azimuth_forward (x, geodesy);
-                  const Real n = evaluate_n_advection (Q, azimuth, ll, level, l);
-                  const Real v = evaluate_v_advection (Q, ll, level, l);
-                  const Real datum = n + v;
-                  color = get_color (p, datum);
-                  break;
-               }
-
-               case Model::Product::THETA_TENDENCY:
-               {
-                  const Real azimuth = journey.get_azimuth_forward (x, geodesy);
-                  size_t i, j;
-                  const Real datum = evaluate_s_tendency (
-                     THETA, azimuth, lat_long, level, l, u_bg);
-                  color = get_color (p, datum);
-                  break;
-               }
-
-               case Model::Product::THETA_ADVECTION:
-               {
-                  const Real h = evaluate_h_advection (THETA, ll, level, l);
-                  const Real v = evaluate_v_advection (THETA, ll, level, l);
-                  const Real datum = h + v;
-                  color = get_color (p, datum);
-                  break;
-               }
-
-               case Model::Product::THETA_H_ADVECTION:
-               {
-                  const Real datum = evaluate_h_advection (THETA, ll, level, l);
-                  color = get_color (p, datum);
-                  break;
-               }
-
-               case Model::Product::THETA_V_ADVECTION:
-               {
-                  const Real datum = evaluate_v_advection (THETA, ll, level, l);
-                  color = get_color (p, datum);
-                  break;
-               }
-
-               case Model::Product::THETA_S_ADVECTION:
-               {
-                  const Real azimuth = journey.get_azimuth_forward (x, geodesy);
-                  const Real datum = evaluate_s_advection (THETA, azimuth, ll, level, l, u_bg);
-                  color = get_color (p, datum);
-                  break;
-               }
-
-               case Model::Product::THETA_N_ADVECTION:
-               {
-                  const Real azimuth = journey.get_azimuth_forward (x, geodesy);
-                  const Real datum = evaluate_n_advection (THETA, azimuth, ll, level, l);
-                  color = get_color (p, datum);
-                  break;
-               }
-
-               case Model::Product::THETA_SV_ADVECTION:
-               {
-                  const Real azimuth = journey.get_azimuth_forward (x, geodesy);
-                  const Real s = evaluate_s_advection (THETA, azimuth, ll, level, l, u_bg);
-                  const Real v = evaluate_v_advection (THETA, ll, level, l);
-                  const Real datum = s + v;
-                  color = get_color (p, datum);
-                  break;
-               }
-
-               case Model::Product::THETA_NV_ADVECTION:
-               {
-                  const Real azimuth = journey.get_azimuth_forward (x, geodesy);
-                  const Real n = evaluate_n_advection (THETA, azimuth, ll, level, l);
-                  const Real v = evaluate_v_advection (THETA, ll, level, l);
-                  const Real datum = n + v;
-                  color = get_color (p, datum);
-                  break;
-               }
-
-               default:
-               {
-                  const Met_Element met_element = product.get_met_element ();
-                  const Real datum = evaluate (met_element, ll, level, l);
-                  color = get_color (p, datum);
-                  break;
-               }
+               raster_ptr->set_pixel (i - index_2d.i, j - index_2d.j, color);
 
             }
 
          }
-
-         raster_ptr->set_pixel (i - index_2d.i, j - index_2d.j, color);
 
       }
 
@@ -3675,7 +3777,6 @@ Model::Stage::get_time_cross_raster_ptr (const Box_2D& box_2d,
                                          const Real azimuth) const
 {
 
-cout << "model stage azimuth " << azimuth << endl;
    Raster* raster_ptr = new Raster (box_2d);
 
    Color color;
@@ -3684,7 +3785,7 @@ cout << "model stage azimuth " << azimuth << endl;
    const Model::Product& p = (is_speed ?
       Model::Product ("SPEED_HIGHER") : product);
 
-   Real t;
+   Real t, ceiling;
    Level level (Level::HEIGHT, GSL_NAN);
    Real& z = level.value;
 
@@ -3697,13 +3798,14 @@ cout << "model stage azimuth " << azimuth << endl;
    for (Integer ii = index_2d.i; ii < index_2d.i + size_2d.i; ii++)
    {
 
-      transform.reverse (t, z, Real (ii), 0);
+      const Integer iii = ii - index_2d.i;
+      //transform.reverse (t, ceiling, Real (ii), Real (index_2d.j));
+      transform.reverse (t, ceiling, Real (ii), Real (0));
+
       Dtime dtime (t);
       if (dtime < start_time || dtime > end_time) { continue; }
 
       const size_t l = get_uppers_l (dtime);
-//      dtime = valid_uppers_time_vector[l];
-//      if (dtime < start_time || dtime > end_time) { continue; }
 
       const Lat_Long& lat_long = location;
       const Lat_Long& ll = lat_long;
@@ -3720,27 +3822,30 @@ cout << "model stage azimuth " << azimuth << endl;
          case Model::Product::SCORER:
          {
 
-            const Sounding* sounding_ptr = get_sounding_ptr (lat_long, dtime);
-            const Real_Profile* scorer_profile_ptr =
+            const Sounding* sounding_ptr = get_sounding_ptr (
+               lat_long, dtime, ceiling);
+            const Real_Profile* profile_ptr =
                sounding_ptr->get_scorer_profile_ptr (azimuth);
 
             for (Integer jj = index_2d.j; jj < index_2d.j + size_2d.j; jj++)
             {
 
+               const Integer jjj = jj - index_2d.j;
                transform.reverse (t, z, Real (ii), Real (jj));
 
                if (z < topography) { color = Color::black (); }
                else
                {
                   const Real pressure = sounding_ptr->get_pressure (z);
-                  const Real datum = scorer_profile_ptr->get_ordinate (pressure);
+                  const Real datum = profile_ptr->get_ordinate (pressure);
                   color = get_color (p, datum);
-                  raster_ptr->set_pixel (ii - index_2d.i, jj - index_2d.j, color);
                }
+
+               raster_ptr->set_pixel (iii, jjj, color);
 
             }
 
-            delete scorer_profile_ptr;
+            delete profile_ptr;
             delete sounding_ptr;
             break;
 
@@ -3749,27 +3854,30 @@ cout << "model stage azimuth " << azimuth << endl;
          case Model::Product::SCORER_A:
          {
 
-            const Sounding* sounding_ptr = get_sounding_ptr (lat_long, dtime);
-            const Real_Profile* scorer_a_profile_ptr =
+            const Sounding* sounding_ptr = get_sounding_ptr (
+               lat_long, dtime, ceiling);
+            const Real_Profile* profile_ptr =
                sounding_ptr->get_scorer_a_profile_ptr (azimuth);
 
             for (Integer jj = index_2d.j; jj < index_2d.j + size_2d.j; jj++)
             {
 
+               const Integer jjj = jj - index_2d.j;
                transform.reverse (t, z, Real (ii), Real (jj));
 
                if (z < topography) { color = Color::black (); }
                else
                {
                   const Real pressure = sounding_ptr->get_pressure (z);
-                  const Real datum = scorer_a_profile_ptr->get_ordinate (pressure);
+                  const Real datum = profile_ptr->get_ordinate (pressure);
                   color = get_color (p, datum);
-                  raster_ptr->set_pixel (ii - index_2d.i, jj - index_2d.j, color);
                }
+
+               raster_ptr->set_pixel (iii, jjj, color);
 
             }
 
-            delete scorer_a_profile_ptr;
+            delete profile_ptr;
             delete sounding_ptr;
             break;
 
@@ -3778,27 +3886,30 @@ cout << "model stage azimuth " << azimuth << endl;
          case Model::Product::SCORER_B:
          {
 
-            const Sounding* sounding_ptr = get_sounding_ptr (lat_long, dtime);
-            const Real_Profile* scorer_b_profile_ptr =
+            const Sounding* sounding_ptr = get_sounding_ptr (
+               lat_long, dtime, ceiling);
+            const Real_Profile* profile_ptr =
                sounding_ptr->get_scorer_b_profile_ptr (azimuth);
 
             for (Integer jj = index_2d.j; jj < index_2d.j + size_2d.j; jj++)
             {
 
+               const Integer jjj = jj - index_2d.j;
                transform.reverse (t, z, Real (ii), Real (jj));
 
                if (z < topography) { color = Color::black (); }
                else
                {
                   const Real pressure = sounding_ptr->get_pressure (z);
-                  const Real datum = scorer_b_profile_ptr->get_ordinate (pressure);
+                  const Real datum = profile_ptr->get_ordinate (pressure);
                   color = get_color (p, datum);
-                  raster_ptr->set_pixel (ii - index_2d.i, jj - index_2d.j, color);
                }
+
+               raster_ptr->set_pixel (iii, jjj, color);
 
             }
 
-            delete scorer_b_profile_ptr;
+            delete profile_ptr;
             delete sounding_ptr;
             break;
 
@@ -3810,6 +3921,7 @@ cout << "model stage azimuth " << azimuth << endl;
             for (Integer jj = index_2d.j; jj < index_2d.j + size_2d.j; jj++)
             {
 
+               const Integer jjj = jj - index_2d.j;
                transform.reverse (t, z, Real (ii), Real (jj));
 
                if (z < topography) { color = Color::black (); }
@@ -4030,7 +4142,7 @@ cout << "model stage azimuth " << azimuth << endl;
 
                }
 
-               raster_ptr->set_pixel (ii - index_2d.i, jj - index_2d.j, color);
+               raster_ptr->set_pixel (iii, jjj, color);
 
             }
 
@@ -4072,7 +4184,7 @@ Model::Stage::get_time_cross_raster_ptr (const Box_2D& box_2d,
    for (Integer ii = index_2d.i; ii < index_2d.i + size_2d.i; ii++)
    {
 
-      transform.reverse (t, z, Real (ii), 0);
+      transform.reverse (t, z, Real (ii), Real (index_2d.j));
       Dtime dtime (t);
       if (dtime < start_time || dtime > end_time) { continue; }
 
@@ -4679,7 +4791,8 @@ Model::Stage::get_aws_repository_ptr (const Lat_Long& lat_long,
 
 Sounding*
 Model::Stage::get_sounding_ptr (const Lat_Long& lat_long,
-                                const Dtime& dtime) const
+                                const Dtime& dtime,
+                                const Real ceiling) const
 {
 
    const Dtime& basetime = model.get_basetime ();
@@ -4688,7 +4801,7 @@ Model::Stage::get_sounding_ptr (const Lat_Long& lat_long,
    sounding_ptr->set_time (dtime);
    sounding_ptr->set_basetime (basetime);
    sounding_ptr->set_location_str (lat_long.get_string (4));
-   fill_sounding (*sounding_ptr, lat_long, dtime);
+   fill_sounding (*sounding_ptr, lat_long, dtime, ceiling);
 
    return sounding_ptr;
 
@@ -4697,6 +4810,7 @@ Model::Stage::get_sounding_ptr (const Lat_Long& lat_long,
 Sounding*
 Model::Stage::get_sounding_ptr (const Lat_Long::List& lat_long_list,
                                 const Dtime& dtime,
+                                const Real ceiling,
                                 const Thermo_Diagram& thermo_diagram) const
 {
 
@@ -4704,7 +4818,7 @@ Model::Stage::get_sounding_ptr (const Lat_Long::List& lat_long_list,
    if (is_singular)
    {
       const Lat_Long& lat_long = lat_long_list.front ();
-      return get_sounding_ptr (lat_long, dtime);
+      return get_sounding_ptr (lat_long, dtime, ceiling);
    }
    else
    {
@@ -4718,7 +4832,7 @@ Model::Stage::get_sounding_ptr (const Lat_Long::List& lat_long_list,
          const Lat_Long& ll = *(iterator);
          const Dstring prefix (iterator == lat_long_list.begin () ? "" : ":");
          location_str += prefix + ll.get_string (4);
-         const Sounding* sounding_ptr = get_sounding_ptr (ll, dtime);
+         const Sounding* sounding_ptr = get_sounding_ptr (ll, dtime, ceiling);
          sounding_ptr_list.push_back (sounding_ptr);
       }
 

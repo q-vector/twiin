@@ -237,7 +237,8 @@ namespace twiin
                void
                fill_sounding (Sounding& sounding,
                               const Lat_Long& lat_long,
-                              const Dtime& dtime) const;
+                              const Dtime& dtime,
+                              const Real ceiling = GSL_POSINF) const;
 
             public:
 
@@ -814,11 +815,13 @@ namespace twiin
 
                Sounding*
                get_sounding_ptr (const Lat_Long& lat_long,
-                                 const Dtime& dtime) const;
+                                 const Dtime& dtime,
+                                 const Real ceiling = GSL_POSINF) const;
 
                Sounding*
                get_sounding_ptr (const Lat_Long::List& lat_long_list,
                                  const Dtime& dtime,
+                                 const Real ceiling = GSL_POSINF,
                                  const Thermo_Diagram& thermo_diagram = Tephigram ()) const;
 
                Tokens
