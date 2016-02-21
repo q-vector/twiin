@@ -1959,7 +1959,7 @@ Twiin::usage ()
    cout << "  -T  --title=STR                    display this help and exit" << endl;
    cout << "  -t  --time=YYYYMMDDHHMM            display this help and exit" << endl;
    cout << "  -u  --u_bg=NUMBER                  display this help and exit" << endl;
-   cout << "  -v  --vertical-profile=STR         display this help and exit" << endl;
+   cout << "  -v  --vertical-profile             display this help and exit" << endl;
    cout << "  -W  --no-wind-barb                 display this help and exit" << endl;
    cout << "  -X  --time-cross                   display this help and exit" << endl;
    cout << "  -x  --cross-section                display this help and exit" << endl;
