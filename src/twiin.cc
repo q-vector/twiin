@@ -1973,8 +1973,14 @@ Twiin::usage ()
    cout << endl;
    cout << "  Vertical Cross Section:" << endl;
    cout << endl;
-   cout << "    twiin -g 1024x300 -L -h 3000m -d 120e3 -s STAGE4 -p Q:THETA -t 201310170000 -x -J -35.2378,144.8571@-37.9481,148.9278" << endl;
+   cout << "    twiin -g 1024x300 -L -h 3000m -s STAGE4 -p Q:THETA -t 201310170000 -x -J -35.2378,144.8571@-37.9481,148.9278" << endl;
    cout << "    twiin -g 1024x300 -L -h 4000m -d 180e3 -s STAGE4 -p THETA:W -t 201310170000 -x -j X:Y:Z -M whatever_file.trajector.gz" << endl;
+   cout << endl;
+   cout << endl;
+   cout << "  Vertical Profile:" << endl;
+   cout << endl;
+   cout << "    twiin -g 800x900 -s STAGE4 -t 201310170200 -v -O 63292 " << endl;
+   cout << "    twiin -g 800x900 -s STAGE4 -t 201310170200 -v -O -35.2378,144.8571 " << endl;
    cout << endl;
 
 }
