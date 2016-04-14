@@ -141,6 +141,7 @@ namespace twiin
                const Dstring& filename,
                const Dstring& color_bar_str,
                const Dstring& scale_bar_str,
+               const list<Polygon>& polygon_list,
                const bool no_stage,
                const bool no_wind_barb,
                const bool is_bludge) const;
@@ -159,6 +160,7 @@ namespace twiin
                const Dstring& filename,
                const Dstring& color_bar_str,
                const Dstring& scale_bar_str,
+               const list<Polygon>& polygon_list,
                const bool no_stage,
                const bool no_wind_barb,
                const bool is_bludge) const;
@@ -253,6 +255,9 @@ namespace twiin
 
                Track::Map
                trajectory_map;
+
+               list<Polygon>
+               polygon_list;
 
                void
                twiin_trajectory_generate (const Dstring& identifier,
@@ -383,6 +388,11 @@ namespace twiin
                     const Location& location);
 
          static void
+         render_polygon_list (const RefPtr<Context>& cr,
+                              const Geodetic_Transform& transform,
+                              const list<Polygon>& polygon_list);
+
+         static void
          render_stages (const RefPtr<Context>& cr,
                         const Geodetic_Transform& transform,
                         const Data& data);
@@ -454,6 +464,7 @@ namespace twiin
                  const Level& level,
                  const Dstring& stage_str,
                  const Model::Product product,
+                 const list<Polygon>& polygon_list,
                  const bool no_stage,
                  const bool no_wind_barb);
 
@@ -643,6 +654,9 @@ namespace twiin
 
                Level
                level;
+
+               list<Polygon>
+               polygon_list;
 
                Tokens
                get_tokens (const Marker& marker) const;

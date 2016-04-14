@@ -23,13 +23,14 @@ main (int argc,
    {
       { "azimuth",                      1, 0, 'A' },
       { "annotation",                   1, 0, 'a' },
+      { "polygon",                      1, 0, 'B' },
       { "bludge",                       0, 0, 'b' },
       { "color-bar",                    1, 0, 'C' },
       { "config",                       1, 0, 'c' },
       { "filename",                     1, 0, 'F' },
       { "format",                       1, 0, 'f' },
-      { "geometry",                     1, 0, 'g' },
       { "gui",                          0, 0, 'G' },
+      { "geometry",                     1, 0, 'g' },
       { "height",                       1, 0, 'h' },
       { "plot-first-char-of-track-id",  0, 0, 'I' },
       { "interactive",                  0, 0, 'i' },
@@ -96,10 +97,11 @@ main (int argc,
    Dstring track_id_str ("");
    bool track_id_initial = false;
    Dstring config_file_path (Dstring (getenv ("HOME")) + "/.twiin.rc");
+   list<Polygon> polygon_list;
 
    int c;
    int option_index = 0;
-   char optstring[] = "A:a:bC:c:d:F:f:Gg:h:IiJ:j:K:Ll:M:mNO:o:Pp:Ss:T:t:u:vVWXxz:?";
+   char optstring[] = "A:a:B:bC:c:d:F:f:Gg:h:IiJ:j:K:Ll:M:mNO:o:Pp:Ss:T:t:u:vVWXxz:?";
    while ((c = getopt_long (argc, argv, optstring,
           long_options, &option_index)) != -1)
    {
@@ -116,6 +118,12 @@ main (int argc,
          case 'a':
          {
             annotation_tokens.push_back (Dstring (optarg));
+            break;
+         }
+
+         case 'B':
+         {
+            polygon_list.push_back (Polygon (optarg));
             break;
          }
 
@@ -448,8 +456,8 @@ main (int argc,
                twiin.plan (stage_str, product_str, level_str, time_str,
                   zoom_str, track_id_str, track_id_initial, track_map,
                   annotation_tokens, format, title_tokens, filename,
-                  color_bar_str, scale_bar_str, no_stage, no_wind_barb,
-                  is_bludge);
+                  color_bar_str, scale_bar_str, polygon_list, no_stage,
+                  no_wind_barb, is_bludge);
             }
             else
             if (track_specified)
@@ -457,7 +465,7 @@ main (int argc,
                twiin.plan (stage_str, product_str, time_str, zoom_str,
                   track_id_str, track_id_initial, track_map, annotation_tokens,
                   format, title_tokens, filename, color_bar_str, scale_bar_str,
-                  no_stage, no_wind_barb, is_bludge);
+                  polygon_list, no_stage, no_wind_barb, is_bludge);
             }
          }
       }

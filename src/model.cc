@@ -430,7 +430,7 @@ Model::Product::get_tick_tuple () const
       case Model::Product::SCORER_A:
       case Model::Product::SCORER_B:
       {
-         return Tuple ("1e-8:3.2e-8:1e-7:3.2e-7:3.2e-7:1e-6:3.2e-6:1e-5");
+         return Tuple ("1e-8:1e-7:1e-6:1e-5:1e-4");
       }
 
       default:
@@ -2993,17 +2993,25 @@ Model::Stage::get_color (const Model::Product& product,
       case Model::Product::SCORER_B:
       {
          if (!gsl_finite (datum)) { return Color::gray (0.5); }
-         const Real e = (log10 (fabs (datum)) - (-8.0));
-         const Integer fe = floor (e * 4) / 4;
+         const bool negative = datum < 0;
+         //const Real e = (log10 (fabs (datum)) - (-8.0));
+         const Real e = log10 (fabs (datum));
+         const Integer fe = min (3, floor ((e + 8) * 4) / 4);
          const Real min = log (1e-8);
          const Real max = log (1e-5);
-         const Real hue = (datum < 0 ? 0.4 - fe * 0.03 : 0.75 + fe * 0.03);
          const Real d = log (fabs (datum));
-         const Real saturation = Domain_1D (min, max).normalize (d);
-         const Real fluc_mag = 0.2;
-         const Real fluctuation = fluc_mag * cos (e * M_PI / 0.5);
+         const bool strong_positive_e = (e > -6) && !negative;
+         const bool small_e = (e < -7);
+         const Real hue = (strong_positive_e ? 0.8 : 
+                           negative ? 0.46 - fe * 0.15 : 0.65);
+         //const Real saturation = Domain_1D (min, max).normalize (d);
+         const Real saturation = (small_e ? 0.3 : 0.85);
+         const Real brightness = 0.8;
+         const Real fluc_mag = 0.0;
+         //const Real fluctuation = -fluc_mag * cos (e * M_PI / 0.5);
+         //const Real fluctuation = fluc_mag * (e - floor (e)) * 0.98;
          //const Real fluctuation = 0;
-         const Real brightness = 0.75 + fluctuation;
+         //const Real brightness = 0.98 + fluctuation;
          return Color::hsb (hue, saturation, brightness);
       }
 

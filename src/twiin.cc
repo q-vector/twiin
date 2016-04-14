@@ -246,6 +246,7 @@ Twiin::plan (const Dstring& stage_str,
              const Dstring& filename,
              const Dstring& color_bar_str,
              const Dstring& scale_bar_str,
+             const list<Polygon>& polygon_list,
              const bool no_stage,
              const bool no_wind_barb,
              const bool is_bludge) const
@@ -323,9 +324,12 @@ Twiin::plan (const Dstring& stage_str,
                                  (p.enumeration == Model::Product::IR4) ||
                                  (p.enumeration == Model::Product::VIS);
 
+cout << "is_hrit = " << (is_hrit ? "yes" : "no") << endl;
+
             const vector<Dtime>& valid_time_vector = is_hrit ?
                hrit.get_valid_time_vector (time_set) :
                stage.get_valid_time_vector (product, level, time_set);
+cout << valid_time_vector.size () << endl;
 
             #pragma omp parallel for
             for (Integer l = 0; l < valid_time_vector.size (); l++)
@@ -347,7 +351,7 @@ Twiin::plan (const Dstring& stage_str,
                   RefPtr<Context> cr = denise::get_cr (surface);
 
                   Twiin::render (cr, transform, size_2d, data,
-                     dtime, level, s, p, no_stage,
+                     dtime, level, s, p, polygon_list, no_stage,
                      no_wind_barb);
 
                   if (gshhs_ptr != NULL)
@@ -370,7 +374,10 @@ Twiin::plan (const Dstring& stage_str,
                        t != track_id_tokens.end (); t++)
                   {
 
-                     const Dstring& track_id = *(t);
+                     const Dstring& token = *(t);
+                     const char c = token[0];
+                     const bool bw_track = (c == '@' || c == '^');
+                     const Dstring& track_id = token.substr (bw_track ? 1 : 0);
                      const Track& track = track_map.at (track_id);
 
                      const Real start_tau = track.get_start_tau ();
@@ -390,9 +397,11 @@ Twiin::plan (const Dstring& stage_str,
                         const Real zz = std::min (z, 5000.0);
                         const Real hue = (zz / 5000) * 0.833;
                         const Point_2D& point = transform.transform (lat_long);
+                        const Color& color = !bw_track ? Color::hsb (hue, 0.8, 0.6) :
+                           (c == '^' ? Color::black () : Color::white ());
                         Color::black (0.5).cairo (cr);
                         Ring (0.4).cairo (cr, point);
-                        Color::hsb (hue, 0.8, 0.6).cairo (cr);
+                        color.cairo (cr);
                         Ring (0.4).cairo (cr, point);
                         cr->fill ();
                      }
@@ -405,9 +414,11 @@ Twiin::plan (const Dstring& stage_str,
                      const Real zz = std::min (z, 5000.0);
                      const Real hue = (zz / 5000) * 0.833;
                      const Point_2D& point = transform.transform (lat_long);
+                     const Color& color = !bw_track ? Color::hsb (hue, 0.8, 0.6) :
+                        (c == '^' ? Color::black () : Color::white ());
                      Color::black (0.5).cairo (cr);
                      Label (track_id_icon, point + Point_2D (2, 2), 'c', 'c').cairo (cr);
-                     Color::hsb (hue, 0.8, 0.6).cairo (cr);
+                     color.cairo (cr);
                      Label (track_id_icon, point, 'c', 'c').cairo (cr);
 
                   }
@@ -464,6 +475,7 @@ Twiin::plan (const Dstring& stage_str,
              const Dstring& filename,
              const Dstring& color_bar_str,
              const Dstring& scale_bar_str,
+             const list<Polygon>& polygon_list,
              const bool no_stage,
              const bool no_wind_barb,
              const bool is_bludge) const
@@ -588,8 +600,8 @@ Twiin::plan (const Dstring& stage_str,
                      size_2d, format, file_path);
                   RefPtr<Context> cr = denise::get_cr (surface);
 
-                  Twiin::render (cr, transform, size_2d, data,
-                     dtime, level, s, p, no_stage, no_wind_barb);
+                  Twiin::render (cr, transform, size_2d, data, dtime,
+                     level, s, p, polygon_list, no_stage, no_wind_barb);
 
                   if (gshhs_ptr != NULL)
                   {
@@ -699,7 +711,7 @@ Twiin::cross_section (const Dstring& stage_str,
    const Dtime& basetime = model.get_basetime ();
 
    const Real margin_l = 50;
-   const Real margin_r = 20 + 80;
+   const Real margin_r = 20 + 90;
    const Real margin_t = title.get_height () + 10;
    const Real margin_b = 20;
    const Real w = size_2d.i - margin_l - margin_r;
@@ -827,7 +839,7 @@ Twiin::cross_section (const Dstring& stage_str,
    const Dtime& basetime = model.get_basetime ();
 
    const Real margin_l = 50;
-   const Real margin_r = 20 + 80;
+   const Real margin_r = 20 + 90;
    const Real margin_t = title.get_height () + 10;
    const Real margin_b = 20;
    const Real w = size_2d.i - margin_l - margin_r;
@@ -978,7 +990,7 @@ cout << "twiin::time_cross a " << endl;
    const Station::Map& station_map = data.get_station_map ();
 
    const Real margin_l = 50;
-   const Real margin_r = 20 + 80;
+   const Real margin_r = 20 + 90;
    const Real margin_t = title.get_height () + 10;
    const Real margin_b = 40;
    const Real w = size_2d.i - margin_l - margin_r;
@@ -1095,7 +1107,7 @@ Twiin::time_cross (const Dstring& stage_str,
    const Dtime& basetime = model.get_basetime ();
 
    const Real margin_l = 50;
-   const Real margin_r = 20 + 80;
+   const Real margin_r = 20 + 90;
    const Real margin_t = title.get_height () + 10;
    const Real margin_b = 40;
    const Real w = size_2d.i - margin_l - margin_r;
@@ -1772,8 +1784,8 @@ Twiin::Andrea::twiin_surface_plan (const Dstring& surface_identifier,
    const Model& model = data.get_model ();
    const Dtime& basetime = model.get_basetime ();
    const Station::Map& station_map = data.get_station_map ();
-   Twiin::render (cr, geodetic_transform, size_2d, data,
-      dtime, level, stage, product, no_stage, no_wind_barb);
+   Twiin::render (cr, geodetic_transform, size_2d, data, dtime,
+      level, stage, product, polygon_list, no_stage, no_wind_barb);
 
    Twiin::render_scale_bar (cr, geodetic_transform, size_2d, scale_bar_str);
    Twiin::render_color_bar (cr, size_2d, product, color_bar_str);
@@ -1929,41 +1941,41 @@ Twiin::usage ()
    cout << endl;
    cout << "Options:" << endl;
    cout << "  -?  --help                         display this help and exit" << endl;
-   cout << "  -A  --azimuth=NUMBER               display this help and exit" << endl;
-   cout << "  -a  --annotation=STR               display this help and exit" << endl;
-   cout << "  -b  --bludge                       display this help and exit" << endl;
-   cout << "  -C  --color-bar=r:10               display this help and exit" << endl;
-   cout << "  -c  --config=CONFIG_FILE           display this help and exit" << endl;
-   cout << "  -F  --filename=FILENAME            display this help and exit" << endl;
-   cout << "  -f  --format=eps|pdf|png           display this help and exit" << endl;
-   cout << "  -g  --geometry=HEIGHTxWIDTH        display this help and exit" << endl;
-   cout << "  -G  --gui                          display this help and exit" << endl;
-   cout << "  -h  --height=STR                   display this help and exit" << endl;
+   cout << "  -A  --azimuth=NUMBER               specify a direction in Lagrangian cross sections" << endl;
+   cout << "  -a  --annotation=STR               annotation as dots or journeys" << endl;
+   cout << "  -b  --bludge                       do noting" << endl;
+   cout << "  -C  --color-bar=r:10               location / size of color bar" << endl;
+   cout << "  -c  --config=CONFIG_FILE           specify config file location" << endl;
+   cout << "  -F  --filename=FILENAME            filename of output file" << endl;
+   cout << "  -f  --format=eps|pdf|png           eps or pdf or png" << endl;
+   cout << "  -g  --geometry=HEIGHTxWIDTH        geometry of image produced" << endl;
+   cout << "  -G  --gui                          GUI Mode" << endl;
+   cout << "  -h  --height=STR                   cross section height" << endl;
    cout << "  -I  --plot-first-char-of-track-id  display this help and exit" << endl;
-   cout << "  -i  --interactive                  display this help and exit" << endl;
-   cout << "  -J  --journey=JOURNEY_STR          display this help and exit" << endl;
-   cout << "  -j  --track=IDENTIFIER             display this help and exit" << endl;
-   cout << "  -j  --trajectory=IDENTIFIER        display this help and exit" << endl;
-   cout << "  -K  --scale-bar=lb:10              display this help and exit" << endl;
-   cout << "  -l  --level=LEVEL_STR              display this help and exit" << endl;
-   cout << "  -M  --track-map=FILENAME           display this help and exit" << endl;
-   cout << "  -M  --trajectory-map=FILENAME      display this help and exit" << endl;
-   cout << "  -m  --meteogram                    display this help and exit" << endl;
-   cout << "  -N  --no-nwp                       display this help and exit" << endl;
-   cout << "  -O  --location=STR                 display this help and exit" << endl;
-   cout << "  -o  --output-dir=STR               display this help and exit" << endl;
-   cout << "  -P  --ignore-pressure              display this help and exit" << endl;
-   cout << "  -p  --product=PRODUCT_STR          display this help and exit" << endl;
-   cout << "  -S  --no-stage                     display this help and exit" << endl;
-   cout << "  -s  --stage=STAGE_STR              display this help and exit" << endl;
-   cout << "  -T  --title=STR                    display this help and exit" << endl;
-   cout << "  -t  --time=YYYYMMDDHHMM            display this help and exit" << endl;
-   cout << "  -u  --u_bg=NUMBER                  display this help and exit" << endl;
-   cout << "  -v  --vertical-profile             display this help and exit" << endl;
-   cout << "  -W  --no-wind-barb                 display this help and exit" << endl;
-   cout << "  -X  --time-cross                   display this help and exit" << endl;
-   cout << "  -x  --cross-section                display this help and exit" << endl;
-   cout << "  -z  --zoom=ZOOM_STR                display this help and exit" << endl;
+   cout << "  -i  --interactive                  interactive mode" << endl;
+   cout << "  -J  --journey=JOURNEY_STR          <location>@<location>@<location>" << endl;
+   cout << "  -j  --track=IDENTIFIER             track/trajectory identifier" << endl;
+   cout << "  -j  --trajectory=IDENTIFIER        track/trajectory identifier" << endl;
+   cout << "  -K  --scale-bar=lb:10              location / size of scale bar" << endl;
+   cout << "  -l  --level=LEVEL_STR              horizontal level" << endl;
+   cout << "  -M  --track-map=FILENAME           track/trajectory database" << endl;
+   cout << "  -M  --trajectory-map=FILENAME      track/trajectory database" << endl;
+   cout << "  -m  --meteogram                    renders meteogram" << endl;
+   cout << "  -N  --no-nwp                       don't show nwp data in meteogram" << endl;
+   cout << "  -O  --location=STR                 lat,long or AWS identifier" << endl;
+   cout << "  -o  --output-dir=STR               output directory" << endl;
+   cout << "  -P  --ignore-pressure              don't render pressure in meteogram" << endl;
+   cout << "  -p  --product=PRODUCT_STR          model product" << endl;
+   cout << "  -S  --no-stage                     don't draw stage boxes" << endl;
+   cout << "  -s  --stage=STAGE_STR              specify stage identifier" << endl;
+   cout << "  -T  --title=STR                    colon separated title tokens" << endl;
+   cout << "  -t  --time=YYYYMMDDHHMM            colon sepearated times of time spans" << endl;
+   cout << "  -u  --u_bg=NUMBER                  specify horizontal speed in Lagrangian cross sections" << endl;
+   cout << "  -v  --vertical-profile             render tephigram" << endl;
+   cout << "  -W  --no-wind-barb                 don't draw wind barbs" << endl;
+   cout << "  -X  --time-cross                   render vertical time cross section" << endl;
+   cout << "  -x  --cross-section                render vertical cross section" << endl;
+   cout << "  -z  --zoom=ZOOM_STR                specify geographic transform" << endl;
    cout << endl;
    cout << "Examples:" << endl;
    cout << endl;
@@ -1987,11 +1999,11 @@ Twiin::usage ()
 
 void
 Twiin::set_title (Title& title,
-                    const Dtime& basetime,
-                    const Dstring& stage_str,
-                    const Model::Product& product,
-                    const Dtime& dtime,
-                    const Level& level)
+                  const Dtime& basetime,
+                  const Dstring& stage_str,
+                  const Model::Product& product,
+                  const Dtime& dtime,
+                  const Level& level)
 {
 
    const Real forecast_hour = dtime.t - basetime.t;
@@ -2129,10 +2141,10 @@ Twiin::set_title (Title& title,
 
 void
 Twiin::set_title (Title& title,
-                    const Dtime& basetime,
-                    const Dstring& stage_str,
-                    const Dtime& dtime,
-                    const Dstring& location_name)
+                  const Dtime& basetime,
+                  const Dstring& stage_str,
+                  const Dtime& dtime,
+                  const Dstring& location_name)
 {
 
    const Real forecast_hour = dtime.t - basetime.t;
@@ -2151,14 +2163,37 @@ Twiin::set_title (Title& title,
 
 void
 Twiin::set_title (Title& title,
-                    const Dtime& basetime,
-                    const Dstring& stage_str,
-                    const Location& location)
+                  const Dtime& basetime,
+                  const Dstring& stage_str,
+                  const Location& location)
 {
    const Dstring& basetime_str = basetime.get_string ();
    const Lat_Long& lat_long (location);
    const Dstring& ll_str = lat_long.get_string (4, true, true, true);
-   title.set ("", stage_str, location.get_long_str (), basetime_str, ll_str);
+   //title.set ("", stage_str, location.get_long_str (), basetime_str, ll_str);
+   title.set (ll_str, stage_str, location.get_long_str (), basetime_str, "");
+}
+
+void
+Twiin::render_polygon_list (const RefPtr<Context>& cr,
+                            const Geodetic_Transform& transform,
+                            const list<Polygon>& polygon_list)
+{
+
+   cr->save ();
+   cr->set_line_width (4);
+   Color::hsb (0.00, 0.00, 0.00, 0.5).cairo (cr);
+
+   for (auto iterator = polygon_list.begin ();
+        iterator != polygon_list.end (); iterator++)
+   {
+      const Polygon& polygon = *(iterator);
+      polygon.cairo (cr, transform);
+      cr->stroke ();
+   }
+
+   cr->restore ();
+
 }
 
 void
@@ -2396,10 +2431,10 @@ Twiin::render_scale_bar (const RefPtr<Context>& cr,
 
 void
 Twiin::render_color_bar (const RefPtr<Context>& cr,
-                           const Model::Product& product,
-                           const Tuple& tick_tuple,
-                           const Box_2D& box_2d,
-                           const bool negative)
+                         const Model::Product& product,
+                         const Tuple& tick_tuple,
+                         const Box_2D& box_2d,
+                         const bool negative)
 {
 
    const Real font_size = 12;
@@ -2468,9 +2503,9 @@ Twiin::render_color_bar (const RefPtr<Context>& cr,
 
 void
 Twiin::render_color_bar (const RefPtr<Context>& cr,
-                           const Size_2D& size_2d,
-                           const Model::Product& product,
-                           const Dstring& color_bar_str)
+                         const Size_2D& size_2d,
+                         const Model::Product& product,
+                         const Dstring& color_bar_str)
 {
 
    if (color_bar_str == "no") { return; }
@@ -2614,14 +2649,17 @@ Twiin::render_annotation (const RefPtr<Context>& cr,
        genre == "r")
    {
       Journey journey;
+      bool annotated = true;
       for (auto iterator = tokens.begin ();
            iterator != tokens.end (); iterator++)
       {
          if (iterator == tokens.begin ()) { continue; }
-         const Location location (*(iterator));
+         const Dstring& token = *(iterator);
+         if (token == "plain") { annotated = false; continue; }
+         const Location location (token);
          journey.push_back (location);
       }
-      journey.cairo (cr, transform);
+      journey.cairo (cr, transform, annotated);
    }
 
 }
@@ -2649,15 +2687,16 @@ Twiin::render_annotations (const RefPtr<Context>& cr,
 
 void
 Twiin::render (const RefPtr<Context>& cr,
-                 const Geodetic_Transform& transform,
-                 const Size_2D& size_2d,
-                 const Data& data,
-                 const Dtime& dtime,
-                 const Level& level,
-                 const Dstring& stage_str,
-                 const Model::Product product,
-                 const bool no_stage,
-                 const bool no_wind_barb)
+               const Geodetic_Transform& transform,
+               const Size_2D& size_2d,
+               const Data& data,
+               const Dtime& dtime,
+               const Level& level,
+               const Dstring& stage_str,
+               const Model::Product product,
+               const list<Polygon>& polygon_list,
+               const bool no_stage,
+               const bool no_wind_barb)
 {
 
    cr->save ();
@@ -2668,6 +2707,8 @@ Twiin::render (const RefPtr<Context>& cr,
 
    render_product (cr, transform, size_2d, data,
       product, dtime, level, stage_str);
+
+   render_polygon_list (cr, transform, polygon_list);
 
    if (!no_wind_barb)
    {
@@ -2857,7 +2898,7 @@ Twiin::render_cross_section (const RefPtr<Context>& cr,
    if (u_bg != 0)
    {
       Color::black ().cairo (cr);
-      const Dstring fmt ("%.2f ms\u207b\u00b9 removed");
+      const Dstring fmt ("%.2f ms\u207b\u00b9");
       const Dstring& u_bg_string = Dstring::render (fmt, u_bg);
       const Index_2D anchor = box_2d.get_ne ();
       Label (u_bg_string, box_2d.get_ne (), 'r', 't', 10).cairo (cr);
@@ -3050,6 +3091,7 @@ Twiin::render_meteogram_mesh (const RefPtr<Context>& cr,
    const Real end_speed = domain_speed.end;
    const Real start_pressure = domain_pressure.start;
    const Real end_pressure = domain_pressure.end;
+   const Real delta_t = end_t - start_t;
 
    const Point_2D& bl_temperature =
       transform_temperature.transform (start_t, start_temperature);
@@ -3075,18 +3117,30 @@ Twiin::render_meteogram_mesh (const RefPtr<Context>& cr,
    const Color& middle_color = Color::black (0.25);
    const Color& major_color = Color::black (0.50);
 
+   const Real major_t_interval = (delta_t > 23 ? 24 : 6);
+   const Real middle_t_interval = (delta_t > 23 ? 6 : 1);
+   const Real minor_t_interval = (delta_t > 23 ? 1 : 1.0/6.0);
+
    Mesh_2D mesh_temperature (Size_2D (2, 2),
-      Domain_2D (domain_t, domain_temperature), 1, 1, minor_color,
-      6, GSL_NAN, middle_color, 24, 10, major_color);
+      Domain_2D (domain_t, domain_temperature),
+                 minor_t_interval, 1, minor_color,
+                 middle_t_interval, GSL_NAN, middle_color,
+                 major_t_interval, 10, major_color);
    Mesh_2D mesh_direction (Size_2D (2, 2),
-      Domain_2D (domain_t, domain_direction), 1, 10, minor_color,
-      6, GSL_NAN, middle_color, 24, 90, major_color);
+      Domain_2D (domain_t, domain_direction),
+                 minor_t_interval, 10, minor_color,
+                 middle_t_interval, GSL_NAN, middle_color,
+                 major_t_interval, 90, major_color);
    Mesh_2D mesh_speed (Size_2D (2, 2),
-      Domain_2D (domain_t, domain_speed), 1, 1, minor_color,
-      6, GSL_NAN, middle_color, 24, 5, major_color);
+      Domain_2D (domain_t, domain_speed),
+                 minor_t_interval, 1, minor_color,
+                 middle_t_interval, GSL_NAN, middle_color,
+                 major_t_interval, 5, major_color);
    Mesh_2D mesh_pressure (Size_2D (2, 2),
-      Domain_2D (domain_t, domain_pressure), 1, 1, minor_color,
-      6, GSL_NAN, middle_color, 24, 10, major_color);
+      Domain_2D (domain_t, domain_pressure),
+                 minor_t_interval, 1, minor_color,
+                 middle_t_interval, GSL_NAN, middle_color,
+                 major_t_interval, 10, major_color);
 
    mesh_temperature.set_offset_multiplier_y (-K, 1);
    mesh_pressure.set_offset_multiplier_y (0, 1e-2);
@@ -3149,15 +3203,15 @@ Twiin::render_meteogram_mesh (const RefPtr<Context>& cr,
 
 void
 Twiin::render_meteogram (const RefPtr<Context>& cr,
-                           const Transform_2D& t_temperature,
-                           const Transform_2D& t_direction,
-                           const Transform_2D& t_speed,
-                           const Transform_2D& t_pressure,
-                           const Aws::Repository& aws_repository,
-                           const Real alpha,
-                           const Real ring_size,
-                           const bool fill,
-                           const bool ignore_pressure)
+                         const Transform_2D& t_temperature,
+                         const Transform_2D& t_direction,
+                         const Transform_2D& t_speed,
+                         const Transform_2D& t_pressure,
+                         const Aws::Repository& aws_repository,
+                         const Real alpha,
+                         const Real ring_size,
+                         const bool fill,
+                         const bool ignore_pressure)
 {
 
    cr->save ();
@@ -3232,13 +3286,13 @@ Twiin::render_meteogram (const RefPtr<Context>& cr,
 
 void
 Twiin::render_meteogram (const RefPtr<Context>& cr,
-                           const Size_2D& size_2d,
-                           const Model::Stage& stage, 
-                           const Aws::Repository& aws_repository,
-                           const Location& location,
-                           const Dstring& time_str,
-                           const bool ignore_pressure,
-                           const bool no_nwp)
+                         const Size_2D& size_2d,
+                         const Model::Stage& stage, 
+                         const Aws::Repository& aws_repository,
+                         const Location& location,
+                         const Dstring& time_str,
+                         const bool ignore_pressure,
+                         const bool no_nwp)
 {
 
    cr->save ();
@@ -3270,6 +3324,10 @@ Twiin::render_meteogram (const RefPtr<Context>& cr,
    Real start_pressure = model_aws_repository.get_mslp_domain ().start;
    Real end_pressure = model_aws_repository.get_mslp_domain ().end;
 
+   Real temperature_gap = 5.1;
+   Real speed_gap = 5.1;
+   Real pressure_gap = 260;
+
    if (station_id > 0)
    {
 
@@ -3277,17 +3335,17 @@ Twiin::render_meteogram (const RefPtr<Context>& cr,
          aws_repository.get_aws_repository_ptr (station_id, time_span);
 
       start_temperature = std::min (start_temperature,
-         aws_repository_ptr->get_dew_point_domain ().start);
+         aws_repository_ptr->get_dew_point_domain ().start) - temperature_gap;
       end_temperature = std::max (end_temperature,
-         aws_repository_ptr->get_temperature_domain ().end);
+         aws_repository_ptr->get_temperature_domain ().end) + temperature_gap;
 
       end_speed = std::max (end_speed,
-         aws_repository_ptr->get_wind_speed_domain ().end);
+         aws_repository_ptr->get_wind_speed_domain ().end) + speed_gap;
 
       start_pressure = std::min (start_pressure,
-         aws_repository_ptr->get_mslp_domain ().start);
+         aws_repository_ptr->get_mslp_domain ().start) - pressure_gap;
       end_pressure = std::max (end_pressure,
-         aws_repository_ptr->get_mslp_domain ().end);
+         aws_repository_ptr->get_mslp_domain ().end) + pressure_gap;
 
    }
 
@@ -3862,7 +3920,7 @@ Twiin::Gui::render_image_buffer (const RefPtr<Context>& cr)
    const Level& level = get_level_panel ().get_level ();
 
    Twiin::render (cr, transform, size_2d, data, dtime,
-      level, stage_str, product, false, false);
+      level, stage_str, product, polygon_list, false, false);
    render_mesh (cr);
    render_overlays (cr);
 
