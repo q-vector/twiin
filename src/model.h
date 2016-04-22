@@ -164,6 +164,9 @@ namespace twiin
                const Tuple&
                get_B (const Met_Element& met_element) const;
 
+               static bool
+               is_theta (const Met_Element& met_element);
+
          };
 
          class Stage
@@ -247,6 +250,9 @@ namespace twiin
                       const Config_File& config_file);
 
                ~Stage ();
+
+               static Dstring
+               get_nc_varname (const Dstring& varname);
 
                virtual void
                ingest (const Dstring& varname,
@@ -855,9 +861,6 @@ namespace twiin
          Vertical_Coefficients
          vertical_coefficients;
 
-         static Dstring
-         get_nc_varname (const Dstring& varname);
-
          const Real
          get_z (const Integer k,
                 const Real topography,
@@ -877,9 +880,6 @@ namespace twiin
          Model (const Config_File& config_file);
 
          ~Model ();
-
-         static bool
-         is_theta (const Met_Element& met_element);
 
          const Dtime&
          get_basetime () const;

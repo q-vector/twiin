@@ -523,14 +523,28 @@ Model::Vertical_Coefficients::get_B (const bool is_theta) const
 const Tuple&
 Model::Vertical_Coefficients::get_A (const Met_Element& met_element) const
 {
-   return get_A (Model::is_theta (met_element));
+   return get_A (is_theta (met_element));
 }
 
 const Tuple&
 Model::Vertical_Coefficients::get_B (const Met_Element& met_element) const
 {
-   return get_B (Model::is_theta (met_element));
+   return get_B (is_theta (met_element));
 }
+bool
+Model::Vertical_Coefficients::is_theta (const Met_Element& met_element)
+{
+   return ((met_element == THETA) || 
+           (met_element == Q) || 
+           (met_element == RHO) || 
+           (met_element == W) || 
+           (met_element == T) || 
+           (met_element == TD) || 
+           (met_element == RH) || 
+           (met_element == THETA_E) ||
+           (met_element == THETA_V));
+}
+
 
 void
 Model::Stage::fill_valid_time (set<Dtime>& valid_time_set,
@@ -634,7 +648,7 @@ Model::Stage::acquire_k (size_t& k,
          if (z < topography) { k = -1; return; }
 
          const bool is_w = (met_element == W);
-         const bool is_theta = Model::is_theta (met_element);
+         const bool is_theta = Model::Vertical_Coefficients::is_theta (met_element);
          const Tuple& A = model.vertical_coefficients.get_A (is_theta);
          const Tuple& B = model.vertical_coefficients.get_B (is_theta);
          if (z > A.back ()) { k = -1; return; }
@@ -653,7 +667,7 @@ Model::Stage::acquire_k (size_t& k,
          if (z < topography) { k = -1; return; }
 
          const bool is_w = (met_element == W);
-         const bool is_theta = Model::is_theta (met_element);
+         const bool is_theta = Model::Vertical_Coefficients::is_theta (met_element);
          const Tuple& A = model.vertical_coefficients.get_A (is_theta);
          const Tuple& B = model.vertical_coefficients.get_B (is_theta);
          if (z > A.back ()) { k = -1; return; }
@@ -795,8 +809,9 @@ Model::Stage::Stage (const Model& model,
       const Tokens argument_tokens (argument, ":");
       const Dstring& model_identifier = argument_tokens[0];
 
-      if (model_identifier.substr (0, 5) == "STAGE" &&
-          argument_tokens.size () == 3)
+//      if (model_identifier.substr (0, 1) == "N" &&
+//          argument_tokens.size () == 3)
+      if (argument_tokens.size () == 3)
       {
 
          if (stage_str != argument_tokens[0].get_trimmed ()) { continue; }
@@ -826,6 +841,29 @@ Model::Stage::~Stage ()
 
 }
 
+Dstring
+Model::Stage::get_nc_varname (const Dstring& varname)
+{
+   if (varname == "orog") { return "ht"; }
+   if (varname == "lsm") { return "lsm"; }
+   if (varname == "temp") { return "temp"; }
+   if (varname == "qsair") { return "q"; }
+   if (varname == "dewpt") { return "field17"; }
+   if (varname == "xwind") { return "x-wind"; }
+   if (varname == "ywind") { return "y-wind"; }
+   if (varname == "ml_xwind") { return "x-wind"; }
+   if (varname == "ml_ywind") { return "y-wind"; }
+   if (varname == "ml_zwind") { return "dz_dt"; }
+   if (varname == "mslp") { return "p"; }
+   if (varname == "prcp8p5") { return "precip"; }
+   if (varname == "ml_prho") { return "p"; }
+   if (varname == "ml_ptheta") { return "p"; }
+   if (varname == "prcp8p5") { return "precip"; }
+   if (varname == "ml_spechum") { return "q"; }
+   if (varname == "ml_theta") { return "theta"; }
+   throw Exception ("invalid varname: " + varname);
+}
+
 void
 Model::Stage::ingest (const Dstring& varname,
                       const Dstring& file_path)
@@ -838,7 +876,7 @@ Model::Stage::ingest (const Dstring& varname,
    this->tuple_latitude = nc_file.get_coordinate_tuple ("latitude");
    this->tuple_longitude = nc_file.get_coordinate_tuple ("longitude");
 
-   const Dstring& nc_varname = Model::get_nc_varname (varname);
+   const Dstring& nc_varname = Model::Stage::get_nc_varname (varname);
 
    int varid;
    int ret = nc_inq_varid (nc_id, nc_varname.get_string ().c_str (), &varid);
@@ -1853,7 +1891,7 @@ Model::Stage::evaluate_dz (const Met_Element& met_element,
    const Integer n = 70;
    if (k < 1 || k >= n - 1) { return GSL_NAN; }
 
-   const bool is_theta = Model::is_theta (met_element);
+   const bool is_theta = Model::Vertical_Coefficients::is_theta (met_element);
    const Tuple& A = model.vertical_coefficients.get_A (met_element);
    const Tuple& B = model.vertical_coefficients.get_B (met_element);
 
@@ -2993,6 +3031,7 @@ Model::Stage::get_color (const Model::Product& product,
       case Model::Product::SCORER_B:
       {
          if (!gsl_finite (datum)) { return Color::gray (0.5); }
+         if (datum > 1e-6) { return Color::transparent (); }
          const bool negative = datum < 0;
          //const Real e = (log10 (fabs (datum)) - (-8.0));
          const Real e = log10 (fabs (datum));
@@ -5036,7 +5075,32 @@ Model::Stage::Map::Map (const Model& model,
                         const Config_File& config_file)
 {
 
-   const Tokens stage_tokens ("STAGE3 STAGE4 STAGE5");
+   // const Tokens stage_tokens ("N4000 N1200 N0440");
+
+   Tokens stage_tokens;
+
+   for (auto iterator = config_file.begin ();
+        iterator != config_file.end (); iterator++)
+   {
+
+      const Tokens tokens (*(iterator), " \f\n\t");
+      if (tokens.size () != 2 || tokens[0] != "model") { continue; }
+  
+      const Dstring& argument = tokens[1];
+      const Tokens argument_tokens (argument, ":");
+      const Integer n = argument_tokens.size ();
+
+      if (argument_tokens[0] == "stage")
+      {
+         for (Integer i = 1; i < argument_tokens.size (); i++)
+         {
+            const Dstring& model_identifier = argument_tokens[i];
+            stage_tokens.push_back (model_identifier);
+         }
+      }
+
+   }
+
    for (auto iterator = stage_tokens.begin ();
         iterator != stage_tokens.end (); iterator++)
    {
@@ -5053,29 +5117,6 @@ Model::Stage::Map::~Map ()
       Model::Stage* stage_ptr = iterator->second;
       delete stage_ptr;
    }
-}
-
-Dstring
-Model::get_nc_varname (const Dstring& varname)
-{
-   if (varname == "orog") { return "ht"; }
-   if (varname == "lsm") { return "lsm"; }
-   if (varname == "temp") { return "temp"; }
-   if (varname == "qsair") { return "q"; }
-   if (varname == "dewpt") { return "field17"; }
-   if (varname == "xwind") { return "x-wind"; }
-   if (varname == "ywind") { return "y-wind"; }
-   if (varname == "ml_xwind") { return "x-wind"; }
-   if (varname == "ml_ywind") { return "y-wind"; }
-   if (varname == "ml_zwind") { return "dz_dt"; }
-   if (varname == "mslp") { return "p"; }
-   if (varname == "prcp8p5") { return "precip"; }
-   if (varname == "ml_prho") { return "p"; }
-   if (varname == "ml_ptheta") { return "p"; }
-   if (varname == "prcp8p5") { return "precip"; }
-   if (varname == "ml_spechum") { return "q"; }
-   if (varname == "ml_theta") { return "theta"; }
-   throw Exception ("invalid varname: " + varname);
 }
 
 const Real
@@ -5160,20 +5201,6 @@ Model::Model (const Config_File& config_file)
 
 Model::~Model ()
 {
-}
-
-bool
-Model::is_theta (const Met_Element& met_element)
-{
-   return ((met_element == THETA) || 
-           (met_element == Q) || 
-           (met_element == RHO) || 
-           (met_element == W) || 
-           (met_element == T) || 
-           (met_element == TD) || 
-           (met_element == RH) || 
-           (met_element == THETA_E) ||
-           (met_element == THETA_V));
 }
 
 const Dtime&

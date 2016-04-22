@@ -2284,12 +2284,12 @@ Twiin::render_product (const RefPtr<Context>& cr,
 
 void
 Twiin::render_wind_barbs (const RefPtr<Context>& cr,
-                            const Geodetic_Transform& transform,
-                            const Size_2D& size_2d,
-                            const Data& data,
-                            const Dtime& dtime,
-                            const Level& level,
-                            const Dstring& stage_str)
+                          const Geodetic_Transform& transform,
+                          const Size_2D& size_2d,
+                          const Data& data,
+                          const Dtime& dtime,
+                          const Level& level,
+                          const Dstring& stage_str)
 {
 
    Point_2D point;
