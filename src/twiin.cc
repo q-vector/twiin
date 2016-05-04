@@ -2022,11 +2022,11 @@ Twiin::set_title (Title& title,
 
 void
 Twiin::set_title (Title& title,
-                    const Dtime& basetime,
-                    const Dstring& stage_str,
-                    const Model::Product& product,
-                    const Dtime& dtime,
-                    const Journey& journey)
+                  const Dtime& basetime,
+                  const Dstring& stage_str,
+                  const Model::Product& product,
+                  const Dtime& dtime,
+                  const Journey& journey)
 {
 
    const Real forecast_hour = dtime.t - basetime.t;
@@ -2199,8 +2199,8 @@ Twiin::render_polygon_list (const RefPtr<Context>& cr,
 
 void
 Twiin::render_stages (const RefPtr<Context>& cr,
-                        const Geodetic_Transform& transform,
-                        const Data& data)
+                      const Geodetic_Transform& transform,
+                      const Data& data)
 {
 
    cr->save ();
@@ -2227,13 +2227,13 @@ Twiin::render_stages (const RefPtr<Context>& cr,
 
 void
 Twiin::render_product (const RefPtr<Context>& cr,
-                         const Geodetic_Transform& transform,
-                         const Size_2D& size_2d,
-                         const Data& data,
-                         const Model::Product& product,
-                         const Dtime& dtime,
-                         const Level& level,
-                         const Dstring& stage_str)
+                       const Geodetic_Transform& transform,
+                       const Size_2D& size_2d,
+                       const Data& data,
+                       const Model::Product& product,
+                       const Dtime& dtime,
+                       const Level& level,
+                       const Dstring& stage_str)
 {
 
    Raster* raster_ptr = NULL;
@@ -2343,9 +2343,9 @@ Twiin::render_wind_barbs (const RefPtr<Context>& cr,
 
 void
 Twiin::render_scale_bar (const RefPtr<Context>& cr,
-                           const Geodetic_Transform& geodetic_transform,
-                           const Size_2D& size_2d,
-                           const Dstring& scale_bar_str)
+                         const Geodetic_Transform& geodetic_transform,
+                         const Size_2D& size_2d,
+                         const Dstring& scale_bar_str)
 {
 
    if (scale_bar_str == "no") { return; }
@@ -2593,11 +2593,11 @@ Twiin::render_color_bar (const RefPtr<Context>& cr,
 
 void
 Twiin::render_annotation_point (const RefPtr<Context>& cr,
-                                  const Geodetic_Transform& transform,
-                                  const Lat_Long& lat_long,
-                                  const Dstring& str,
-                                  const char h_align,
-                                  const char v_align)
+                                const Geodetic_Transform& transform,
+                                const Lat_Long& lat_long,
+                                const Dstring& str,
+                                const char h_align,
+                                const char v_align)
 {
 
    const Real ring_size = 4;
@@ -2624,9 +2624,9 @@ Twiin::render_annotation_point (const RefPtr<Context>& cr,
 
 void
 Twiin::render_annotation (const RefPtr<Context>& cr,
-                            const Geodetic_Transform& transform,
-                            const Dstring& annotation_str,
-                            const Data& data)
+                          const Geodetic_Transform& transform,
+                          const Dstring& annotation_str,
+                          const Data& data)
 {
 
    const Station::Map& station_map = data.get_station_map ();
@@ -2667,9 +2667,9 @@ Twiin::render_annotation (const RefPtr<Context>& cr,
 
 void
 Twiin::render_annotations (const RefPtr<Context>& cr,
-                             const Geodetic_Transform& transform,
-                             const Tokens& annotation_tokens,
-                             const Data& data)
+                           const Geodetic_Transform& transform,
+                           const Tokens& annotation_tokens,
+                           const Data& data)
 {
 
    cr->save ();
@@ -2733,11 +2733,11 @@ Twiin::render (const RefPtr<Context>& cr,
 
 void
 Twiin::render_cross_section_w (const RefPtr<Context>& cr,
-                                 const Transform_2D& transform,
-                                 const Box_2D& box_2d,
-                                 const Model::Stage& stage,
-                                 const Dtime& dtime,
-                                 const Journey& journey)
+                               const Transform_2D& transform,
+                               const Box_2D& box_2d,
+                               const Model::Stage& stage,
+                               const Dtime& dtime,
+                               const Journey& journey)
 {
    Raster* raster_ptr = stage.get_cross_section_raster_ptr (box_2d,
       transform, Model::Product ("W"), dtime, journey);
@@ -2747,9 +2747,9 @@ Twiin::render_cross_section_w (const RefPtr<Context>& cr,
 
 void
 Twiin::render_cross_section_mesh (const RefPtr<Context>& cr,
-                                    const Transform_2D& transform,
-                                    const Domain_1D& domain_z,
-                                    const Journey& journey)
+                                  const Transform_2D& transform,
+                                  const Domain_1D& domain_z,
+                                  const Journey& journey)
 {
 
    const Geodesy geodesy;
@@ -2795,13 +2795,13 @@ Twiin::render_cross_section_mesh (const RefPtr<Context>& cr,
 
 void
 Twiin::render_cross_section_arrows (const RefPtr<Context>& cr,
-                                      const Transform_2D& transform,
-                                      const Box_2D& box_2d,
-                                      const Model::Stage& stage,
-                                      const Model::Product& product,
-                                      const Dtime& dtime,
-                                      const Journey& journey,
-                                      const Real u_bg)
+                                    const Transform_2D& transform,
+                                    const Box_2D& box_2d,
+                                    const Model::Stage& stage,
+                                    const Model::Product& product,
+                                    const Dtime& dtime,
+                                    const Journey& journey,
+                                    const Real u_bg)
 {
 
    Real x;
@@ -2862,14 +2862,14 @@ Twiin::render_cross_section_arrows (const RefPtr<Context>& cr,
 
 void
 Twiin::render_cross_section (const RefPtr<Context>& cr,
-                               const Transform_2D& transform,
-                               const Box_2D& box_2d,
-                               const Domain_1D& domain_z,
-                               const Model::Stage& stage,
-                               const Model::Product& product,
-                               const Dtime& dtime,
-                               const Journey& journey,
-                               const Real u_bg)
+                             const Transform_2D& transform,
+                             const Box_2D& box_2d,
+                             const Domain_1D& domain_z,
+                             const Model::Stage& stage,
+                             const Model::Product& product,
+                             const Dtime& dtime,
+                             const Journey& journey,
+                             const Real u_bg)
 {
 
    cr->save ();
@@ -2911,10 +2911,10 @@ Twiin::render_cross_section (const RefPtr<Context>& cr,
 
 void
 Twiin::render_time_cross_w (const RefPtr<Context>& cr,
-                              const Transform_2D& transform,
-                              const Box_2D& box_2d,
-                              const Model::Stage& stage,
-                              const Track& track)
+                            const Transform_2D& transform,
+                            const Box_2D& box_2d,
+                            const Model::Stage& stage,
+                            const Track& track)
 {
    Raster* raster_ptr = stage.get_time_cross_raster_ptr (box_2d,
       transform, Model::Product ("W_TRANSLUCENT"), track);
@@ -2924,9 +2924,9 @@ Twiin::render_time_cross_w (const RefPtr<Context>& cr,
 
 void
 Twiin::render_time_cross_mesh (const RefPtr<Context>& cr,
-                                 const Transform_2D& transform,
-                                 const Domain_1D& domain_t,
-                                 const Domain_1D& domain_z)
+                               const Transform_2D& transform,
+                               const Domain_1D& domain_t,
+                               const Domain_1D& domain_z)
 {
 
    cr->save ();
@@ -2964,8 +2964,8 @@ Twiin::render_time_cross_mesh (const RefPtr<Context>& cr,
 
 void
 Twiin::render_time_cross_track (const RefPtr<Context>& cr,
-                                  const Transform_2D& transform,
-                                  const Track& track)
+                                const Transform_2D& transform,
+                                const Track& track)
 {
 
    const Dtime& epoch = track.get_epoch ();
@@ -3068,16 +3068,16 @@ Twiin::render_time_cross (const RefPtr<Context>& cr,
 
 void
 Twiin::render_meteogram_mesh (const RefPtr<Context>& cr,
-                                const Domain_1D& domain_t,
-                                const Domain_1D& domain_temperature,
-                                const Domain_1D& domain_direction,
-                                const Domain_1D& domain_speed,
-                                const Domain_1D& domain_pressure,
-                                const Transform_2D& transform_temperature,
-                                const Transform_2D& transform_direction,
-                                const Transform_2D& transform_speed,
-                                const Transform_2D& transform_pressure,
-                                const bool ignore_pressure)
+                              const Domain_1D& domain_t,
+                              const Domain_1D& domain_temperature,
+                              const Domain_1D& domain_direction,
+                              const Domain_1D& domain_speed,
+                              const Domain_1D& domain_pressure,
+                              const Transform_2D& transform_temperature,
+                              const Transform_2D& transform_direction,
+                              const Transform_2D& transform_speed,
+                              const Transform_2D& transform_pressure,
+                              const bool ignore_pressure)
 {
 
    cr->save ();
@@ -3466,11 +3466,11 @@ Twiin::render_meteogram (const RefPtr<Context>& cr,
 
 void
 Twiin::render_vertical_profile (const RefPtr<Context>& cr,
-                                  const Thermo_Diagram& thermo_diagram,
-                                  const Model::Stage& stage,
-                                  const Dtime& dtime,
-                                  const Lat_Long& lat_long,
-                                  const Level& level)
+                                const Thermo_Diagram& thermo_diagram,
+                                const Model::Stage& stage,
+                                const Dtime& dtime,
+                                const Lat_Long& lat_long,
+                                const Level& level)
 {
 
    cr->save ();
@@ -3563,7 +3563,7 @@ Twiin::Gui::Product_Panel::Product_Panel (Gui& gui,
 
 void
 Twiin::Gui::Product_Panel::add_product (const Dstring& drawer_str,
-                                     const Model::Product& product)
+                                        const Model::Product& product)
 {
    Button* pb_ptr = new Button (gui, product, font_size);
    Button::T_Signal& signal = pb_ptr->get_t_signal ();
