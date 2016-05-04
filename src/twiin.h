@@ -223,7 +223,7 @@ namespace twiin
                     const Tokens& title_tokens,
                     const Dstring& filename,
                     const bool ignore_pressure,
-                    const bool no_nwp,
+                    const Dstring& meteogram_mode,
                     const bool is_bludge) const;
 
          void
@@ -385,7 +385,8 @@ namespace twiin
          set_title (Title& title,
                     const Dtime& basetime,
                     const Dstring& stage_str,
-                    const Location& location);
+                    const Location& location,
+                    const Dstring& meteogram_mode);
 
          static void
          render_polygon_list (const RefPtr<Context>& cr,
@@ -575,7 +576,7 @@ namespace twiin
                            const Location& location,
                            const Dstring& time_str,
                            const bool ignore_pressure,
-                           const bool no_nwp);
+                           const Dstring& meteogram_mode);
 
          static void
          render_vertical_profile (const RefPtr<Context>& cr,

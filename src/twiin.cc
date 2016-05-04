@@ -1207,7 +1207,7 @@ Twiin::meteogram (const Dstring& stage_str,
                   const Tokens& title_tokens,
                   const Dstring& filename,
                   const bool ignore_pressure,
-                  const bool no_nwp,
+                  const Dstring& meteogram_mode,
                   const bool is_bludge) const
 {
 
@@ -1249,11 +1249,11 @@ Twiin::meteogram (const Dstring& stage_str,
             RefPtr<Context> cr = denise::get_cr (surface);
 
             Twiin::render_meteogram (cr, size_2d, stage, aws_repository,
-               location, time_str, ignore_pressure, no_nwp);
+               location, time_str, ignore_pressure, meteogram_mode);
 
             if (title_tokens.size () == 0)
             {
-               Twiin::set_title (title, basetime, s, location);
+               Twiin::set_title (title, basetime, s, location, meteogram_mode);
             }
             else
             {
@@ -1960,8 +1960,7 @@ Twiin::usage ()
    cout << "  -l  --level=LEVEL_STR              horizontal level" << endl;
    cout << "  -M  --track-map=FILENAME           track/trajectory database" << endl;
    cout << "  -M  --trajectory-map=FILENAME      track/trajectory database" << endl;
-   cout << "  -m  --meteogram                    renders meteogram" << endl;
-   cout << "  -N  --no-nwp                       don't show nwp data in meteogram" << endl;
+   cout << "  -m  --meteogram=MODE_STR           renders meteogram" << endl;
    cout << "  -O  --location=STR                 lat,long or AWS identifier" << endl;
    cout << "  -o  --output-dir=STR               output directory" << endl;
    cout << "  -P  --ignore-pressure              don't render pressure in meteogram" << endl;
@@ -2165,9 +2164,11 @@ void
 Twiin::set_title (Title& title,
                   const Dtime& basetime,
                   const Dstring& stage_str,
-                  const Location& location)
+                  const Location& location,
+                  const Dstring& meteogram_mode)
 {
-   const Dstring& basetime_str = basetime.get_string ();
+   const Dstring& basetime_str = meteogram_mode == "no_nwp" ?
+      "" : "Model Basetime: " + basetime.get_string ();
    const Lat_Long& lat_long (location);
    const Dstring& ll_str = lat_long.get_string (4, true, true, true);
    //title.set ("", stage_str, location.get_long_str (), basetime_str, ll_str);
@@ -3166,6 +3167,36 @@ Twiin::render_meteogram_mesh (const RefPtr<Context>& cr,
 
    Color::black ().cairo (cr);
 
+   cr->save ();
+   const Real temperature_centre = (domain_temperature.start + domain_temperature.end) / 2;
+   const Point_2D temperature_point (domain_t.start, temperature_centre);
+   Label temperature_label ("Temperature", temperature_point, 'c', 't', -70);
+   temperature_label.set_text_angle (3 * M_PI / 2);
+   cr->set_font_size (14);
+   Color::black ().cairo (cr);
+   temperature_label.cairo (cr, transform_temperature);
+   cr->restore ();
+
+   cr->save ();
+   const Real direction_centre = (domain_direction.start + domain_direction.end) / 2;
+   const Point_2D direction_point (domain_t.start, direction_centre);
+   Label direction_label ("Wind Direction", direction_point, 'c', 't', -70);
+   direction_label.set_text_angle (3 * M_PI / 2);
+   cr->set_font_size (14);
+   Color::black ().cairo (cr);
+   direction_label.cairo (cr, transform_direction);
+   cr->restore ();
+
+   cr->save ();
+   const Real speed_centre = (domain_speed.start + domain_speed.end) / 2;
+   const Point_2D speed_point (domain_t.start, speed_centre);
+   Label speed_label ("Wind Speed", speed_point, 'c', 't', -70);
+   speed_label.set_text_angle (3 * M_PI / 2);
+   cr->set_font_size (14);
+   Color::black ().cairo (cr);
+   speed_label.cairo (cr, transform_speed);
+   cr->restore ();
+
    mesh_temperature.render_label_y (cr, transform_temperature, 2,
       start_t, "%.0f\u00b0C", Label::REAL, 'r', 'c', 5);
    mesh_temperature.render_label_x (cr, transform_temperature, 2,
@@ -3190,7 +3221,7 @@ Twiin::render_meteogram_mesh (const RefPtr<Context>& cr,
    if (!ignore_pressure)
    {
       mesh_pressure.render_label_y (cr, transform_pressure, 2,
-         start_t, "%.0fPa", Label::REAL, 'r', 'c', 5);
+         start_t, "%.0f hPa", Label::REAL, 'r', 'c', 5);
       mesh_pressure.render_label_x (cr, transform_pressure, 2,
          domain_pressure.end, "%b %d", Label::TIME, 'c', 't', 15);
       mesh_pressure.render_label_x (cr, transform_pressure, 1,
@@ -3292,7 +3323,7 @@ Twiin::render_meteogram (const RefPtr<Context>& cr,
                          const Location& location,
                          const Dstring& time_str,
                          const bool ignore_pressure,
-                         const bool no_nwp)
+                         const Dstring& meteogram_mode)
 {
 
    cr->save ();
@@ -3358,7 +3389,8 @@ Twiin::render_meteogram (const RefPtr<Context>& cr,
    const Real margin = 30;
    const Real margin_t = title_height + 10;
    const Real margin_b = 30;
-   const Real margin_l = 55;
+   //const Real margin_l = 55;
+   const Real margin_l = 85;
    const Real margin_r = 20;
 
    const Real n = (ignore_pressure ? 3 : 4);
@@ -3401,29 +3433,28 @@ Twiin::render_meteogram (const RefPtr<Context>& cr,
       transform_temperature, transform_direction,
       transform_speed, transform_pressure, ignore_pressure);
  
-   // aws data
-   if (aws_repository_ptr != NULL)
-   {
-      // draw aws
-      //const bool faint = !no_nwp;
-      const Real alpha = 0.9;
-      const Real ring_size = 1.0;
-      const bool fill = true;
-      render_meteogram (cr, transform_temperature, transform_direction,
-         transform_speed, transform_pressure, *aws_repository_ptr, alpha,
-         ring_size, fill, ignore_pressure);
-   }
-
    // nwp data
-   if (!no_nwp)
+   if (meteogram_mode != "no_nwp")
    {
       // draw nwp
-      const Real alpha = 0.2;
-      const Real ring_size = 3.0;
+      const Real alpha = 0.3;
+      const Real ring_size = 4.0;
       const bool fill = false;
       render_meteogram (cr, transform_temperature, transform_direction,
          transform_speed, transform_pressure, *model_aws_repository_ptr,
          alpha, ring_size, fill, ignore_pressure);
+   }
+
+   // aws data
+   if (meteogram_mode != "no_aws" || aws_repository_ptr != NULL)
+   {
+      // draw aws
+      const Real alpha = 0.999;
+      const Real ring_size = 0.8;
+      const bool fill = true;
+      render_meteogram (cr, transform_temperature, transform_direction,
+         transform_speed, transform_pressure, *aws_repository_ptr, alpha,
+         ring_size, fill, ignore_pressure);
    }
 
    delete aws_repository_ptr;

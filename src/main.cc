@@ -41,8 +41,7 @@ main (int argc,
       { "level",                        1, 0, 'l' },
       { "track-map",                    1, 0, 'M' },
       { "trajectory-map",               1, 0, 'M' },
-      { "meteogram",                    0, 0, 'm' },
-      { "no-nwp",                       0, 0, 'N' },
+      { "meteogram",                    1, 0, 'm' },
       { "location",                     1, 0, 'O' },
       { "output-dir",                   1, 0, 'o' },
       { "ignore-pressure",              0, 0, 'P' },
@@ -80,9 +79,9 @@ main (int argc,
    bool is_gui = false;
    bool is_interactive = false;
    bool is_meteogram = false;
+   Dstring meteogram_mode ("both");
    bool lagrangian = false;
    bool ignore_pressure = false;
-   bool no_nwp = false;
    bool no_stage = false;
    bool no_wind_barb = false;
    Dstring color_bar_str = "r:10";
@@ -101,7 +100,7 @@ main (int argc,
 
    int c;
    int option_index = 0;
-   char optstring[] = "A:a:B:bC:c:d:F:f:Gg:h:IiJ:j:K:Ll:M:mNO:o:Pp:Ss:T:t:u:vVWXxz:?";
+   char optstring[] = "A:a:B:bC:c:d:F:f:Gg:h:IiJ:j:K:Ll:M:m:O:o:Pp:Ss:T:t:u:vVWXxz:?";
    while ((c = getopt_long (argc, argv, optstring,
           long_options, &option_index)) != -1)
    {
@@ -249,12 +248,7 @@ main (int argc,
             is_gui = false;
             is_interactive = false;
             is_meteogram = true;
-            break;
-         }
-
-         case 'N':
-         {
-            no_nwp = true;
+            meteogram_mode = optarg;
             break;
          }
 
@@ -432,7 +426,7 @@ main (int argc,
             {
                twiin.meteogram (stage_str, location_str, time_str,
                   format, title_tokens, filename, ignore_pressure,
-                  no_nwp, is_bludge);
+                  meteogram_mode, is_bludge);
             }
          }
          else

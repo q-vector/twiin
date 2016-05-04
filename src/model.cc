@@ -149,9 +149,9 @@ Model::Product::get_description () const
       case Product::NORMAL_SPEED:       return "Normal Speed";
       case Product::BRUNT_VAISALA:      return "Brunt-V\u00e4is\u00e4L\u00e4";
       case Product::RICHARDSON:         return "Richardson Number";
-      case Product::SCORER:             return "Scorer's Parameter";
-      case Product::SCORER_A:           return "Scorer's Parameter Term A";
-      case Product::SCORER_B:           return "Scorer's Parameter Term B";
+      case Product::SCORER:             return "Scorer Parameter";
+      case Product::SCORER_A:           return "Scorer Parameter Term A";
+      case Product::SCORER_B:           return "Scorer Parameter Term B";
       case Product::T:                  return "Temperature";
       case Product::TD:                 return "Dew Point";
       case Product::RH:                 return "Relative Humidity";
