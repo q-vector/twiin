@@ -449,17 +449,17 @@ Model::Product::operator<< (ostream& out_file) const
    return out_file;
 }
 
-Model::Vertical_Coefficients::Vertical_Coefficients ()
+Model::Stage::Vertical_Coefficients::Vertical_Coefficients ()
 {
 }
 
-Model::Vertical_Coefficients::Vertical_Coefficients (const Dstring& file_path)
+Model::Stage::Vertical_Coefficients::Vertical_Coefficients (const Dstring& file_path)
 {
    init (file_path);
 }
 
 void
-Model::Vertical_Coefficients::init (const Dstring& file_path)
+Model::Stage::Vertical_Coefficients::init (const Dstring& file_path)
 {
 
    string is;
@@ -485,66 +485,59 @@ Model::Vertical_Coefficients::init (const Dstring& file_path)
 }
 
 const Tuple&
-Model::Vertical_Coefficients::get_A_theta () const
-{
-   return A_theta;
-}
-
-const Tuple&
-Model::Vertical_Coefficients::get_B_theta () const
-{
-   return B_theta;
-}
-
-const Tuple&
-Model::Vertical_Coefficients::get_A_rho () const
-{
-   return A_rho;
-}
-
-const Tuple&
-Model::Vertical_Coefficients::get_B_rho () const
-{
-   return B_rho;
-}
-
-const Tuple&
-Model::Vertical_Coefficients::get_A (const bool is_theta) const
+Model::Stage::Vertical_Coefficients::get_A (const bool is_theta) const
 {
    return (is_theta ? A_theta : A_rho);
 }
 
 const Tuple&
-Model::Vertical_Coefficients::get_B (const bool is_theta) const
+Model::Stage::Vertical_Coefficients::get_B (const bool is_theta) const
 {
    return (is_theta ? B_theta : B_rho);
 }
 
-const Tuple&
-Model::Vertical_Coefficients::get_A (const Met_Element& met_element) const
+const Real
+Model::Stage::Vertical_Coefficients::get_z (const Integer k,
+                                            const Real topography,
+                                            const bool is_theta) const
 {
-   return get_A (is_theta (met_element));
+   const Tuple& A = get_A (is_theta);
+   const Tuple& B = get_B (is_theta);
+   return A[k] + B[k] * topography;
 }
 
-const Tuple&
-Model::Vertical_Coefficients::get_B (const Met_Element& met_element) const
+const size_t
+Model::Stage::Vertical_Coefficients::get_k (const Real z,
+                                            const Real topography,
+                                            const bool is_theta,
+                                            Integer start_k,
+                                            Integer end_k) const
 {
-   return get_B (is_theta (met_element));
-}
-bool
-Model::Vertical_Coefficients::is_theta (const Met_Element& met_element)
-{
-   return ((met_element == THETA) || 
-           (met_element == Q) || 
-           (met_element == RHO) || 
-           (met_element == W) || 
-           (met_element == T) || 
-           (met_element == TD) || 
-           (met_element == RH) || 
-           (met_element == THETA_E) ||
-           (met_element == THETA_V));
-}
 
+   if (start_k == -1) { start_k = 0; }
+   if (end_k == -1) { end_k = 69; }
+
+   if (end_k - start_k <= 1)
+   {
+      const Real start_diff = fabs (z - get_z (start_k, topography, is_theta));
+      const Real end_diff = fabs (z - get_z (end_k, topography, is_theta));
+      const bool nearer_to_start = start_diff < end_diff;
+      return (nearer_to_start ? start_k : end_k);
+   }
+   else
+   {
+      const Real sum = start_k + end_k;
+      const bool is_even = denise::is_even (sum);
+      const Integer mk = Integer (is_even ? round (sum/2) : floor (sum/2));
+      const Real middle_z = get_z (mk, topography, is_theta);
+      const bool larger = z > middle_z;
+      return (larger ?
+         get_k (z, topography, is_theta, mk, end_k) :
+         get_k (z, topography, is_theta, start_k, mk));
+
+   }
+
+}
 
 void
 Model::Stage::fill_valid_time (set<Dtime>& valid_time_set,
@@ -631,6 +624,8 @@ Model::Stage::acquire_k (size_t& k,
                          const Level& level) const
 {
 
+   const Model::Stage::Vertical_Coefficients& vc = vertical_coefficients;
+
    switch (level.type)
    {
 
@@ -648,13 +643,11 @@ Model::Stage::acquire_k (size_t& k,
          if (z < topography) { k = -1; return; }
 
          const bool is_w = (met_element == W);
-         const bool is_theta = Model::Vertical_Coefficients::is_theta (met_element);
-         const Tuple& A = model.vertical_coefficients.get_A (is_theta);
-         const Tuple& B = model.vertical_coefficients.get_B (is_theta);
-         if (z > A.back ()) { k = -1; return; }
+         const bool is_theta = Model::Stage::is_theta (met_element);
+         if (z > vc.get_A (is_theta).back ()) { k = -1; return; }
 
          const bool surface = (z < 0);
-         k = surface ? -1 : model.get_k (z, topography, A, B);
+         k = surface ? -1 : vc.get_k (z, topography, is_theta);
          break;
 
       }
@@ -667,13 +660,11 @@ Model::Stage::acquire_k (size_t& k,
          if (z < topography) { k = -1; return; }
 
          const bool is_w = (met_element == W);
-         const bool is_theta = Model::Vertical_Coefficients::is_theta (met_element);
-         const Tuple& A = model.vertical_coefficients.get_A (is_theta);
-         const Tuple& B = model.vertical_coefficients.get_B (is_theta);
-         if (z > A.back ()) { k = -1; return; }
+         const bool is_theta = Model::Stage::is_theta (met_element);
+         if (z > vc.get_A (is_theta).back ()) { k = -1; return; }
 
          const bool surface = (z < 0);
-         k = surface ? -1 : model.get_k (z, topography, A, B);
+         k = surface ? -1 : vc.get_k (z, topography, is_theta);
          break;
 
       }
@@ -742,11 +733,13 @@ Model::Stage::fill_sounding (Sounding& sounding,
    size_t i, j;
    acquire_ij (i, j, lat_long);
 
+   const Model::Stage::Vertical_Coefficients& vc = vertical_coefficients;
    const Integer surface_l = get_surface_l (dtime);
    const Integer uppers_l = get_uppers_l (dtime);
    const Real topography = get_topography (i, j);
 
-   // surface points commented out because surface_p cannot be calculated accurately
+   // surface points commented out because surface_p cannot be
+   // calculated accurately
 
    //const Real t = evaluate (T, i, j, surface_l);
    //const Real t_d = evaluate (TD, i, j, surface_l);
@@ -761,16 +754,11 @@ Model::Stage::fill_sounding (Sounding& sounding,
    //sounding.get_wind_profile ().add (surface_p, Wind (u, v));
    //sounding.get_height_profile ().add (surface_p, 0);
 
-   const Tuple& A_rho = model.vertical_coefficients.get_A_rho ();
-   const Tuple& B_rho = model.vertical_coefficients.get_B_rho ();
-   const Tuple& A_theta = model.vertical_coefficients.get_A_theta ();
-   const Tuple& B_theta = model.vertical_coefficients.get_B_theta ();
-
    for (Integer k = 0; k < 70; k++)
    {
 
-      const Real z_rho = model.get_z (k, topography, A_rho, B_rho);
-      const Real z_theta = model.get_z (k, topography, A_theta, B_theta);
+      const Real z_rho = vc.get_z (k, topography, false);
+      const Real z_theta = vc.get_z (k, topography, true);
 
       if (z_rho > ceiling || z_theta > ceiling) { continue; }
 
@@ -807,16 +795,24 @@ Model::Stage::Stage (const Model& model,
 
       const Dstring& argument = tokens[1];
       const Tokens argument_tokens (argument, ":");
-      const Dstring& model_identifier = argument_tokens[0];
+      const Dstring& model_identifier = argument_tokens[0].get_trimmed ();
+      if (stage_str != model_identifier) { continue; }
 
-//      if (model_identifier.substr (0, 1) == "N" &&
+      this->basetime = Dtime (argument_tokens[1].get_trimmed ());
+
+      if (argument_tokens[2] == "AB")
+      {
+         vertical_coefficients.init (argument_tokens[3].get_trimmed ());
+         continue;
+      }
+
 //          argument_tokens.size () == 3)
-      if (argument_tokens.size () == 3)
+      if (argument_tokens.size () == 4)
       {
 
          if (stage_str != argument_tokens[0].get_trimmed ()) { continue; }
-         const Dstring& varname = argument_tokens[1].get_trimmed ();
-         const Dstring& file_path = argument_tokens[2].get_trimmed ();
+         const Dstring& varname = argument_tokens[2].get_trimmed ();
+         const Dstring& file_path = argument_tokens[3].get_trimmed ();
 
          ingest (varname, file_path);
          continue;
@@ -839,6 +835,20 @@ Model::Stage::~Stage ()
       delete nc_file_ptr;
    }
 
+}
+
+bool
+Model::Stage::is_theta (const Met_Element& met_element)
+{
+   return ((met_element == THETA) || 
+           (met_element == Q) || 
+           (met_element == RHO) || 
+           (met_element == W) || 
+           (met_element == T) || 
+           (met_element == TD) || 
+           (met_element == RH) || 
+           (met_element == THETA_E) ||
+           (met_element == THETA_V));
 }
 
 Dstring
@@ -888,7 +898,7 @@ Model::Stage::ingest (const Dstring& varname,
 const Dtime&
 Model::Stage::get_basetime () const
 {
-   return model.get_basetime ();
+   return basetime;
 }
 
 Domain_2D
@@ -1891,18 +1901,16 @@ Model::Stage::evaluate_dz (const Met_Element& met_element,
    const Integer n = 70;
    if (k < 1 || k >= n - 1) { return GSL_NAN; }
 
-   const bool is_theta = Model::Vertical_Coefficients::is_theta (met_element);
-   const Tuple& A = model.vertical_coefficients.get_A (met_element);
-   const Tuple& B = model.vertical_coefficients.get_B (met_element);
+   const bool is_theta = Model::Stage::is_theta (met_element);
 
    const Integer k_0 = (k == 0   ? k : k-1);
    const Integer k_1 = k;
    const Integer k_2 = (k == n-1 ? k : k+1);
 
    const Real topography = get_topography (i, j);
-   const Real z_0 = model.get_z (k_0, topography, A, B);
-   const Real z_1 = model.get_z (k_1, topography, A, B);
-   const Real z_2 = model.get_z (k_2, topography, A, B);
+   const Real z_0 = vertical_coefficients.get_z (k_0, topography, is_theta);
+   const Real z_1 = vertical_coefficients.get_z (k_1, topography, is_theta);
+   const Real z_2 = vertical_coefficients.get_z (k_2, topography, is_theta);
 
    const Real datum_0 = evaluate (met_element, i, j, k_0, l);
    const Real datum_1 = evaluate (met_element, i, j, k_1, l);
@@ -2325,11 +2333,8 @@ Model::Stage::evaluate_richardson (const Real azimuth,
    acquire_k (k_theta, THETA, i, j, level);
    if (k_theta <= 0 || k_theta >= 69) { return GSL_NAN; }
 
+   const Model::Stage::Vertical_Coefficients& vc = vertical_coefficients;
    const Real topography = get_topography (i, j);
-   const Tuple& A_rho = model.vertical_coefficients.get_A_rho ();
-   const Tuple& B_rho = model.vertical_coefficients.get_B_rho ();
-   const Tuple& A_theta = model.vertical_coefficients.get_A_theta ();
-   const Tuple& B_theta = model.vertical_coefficients.get_B_theta ();
 
    const Integer k_rho_0 = k_rho - 1;
    const Integer k_rho_1 = k_rho;
@@ -2351,13 +2356,13 @@ Model::Stage::evaluate_richardson (const Real azimuth,
    const Real v_1 = evaluate (V, i, j, k_rho_1, l);
    const Real v_2 = evaluate (V, i, j, k_rho_2, l);
 
-   const Real z_theta_0 = model.get_z (k_theta_0, topography, A_theta, B_theta);
-   const Real z_theta_1 = model.get_z (k_theta_1, topography, A_theta, B_theta);
-   const Real z_theta_2 = model.get_z (k_theta_2, topography, A_theta, B_theta);
+   const Real z_theta_0 = vc.get_z (k_theta_0, topography, true);
+   const Real z_theta_1 = vc.get_z (k_theta_1, topography, true);
+   const Real z_theta_2 = vc.get_z (k_theta_2, topography, true);
 
-   const Real z_rho_0 = model.get_z (k_rho_0, topography, A_rho, B_rho);
-   const Real z_rho_1 = model.get_z (k_rho_1, topography, A_rho, B_rho);
-   const Real z_rho_2 = model.get_z (k_rho_2, topography, A_rho, B_rho);
+   const Real z_rho_0 = vc.get_z (k_rho_0, topography, false);
+   const Real z_rho_1 = vc.get_z (k_rho_1, topography, false);
+   const Real z_rho_2 = vc.get_z (k_rho_2, topography, false);
 
    typedef Differentiation D;
    const Real dtheta_dz = D::d_1 (theta_0, theta_1,
@@ -2399,11 +2404,8 @@ Model::Stage::evaluate_scorer (const Real azimuth,
    acquire_k (k_theta, THETA, i, j, level);
    if (k_theta <= 0 || k_theta >= 69) { return GSL_NAN; }
 
+   const Model::Stage::Vertical_Coefficients& vc = vertical_coefficients;
    const Real topography = get_topography (i, j);
-   const Tuple& A_rho = model.vertical_coefficients.get_A_rho ();
-   const Tuple& B_rho = model.vertical_coefficients.get_B_rho ();
-   const Tuple& A_theta = model.vertical_coefficients.get_A_theta ();
-   const Tuple& B_theta = model.vertical_coefficients.get_B_theta ();
 
    const Integer k_rho_0 = k_rho - 1;
    const Integer k_rho_1 = k_rho;
@@ -2430,13 +2432,13 @@ Model::Stage::evaluate_scorer (const Real azimuth,
    const Real along_1 = u_1 * sin (theta) + v_1 * cos (theta);
    const Real along_2 = u_2 * sin (theta) + v_2 * cos (theta);
 
-   const Real z_theta_0 = model.get_z (k_theta_0, topography, A_theta, B_theta);
-   const Real z_theta_1 = model.get_z (k_theta_1, topography, A_theta, B_theta);
-   const Real z_theta_2 = model.get_z (k_theta_2, topography, A_theta, B_theta);
+   const Real z_theta_0 = vc.get_z (k_theta_0, topography, true);
+   const Real z_theta_1 = vc.get_z (k_theta_1, topography, true);
+   const Real z_theta_2 = vc.get_z (k_theta_2, topography, true);
 
-   const Real z_rho_0 = model.get_z (k_rho_0, topography, A_rho, B_rho);
-   const Real z_rho_1 = model.get_z (k_rho_1, topography, A_rho, B_rho);
-   const Real z_rho_2 = model.get_z (k_rho_2, topography, A_rho, B_rho);
+   const Real z_rho_0 = vc.get_z (k_rho_0, topography, false);
+   const Real z_rho_1 = vc.get_z (k_rho_1, topography, false);
+   const Real z_rho_2 = vc.get_z (k_rho_2, topography, false);
 
    typedef Differentiation D;
    const Real dtheta_dz = D::d_1 (theta_0, theta_1,
@@ -2487,9 +2489,8 @@ Model::Stage::evaluate_scorer_a (const Real azimuth,
    acquire_k (k_theta, THETA, i, j, level);
    if (k_theta <= 0 || k_theta >= 69) { return GSL_NAN; }
 
+   const Model::Stage::Vertical_Coefficients& vc = vertical_coefficients;
    const Real topography = get_topography (i, j);
-   const Tuple& A_theta = model.vertical_coefficients.get_A_theta ();
-   const Tuple& B_theta = model.vertical_coefficients.get_B_theta ();
 
    const Integer k_theta_0 = k_theta - 1;
    const Integer k_theta_1 = k_theta;
@@ -2505,9 +2506,9 @@ Model::Stage::evaluate_scorer_a (const Real azimuth,
    const Real theta = azimuth * DEGREE_TO_RADIAN;
    const Real along = u * sin (theta) + v * cos (theta) - u_bg;
 
-   const Real z_theta_0 = model.get_z (k_theta_0, topography, A_theta, B_theta);
-   const Real z_theta_1 = model.get_z (k_theta_1, topography, A_theta, B_theta);
-   const Real z_theta_2 = model.get_z (k_theta_2, topography, A_theta, B_theta);
+   const Real z_theta_0 = vc.get_z (k_theta_0, topography, true);
+   const Real z_theta_1 = vc.get_z (k_theta_1, topography, true);
+   const Real z_theta_2 = vc.get_z (k_theta_2, topography, true);
 
    typedef Differentiation D;
    const Real dtheta_dz = D::d_1 (theta_0, theta_1,
@@ -2543,9 +2544,8 @@ Model::Stage::evaluate_scorer_b (const Real azimuth,
    acquire_k (k_rho, U, i, j, level);
    if (k_rho <= 0 || k_rho >= 69) { return GSL_NAN; }
 
+   const Model::Stage::Vertical_Coefficients& vc = vertical_coefficients;
    const Real topography = get_topography (i, j);
-   const Tuple& A_rho = model.vertical_coefficients.get_A_rho ();
-   const Tuple& B_rho = model.vertical_coefficients.get_B_rho ();
 
    const Integer k_rho_0 = k_rho - 1;
    const Integer k_rho_1 = k_rho;
@@ -2564,9 +2564,9 @@ Model::Stage::evaluate_scorer_b (const Real azimuth,
    const Real along_1 = u_1 * sin (theta) + v_1 * cos (theta) - u_bg;
    const Real along_2 = u_2 * sin (theta) + v_2 * cos (theta) - u_bg;
 
-   const Real z_rho_0 = model.get_z (k_rho_0, topography, A_rho, B_rho);
-   const Real z_rho_1 = model.get_z (k_rho_1, topography, A_rho, B_rho);
-   const Real z_rho_2 = model.get_z (k_rho_2, topography, A_rho, B_rho);
+   const Real z_rho_0 = vc.get_z (k_rho_0, topography, false);
+   const Real z_rho_1 = vc.get_z (k_rho_1, topography, false);
+   const Real z_rho_2 = vc.get_z (k_rho_2, topography, false);
 
    typedef Differentiation D;
    return -D::d2 (along_0, along_1, along_2, z_rho_0,
@@ -2595,9 +2595,8 @@ Model::Stage::evaluate_brunt_vaisala (const size_t i,
    acquire_k (k, THETA, i, j, level);
    if (k <= 0 || k >= 69) { return GSL_NAN; }
 
+   const Model::Stage::Vertical_Coefficients& vc = vertical_coefficients;
    const Real topography = get_topography (i, j);
-   const Tuple& A_theta = model.vertical_coefficients.get_A_theta ();
-   const Tuple& B_theta = model.vertical_coefficients.get_B_theta ();
 
    const Integer k_0 = k - 1;
    const Integer k_1 = k;
@@ -2607,9 +2606,9 @@ Model::Stage::evaluate_brunt_vaisala (const size_t i,
    const Real theta_1 = evaluate (THETA, i, j, k_1, l);
    const Real theta_2 = evaluate (THETA, i, j, k_2, l);
 
-   const Real z_0 = model.get_z (k_0, topography, A_theta, B_theta);
-   const Real z_1 = model.get_z (k_1, topography, A_theta, B_theta);
-   const Real z_2 = model.get_z (k_2, topography, A_theta, B_theta);
+   const Real z_0 = vc.get_z (k_0, topography, true);
+   const Real z_1 = vc.get_z (k_1, topography, true);
+   const Real z_2 = vc.get_z (k_2, topography, true);
 
    typedef Differentiation D;
    const Real dtheta_dz = D::d_1 (theta_0, theta_1, theta_2, z_0, z_1, z_2);
@@ -4842,7 +4841,6 @@ Model::Stage::get_sounding_ptr (const Lat_Long& lat_long,
                                 const Real ceiling) const
 {
 
-   const Dtime& basetime = model.get_basetime ();
    Sounding* sounding_ptr = new Sounding ();
 
    sounding_ptr->set_time (dtime);
@@ -4893,7 +4891,6 @@ Model::Stage::get_sounding_ptr (const Lat_Long::List& lat_long_list,
          delete sounding_ptr;
       }
 
-      const Dtime& basetime = model.get_basetime ();
       mean_sounding_ptr->set_time (dtime);
       mean_sounding_ptr->set_basetime (basetime);
       mean_sounding_ptr->set_location_str (location_str);
@@ -5075,8 +5072,6 @@ Model::Stage::Map::Map (const Model& model,
                         const Config_File& config_file)
 {
 
-   // const Tokens stage_tokens ("N4000 N1200 N0440");
-
    Tokens stage_tokens;
 
    for (auto iterator = config_file.begin ();
@@ -5119,55 +5114,9 @@ Model::Stage::Map::~Map ()
    }
 }
 
-const Real
-Model::get_z (const Integer k,
-              const Real topography,
-              const Tuple& A,
-              const Tuple& B) const
-{
-   return A[k] + B[k] * topography;
-}
-
-const size_t
-Model::get_k (const Real z,
-              const Real topography,
-              const Tuple& A,
-              const Tuple& B,
-              Integer start_k,
-              Integer end_k) const
-{
-
-   if (start_k == -1) { start_k = 0; }
-   if (end_k == -1) { end_k = 69; }
-
-   if (end_k - start_k <= 1)
-   {
-      const Real start_diff = fabs (z - get_z (start_k, topography, A, B));
-      const Real end_diff = fabs (z - get_z (end_k, topography, A, B));
-      const bool nearer_to_start = start_diff < end_diff;
-      return (nearer_to_start ? start_k : end_k);
-   }
-   else
-   {
-      const Real sum = start_k + end_k;
-      const bool is_even = denise::is_even (sum);
-      const Integer mk = Integer (is_even ? round (sum/2) : floor (sum/2));
-      const Real middle_z = get_z (mk, topography, A, B);
-      const bool larger = z > middle_z;
-      return (larger ?
-         get_k (z, topography, A, B, mk, end_k) :
-         get_k (z, topography, A, B, start_k, mk));
-
-   }
-
-}
-
-
 Model::Model (const Config_File& config_file)
    : stage_map (*this, config_file)
 {
-
-   Dstring vertical_coefficients_file_path;
 
    for (auto iterator = config_file.begin ();
         iterator != config_file.end (); iterator++)
@@ -5181,32 +5130,12 @@ Model::Model (const Config_File& config_file)
       const Dstring& model_identifier = argument_tokens[0];
       const Integer n = argument_tokens.size ();
 
-      if (model_identifier == "RUN" && n == 2)
-      {
-         basetime = Dtime (argument_tokens[1]);
-         continue;
-      }
-
-      if (model_identifier == "AB" && n == 2)
-      {
-         vertical_coefficients_file_path = argument_tokens[1].get_trimmed ();
-         continue;
-      }
-
    }
-
-   vertical_coefficients.init (vertical_coefficients_file_path);
 
 }
 
 Model::~Model ()
 {
-}
-
-const Dtime&
-Model::get_basetime () const
-{
-   return basetime;
 }
 
 const Model::Stage&

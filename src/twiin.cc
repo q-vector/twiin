@@ -282,7 +282,6 @@ Twiin::plan (const Dstring& stage_str,
    Title title (size_2d);
    const Data data (config_file);
    const Model& model = data.get_model ();
-   const Dtime& basetime = model.get_basetime ();
    const Hrit& hrit = data.get_hrit ();
    const Station::Map& station_map = data.get_station_map ();
 
@@ -296,6 +295,7 @@ Twiin::plan (const Dstring& stage_str,
 
       const Dstring s (*i);
       const Model::Stage& stage = model.get_stage (s);
+      const Dtime& basetime = stage.get_basetime ();
       const Geodetic_Transform& transform = gt_ptr == NULL ?
          *(transform_ptr_map[s]) : *gt_ptr;
 
@@ -510,7 +510,6 @@ Twiin::plan (const Dstring& stage_str,
    Title title (size_2d);
    const Data data (config_file);
    const Model& model = data.get_model ();
-   const Dtime& basetime = model.get_basetime ();
    const Hrit& hrit = data.get_hrit ();
    const Station::Map& station_map = data.get_station_map ();
 
@@ -524,6 +523,7 @@ Twiin::plan (const Dstring& stage_str,
 
       const Dstring s (*i);
       const Model::Stage& stage = model.get_stage (s);
+      const Dtime& basetime = stage.get_basetime ();
       const Geodetic_Transform& transform = gt_ptr == NULL ?
          *(transform_ptr_map[s]) : *gt_ptr;
 
@@ -708,7 +708,6 @@ Twiin::cross_section (const Dstring& stage_str,
    Title title (size_2d);
    const Data data (config_file);
    const Model& model = data.get_model ();
-   const Dtime& basetime = model.get_basetime ();
 
    const Real margin_l = 50;
    const Real margin_r = 20 + 90;
@@ -741,6 +740,7 @@ Twiin::cross_section (const Dstring& stage_str,
 
          const Dstring s (*i);
          const Model::Stage& stage = model.get_stage (s);
+         const Dtime& basetime = stage.get_basetime ();
 
          for (Tokens::const_iterator j = product_tokens.begin ();
               j != product_tokens.end (); j++)
@@ -836,7 +836,6 @@ Twiin::cross_section (const Dstring& stage_str,
    Title title (size_2d);
    const Data data (config_file);
    const Model& model = data.get_model ();
-   const Dtime& basetime = model.get_basetime ();
 
    const Real margin_l = 50;
    const Real margin_r = 20 + 90;
@@ -851,6 +850,7 @@ Twiin::cross_section (const Dstring& stage_str,
 
       const Dstring s (*i);
       const Model::Stage& stage = model.get_stage (s);
+      const Dtime& basetime = stage.get_basetime ();
 
       for (Tokens::const_iterator j = product_tokens.begin ();
            j != product_tokens.end (); j++)
@@ -973,7 +973,6 @@ Twiin::time_cross (const Dstring& stage_str,
                    const bool is_bludge) const
 {
 
-cout << "twiin::time_cross a " << endl;
    const Level level ("100m");
    const Dtime::Set time_set (time_str);
    const Dtime::Span time_span = time_set.get_span ();
@@ -986,7 +985,6 @@ cout << "twiin::time_cross a " << endl;
    Title title (size_2d);
    const Data data (config_file);
    const Model& model = data.get_model ();
-   const Dtime& basetime = model.get_basetime ();
    const Station::Map& station_map = data.get_station_map ();
 
    const Real margin_l = 50;
@@ -1002,6 +1000,7 @@ cout << "twiin::time_cross a " << endl;
 
       const Dstring s (*i);
       const Model::Stage& stage = model.get_stage (s);
+      const Dtime& basetime = stage.get_basetime ();
 
       for (Tokens::const_iterator j = product_tokens.begin ();
            j != product_tokens.end (); j++)
@@ -1104,7 +1103,6 @@ Twiin::time_cross (const Dstring& stage_str,
    Title title (size_2d);
    const Data data (config_file);
    const Model& model = data.get_model ();
-   const Dtime& basetime = model.get_basetime ();
 
    const Real margin_l = 50;
    const Real margin_r = 20 + 90;
@@ -1119,6 +1117,7 @@ Twiin::time_cross (const Dstring& stage_str,
 
       const Dstring s (*i);
       const Model::Stage& stage = model.get_stage (s);
+      const Dtime& basetime = stage.get_basetime ();
 
       for (Tokens::const_iterator j = product_tokens.begin ();
            j != product_tokens.end (); j++)
@@ -1217,7 +1216,6 @@ Twiin::meteogram (const Dstring& stage_str,
    Title title (size_2d);
    const Data data (config_file);
    const Model& model = data.get_model ();
-   const Dtime& basetime = model.get_basetime ();
    const Station::Map& station_map = data.get_station_map ();
    const Aws::Repository& aws_repository = data.get_aws_repository ();
 
@@ -1227,6 +1225,7 @@ Twiin::meteogram (const Dstring& stage_str,
 
       const Dstring s (*i);
       const Model::Stage& stage = model.get_stage (s);
+      const Dtime& basetime = stage.get_basetime ();
 
       for (Tokens::const_iterator j = location_tokens.begin ();
            j != location_tokens.end (); j++)
@@ -1293,7 +1292,6 @@ Twiin::vertical_profile (const Dstring& stage_str,
    Title title (size_2d);
    const Data data (config_file);
    const Model& model = data.get_model ();
-   const Dtime& basetime = model.get_basetime ();
    const Station::Map& station_map = data.get_station_map ();
 
    const Tephigram tephigram (size_2d);
@@ -1304,6 +1302,7 @@ Twiin::vertical_profile (const Dstring& stage_str,
 
       const Dstring s (*i);
       const Model::Stage& stage = model.get_stage (s);
+      const Dtime& basetime = stage.get_basetime ();
 
       const vector<Dtime>& valid_time_vector =
          stage.get_valid_time_vector (product, level, time_set);
@@ -1431,7 +1430,6 @@ Twiin::vertical_profile (const Dstring& stage_str,
    Title title (size_2d);
    const Data data (config_file);
    const Model& model = data.get_model ();
-   const Dtime& basetime = model.get_basetime ();
    const Station::Map& station_map = data.get_station_map ();
 
    const Tephigram tephigram (size_2d);
@@ -1442,6 +1440,7 @@ Twiin::vertical_profile (const Dstring& stage_str,
 
       const Dstring s (*i);
       const Model::Stage& stage = model.get_stage (s);
+      const Dtime& basetime = stage.get_basetime ();
 
       for (auto t = track_id_tokens.begin ();
            t != track_id_tokens.end (); t++)
@@ -1782,7 +1781,6 @@ Twiin::Andrea::twiin_surface_plan (const Dstring& surface_identifier,
 
    const Data data (config_file);
    const Model& model = data.get_model ();
-   const Dtime& basetime = model.get_basetime ();
    const Station::Map& station_map = data.get_station_map ();
    Twiin::render (cr, geodetic_transform, size_2d, data, dtime,
       level, stage, product, polygon_list, no_stage, no_wind_barb);
@@ -2209,7 +2207,7 @@ Twiin::render_stages (const RefPtr<Context>& cr,
 
    cr->set_line_width (4);
    Color::hsb (0.00, 0.00, 0.00, 0.5).cairo (cr);
-   const Tokens stage_tokens ("STAGE3 STAGE4 STAGE5");
+   const Tokens stage_tokens ("N4000 N1200 N0440");
 
    for (auto iterator = stage_tokens.begin ();
         iterator != stage_tokens.end (); iterator++)
@@ -3933,7 +3931,8 @@ void
 Twiin::Gui::render_queue_draw ()
 {
    const Model& model = data.get_model ();
-   const Dtime& basetime = model.get_basetime ();
+   const Model::Stage& stage = model.get_stage (stage_str);
+   const Dtime& basetime = stage.get_basetime ();
    const Dtime& dtime = get_time_chooser ().get_time ();
    Twiin::set_title (title, basetime, stage_str, product, dtime, level);
    set_foreground_ready (false);

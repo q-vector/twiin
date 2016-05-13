@@ -267,7 +267,8 @@ void
 Cross_Section::render_queue_draw ()
 {
 
-   const Dtime& basetime = model.get_basetime ();
+   const Model::Stage& stage = model.get_stage (stage_str);
+   const Dtime& basetime = stage.get_basetime ();
    const Dtime& dtime = get_time_chooser ().get_time ();
    Twiin::set_title (title, basetime, stage_str, product, dtime, journey);
 

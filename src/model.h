@@ -114,71 +114,71 @@ namespace twiin
 
          };
 
-         class Vertical_Coefficients
-         {
-
-            private:
-
-               Tuple
-               A_theta;
-
-               Tuple
-               B_theta;
-
-               Tuple
-               A_rho;
-
-               Tuple
-               B_rho;
-
-            public:
-
-               Vertical_Coefficients ();
-
-               Vertical_Coefficients (const Dstring& file_path);
-
-               void
-               init (const Dstring& file_path);
-
-               const Tuple&
-               get_A_theta () const;
-
-               const Tuple&
-               get_B_theta () const;
-
-               const Tuple&
-               get_A_rho () const;
-
-               const Tuple&
-               get_B_rho () const;
-
-               const Tuple&
-               get_A (const bool is_theta) const;
-
-               const Tuple&
-               get_B (const bool is_theta) const;
-
-               const Tuple&
-               get_A (const Met_Element& met_element) const;
-
-               const Tuple&
-               get_B (const Met_Element& met_element) const;
-
-               static bool
-               is_theta (const Met_Element& met_element);
-
-         };
-
          class Stage
          {
 
             private:
+
+               class Vertical_Coefficients
+               {
+
+                  private:
+
+                     Tuple
+                     A_theta;
+
+                     Tuple
+                     B_theta;
+
+                     Tuple
+                     A_rho;
+
+                     Tuple
+                     B_rho;
+
+                  public:
+
+                     Vertical_Coefficients ();
+
+                     Vertical_Coefficients (const Dstring& file_path);
+
+                     void
+                     init (const Dstring& file_path);
+
+                     const Tuple&
+                     get_A (const bool is_theta) const;
+
+                     const Tuple&
+                     get_B (const bool is_theta) const;
+
+                     Real
+                     get_max_z () const;
+
+                     const Real
+                     get_z (const Integer k,
+                            const Real topography,
+                            const bool is_theta) const;
+
+                     const size_t
+                     get_k (const Real z,
+                            const Real topography,
+                            const bool is_theta,
+                            Integer start_k = -1,
+                            Integer end_k = -1) const;
+
+               };
 
                const Model&
                model;
 
                const Dstring
                stage_str;
+
+               Dtime
+               basetime;
+
+               Vertical_Coefficients
+               vertical_coefficients;
 
                Tuple
                tuple_latitude;
@@ -250,6 +250,9 @@ namespace twiin
                       const Config_File& config_file);
 
                ~Stage ();
+
+               static bool
+               is_theta (const Met_Element& met_element);
 
                static Dstring
                get_nc_varname (const Dstring& varname);
@@ -852,37 +855,14 @@ namespace twiin
 
       private:
 
-         Dtime
-         basetime;
-
          Stage::Map
          stage_map;
-
-         Vertical_Coefficients
-         vertical_coefficients;
-
-         const Real
-         get_z (const Integer k,
-                const Real topography,
-                const Tuple& A,
-                const Tuple& B) const;
-
-         const size_t
-         get_k (const Real z,
-                const Real topography,
-                const Tuple& A,
-                const Tuple& B,
-                Integer start_k = -1,
-                Integer end_k = -1) const;
 
       public:
 
          Model (const Config_File& config_file);
 
          ~Model ();
-
-         const Dtime&
-         get_basetime () const;
 
          const Model::Stage&
          get_stage (const Dstring& stage) const;
