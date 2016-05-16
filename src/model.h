@@ -117,6 +117,140 @@ namespace twiin
          class Stage
          {
 
+            public:
+
+               virtual const Dtime&
+               get_basetime () const = 0;
+
+               virtual Domain_2D
+               get_domain_2d () const = 0;
+
+               virtual bool
+               out_of_bounds (const Lat_Long& lat_long) const = 0;
+
+               virtual const set<Dtime>&
+               get_valid_time_set (const Product& product,
+                                   const Level& level) const = 0;
+
+               virtual vector<Dtime>
+               get_valid_time_vector (const Product& product,
+                                      const Level& level,
+                                      const Dtime::Set& time_set) const = 0;
+
+               virtual Real
+               get_topography (const Lat_Long& lat_long) const = 0;
+
+               virtual size_t
+               get_uppers_l (const Dtime& dtime) const = 0;
+
+               virtual Real
+               evaluate (const Met_Element& met_element,
+                         const Lat_Long& lat_long,
+                         const Level& level,
+                         const Dtime& dtime) const = 0;
+
+               virtual Raster*
+               get_terrain_raster_ptr (const Size_2D& size_2d,
+                                       const Transform_2D& transform) const = 0;
+
+               virtual Raster*
+               get_surface_raster_ptr (const Size_2D& size_2d,
+                                       const Transform_2D& transform,
+                                       const Product& product,
+                                       const Dtime& dtime) const = 0;
+
+               virtual Raster*
+               get_uppers_raster_ptr (const Size_2D& size_2d,
+                                      const Transform_2D& transform,
+                                      const Product& product,
+                                      const Dtime& dtime,
+                                      const Level& level) const = 0;
+
+               virtual Raster*
+               get_cross_section_raster_ptr (const Box_2D& box_2d,
+                                             const Transform_2D& transform,
+                                             const Product& product,
+                                             const Dtime& dtime,
+                                             const Journey& journey,
+                                             const Real u_bg = 0) const = 0;
+
+               virtual Raster*
+               get_time_cross_raster_ptr (const Box_2D& box_2d,
+                                          const Transform_2D& transform,
+                                          const Model::Product& product,
+                                          const Location& location,
+                                          const Dtime::Span& time_span,
+                                          const Real azimuth = GSL_NAN) const = 0;
+
+               virtual Raster*
+               get_time_cross_raster_ptr (const Box_2D& box_2d,
+                                          const Transform_2D& transform,
+                                          const Model::Product& product,
+                                          const Track& track,
+                                          const bool lagrangian = false) const = 0;
+
+               virtual Track
+               get_trajectory (Lat_Long lat_long,
+                               Level level,
+                               Dtime dtime,
+                               const Real finish_tau,
+                               const vector<Product>& product_vector = vector<Product> ()) const = 0;
+
+               virtual void
+               survey_trajectory (Track& trajectory,
+                                  const vector<Product>& product_vector) const = 0;
+
+               virtual const Aws::Repository*
+               get_aws_repository_ptr (const Lat_Long& lat_long,
+                                       const Dtime::Set& time_set = Dtime::Set ()) const = 0;
+
+               virtual Sounding*
+               get_sounding_ptr (const Lat_Long::List& lat_long_list,
+                                 const Dtime& dtime,
+                                 const Real ceiling = GSL_POSINF,
+                                 const Thermo_Diagram& thermo_diagram = Tephigram ()) const = 0;
+
+               virtual Sounding*
+               get_sounding_ptr (const Lat_Long& lat_long,
+                                 const Dtime& dtime,
+                                 const Real ceiling = GSL_POSINF) const = 0;
+
+               static Color
+               get_wind_color (const Real direction,
+                               const Real speed);
+
+               static Color
+               get_color (const Model::Product& product,
+                          const Real datum);
+
+               static Color
+               get_color (const Model::Product& product,
+                          const Real datum,
+                          const Dstring& unit);
+
+               virtual Tokens
+               get_marker_tokens (const Lat_Long& lat_long,
+                                  const Dtime& dtime,
+                                  const Product& product,
+                                  const Level& level) const = 0; 
+
+               class Map : public map<Dstring, Model::Stage*>
+               {
+
+                  public:
+
+                     Map (const Model& model,
+                          const Config_File& config_file);
+
+                     ~Map ();
+
+               };
+
+         };
+
+         class Acncrjbf : public Stage
+         {
+
             private:
 
                class Vertical_Coefficients
@@ -245,11 +379,11 @@ namespace twiin
 
             public:
 
-               Stage (const Model& model,
-                      const Dstring& stage_str,
-                      const Config_File& config_file);
+               Acncrjbf (const Model& model,
+                         const Dstring& stage_str,
+                         const Config_File& config_file);
 
-               ~Stage ();
+               ~Acncrjbf ();
 
                static bool
                is_theta (const Met_Element& met_element);
@@ -733,19 +867,6 @@ namespace twiin
                get_topography (const size_t i,
                                const size_t j) const;
 
-               static Color
-               get_wind_color (const Real direction,
-                               const Real speed);
-
-               static Color
-               get_color (const Model::Product& product,
-                          const Real datum);
-
-               static Color
-               get_color (const Model::Product& product,
-                          const Real datum,
-                          const Dstring& unit);
-
                Color
                get_color (const Product& product,
                           const Lat_Long& lat_long,
@@ -838,18 +959,6 @@ namespace twiin
                                   const Dtime& dtime,
                                   const Product& product,
                                   const Level& level) const;
-
-               class Map : public map<Dstring, Model::Stage*>
-               {
-
-                  public:
-
-                     Map (const Model& model,
-                          const Config_File& config_file);
-
-                     ~Map ();
-
-               };
 
          };
 

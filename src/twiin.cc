@@ -2238,6 +2238,18 @@ Twiin::render_product (const RefPtr<Context>& cr,
    const Model& model = data.get_model ();
    const Model::Stage& stage = model.get_stage (stage_str);
 
+   if (product.enumeration == Model::Product::IR1 ||
+       product.enumeration == Model::Product::IR2 ||
+       product.enumeration == Model::Product::IR3 ||
+       product.enumeration == Model::Product::IR4 ||
+       product.enumeration == Model::Product::VIS ||
+       product.enumeration == Model::Product::Pseudo)
+   {
+      const Hrit& hrit = data.get_hrit ();
+      const Dstring& channel_str = product.get_string ();
+      raster_ptr = hrit.get_raster_ptr (size_2d, transform, channel_str, dtime);
+   }
+   else
    if (product.enumeration == Model::Product::TERRAIN)
    {
       raster_ptr = stage.get_terrain_raster_ptr (size_2d, transform);
@@ -2249,18 +2261,6 @@ Twiin::render_product (const RefPtr<Context>& cr,
    {
       raster_ptr = stage.get_surface_raster_ptr (
          size_2d, transform, product, dtime);
-   }
-   else
-   if (product.enumeration == Model::Product::IR1 ||
-       product.enumeration == Model::Product::IR2 ||
-       product.enumeration == Model::Product::IR3 ||
-       product.enumeration == Model::Product::IR4 ||
-       product.enumeration == Model::Product::VIS ||
-       product.enumeration == Model::Product::Pseudo)
-   {
-      const Hrit& hrit = data.get_hrit ();
-      const Dstring& channel_str = product.get_string ();
-      raster_ptr = hrit.get_raster_ptr (size_2d, transform, channel_str, dtime);
    }
    else
    {
