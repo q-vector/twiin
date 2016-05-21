@@ -2250,30 +2250,8 @@ Twiin::render_product (const RefPtr<Context>& cr,
       raster_ptr = hrit.get_raster_ptr (size_2d, transform, channel_str, dtime);
    }
    else
-   if (product.enumeration == Model::Product::TERRAIN)
    {
-      raster_ptr = stage.get_terrain_raster_ptr (size_2d, transform);
-   }
-   else
-   if (product.enumeration == Model::Product::FFDI ||
-       product.enumeration == Model::Product::MSLP ||
-       product.enumeration == Model::Product::PRECIP_RATE)
-   {
-      raster_ptr = stage.get_surface_raster_ptr (
-         size_2d, transform, product, dtime);
-   }
-   else
-   {
-      if (level.type == Level::SURFACE)
-      {
-         raster_ptr = stage.get_surface_raster_ptr (size_2d,
-            transform, product, dtime);
-      }
-      else
-      {
-         raster_ptr = stage.get_uppers_raster_ptr (size_2d,
-            transform, product, dtime, level);
-      }
+      raster_ptr = stage.get_geo_raster_ptr (size_2d, transform, product, dtime, level);
    }
 
    if (raster_ptr != NULL) { raster_ptr->blit (cr); }

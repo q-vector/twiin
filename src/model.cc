@@ -1568,8 +1568,8 @@ Model::Acncrjbf::get_valid_time_set (const Product& product,
 
 vector<Dtime>
 Model::Acncrjbf::get_valid_time_vector (const Product& product,
-                                     const Level& level,
-                                     const Dtime::Set& time_set) const
+                                        const Level& level,
+                                        const Dtime::Set& time_set) const
 {
 
    vector<Dtime> valid_time_vector;
@@ -1588,8 +1588,8 @@ Model::Acncrjbf::get_valid_time_vector (const Product& product,
 
 Real
 Model::Acncrjbf::evaluate (const Dstring& varname,
-                        const size_t& i,
-                        const size_t& j) const
+                           const size_t& i,
+                           const size_t& j) const
 {
 
    float datum;
@@ -1606,7 +1606,7 @@ Model::Acncrjbf::evaluate (const Dstring& varname,
 
 Real
 Model::Acncrjbf::evaluate (const Dstring& varname,
-                        const Lat_Long& lat_long) const
+                           const Lat_Long& lat_long) const
 {
    size_t i, j;
    acquire_ij (i, j, lat_long);
@@ -1615,8 +1615,8 @@ Model::Acncrjbf::evaluate (const Dstring& varname,
 
 Real
 Model::Acncrjbf::evaluate (const Met_Element& met_element,
-                        const Lat_Long& lat_long,
-                        const size_t l) const
+                           const Lat_Long& lat_long,
+                           const size_t l) const
 {
    size_t i, j;
    acquire_ij (i, j, lat_long);
@@ -1625,9 +1625,9 @@ Model::Acncrjbf::evaluate (const Met_Element& met_element,
 
 Real
 Model::Acncrjbf::evaluate (const Met_Element& met_element,
-                        const size_t i,
-                        const size_t j,
-                        const size_t l) const
+                           const size_t i,
+                           const size_t j,
+                           const size_t l) const
 {
 
    int ret;
@@ -1798,9 +1798,9 @@ Model::Acncrjbf::evaluate (const Met_Element& met_element,
 
 Real
 Model::Acncrjbf::evaluate (const Met_Element& met_element,
-                        const Lat_Long& lat_long,
-                        const Level& level,
-                        const size_t l) const
+                           const Lat_Long& lat_long,
+                           const Level& level,
+                           const size_t l) const
 {
    size_t i, j;
    acquire_ij (i, j, lat_long);
@@ -1809,10 +1809,10 @@ Model::Acncrjbf::evaluate (const Met_Element& met_element,
 
 Real
 Model::Acncrjbf::evaluate (const Met_Element& met_element,
-                        const size_t i,
-                        const size_t j,
-                        const Level& level,
-                        const size_t l) const
+                           const size_t i,
+                           const size_t j,
+                           const Level& level,
+                           const size_t l) const
 {
 
    size_t k;
@@ -1826,9 +1826,9 @@ Model::Acncrjbf::evaluate (const Met_Element& met_element,
 
 Real
 Model::Acncrjbf::evaluate (const Met_Element& met_element,
-                        const Lat_Long& lat_long,
-                        const size_t k,
-                        const size_t l) const
+                           const Lat_Long& lat_long,
+                           const size_t k,
+                           const size_t l) const
 {
    size_t i, j;
    acquire_ij (i, j, lat_long);
@@ -1837,10 +1837,10 @@ Model::Acncrjbf::evaluate (const Met_Element& met_element,
 
 Real
 Model::Acncrjbf::evaluate (const Met_Element& met_element,
-                        const size_t i,
-                        const size_t j,
-                        const size_t k,
-                        const size_t l) const
+                           const size_t i,
+                           const size_t j,
+                           const size_t k,
+                           const size_t l) const
 {
 
    int ret;
@@ -2019,9 +2019,9 @@ Model::Acncrjbf::evaluate (const Met_Element& met_element,
 
 Real
 Model::Acncrjbf::evaluate (const Met_Element& met_element,
-                        const Lat_Long& lat_long,
-                        const size_t k,
-                        const Dtime& dtime) const
+                           const Lat_Long& lat_long,
+                              const size_t k,
+                           const Dtime& dtime) const
 {
 
    if (k < 0)
@@ -2039,9 +2039,9 @@ Model::Acncrjbf::evaluate (const Met_Element& met_element,
 
 Real
 Model::Acncrjbf::evaluate (const Met_Element& met_element,
-                        const Lat_Long& lat_long,
-                        const Level& level,
-                        const Dtime& dtime) const
+                           const Lat_Long& lat_long,
+                           const Level& level,
+                           const Dtime& dtime) const
 {
 
    if (level.type == Level::SURFACE)
@@ -2073,8 +2073,8 @@ Model::Acncrjbf::evaluate (const Met_Element& met_element,
 
 Real
 Model::Acncrjbf::evaluate_dt (const Met_Element& met_element,
-                           const Lat_Long& lat_long,
-                           const size_t l) const
+                              const Lat_Long& lat_long,
+                              const size_t l) const
 {
    size_t i, j;
    acquire_ij (i, j, lat_long);
@@ -2083,9 +2083,9 @@ Model::Acncrjbf::evaluate_dt (const Met_Element& met_element,
 
 Real
 Model::Acncrjbf::evaluate_dt (const Met_Element& met_element,
-                           const size_t i,
-                           const size_t j,
-                           const size_t l) const
+                              const size_t i,
+                              const size_t j,
+                              const size_t l) const
 {
 
    const Integer n = valid_surface_time_vector.size ();
@@ -2105,9 +2105,9 @@ Model::Acncrjbf::evaluate_dt (const Met_Element& met_element,
 
 Real
 Model::Acncrjbf::evaluate_dt (const Met_Element& met_element,
-                           const Lat_Long& lat_long,
-                           const Level& level,
-                           const size_t l) const
+                              const Lat_Long& lat_long,
+                              const Level& level,
+                              const size_t l) const
 {
    size_t i, j;
    acquire_ij (i, j, lat_long);
@@ -2116,10 +2116,10 @@ Model::Acncrjbf::evaluate_dt (const Met_Element& met_element,
 
 Real
 Model::Acncrjbf::evaluate_dt (const Met_Element& met_element,
-                           const size_t i,
-                           const size_t j,
-                           const Level& level,
-                           const size_t l) const
+                              const size_t i,
+                              const size_t j,
+                              const Level& level,
+                              const size_t l) const
 {
 
    size_t k;
@@ -2133,9 +2133,9 @@ Model::Acncrjbf::evaluate_dt (const Met_Element& met_element,
 
 Real
 Model::Acncrjbf::evaluate_dt (const Met_Element& met_element,
-                           const Lat_Long& lat_long,
-                           const size_t k,
-                           const size_t l) const
+                              const Lat_Long& lat_long,
+                              const size_t k,
+                              const size_t l) const
 {
    size_t i, j;
    acquire_ij (i, j, lat_long);
@@ -2144,10 +2144,10 @@ Model::Acncrjbf::evaluate_dt (const Met_Element& met_element,
 
 Real
 Model::Acncrjbf::evaluate_dt (const Met_Element& met_element,
-                           const size_t i,
-                           const size_t j,
-                           const size_t k,
-                           const size_t l) const
+                              const size_t i,
+                              const size_t j,
+                              const size_t k,
+                              const size_t l) const
 {
 
    const Integer n = valid_uppers_time_vector.size ();
@@ -2167,8 +2167,8 @@ Model::Acncrjbf::evaluate_dt (const Met_Element& met_element,
 
 Real
 Model::Acncrjbf::evaluate_dx (const Met_Element& met_element,
-                           const Lat_Long& lat_long,
-                           const size_t l) const
+                              const Lat_Long& lat_long,
+                              const size_t l) const
 {
    size_t i, j;
    acquire_ij (i, j, lat_long);
@@ -2177,9 +2177,9 @@ Model::Acncrjbf::evaluate_dx (const Met_Element& met_element,
 
 Real
 Model::Acncrjbf::evaluate_dx (const Met_Element& met_element,
-                           const size_t i,
-                           const size_t j,
-                           const size_t l) const
+                              const size_t i,
+                              const size_t j,
+                              const size_t l) const
 {
 
    const Integer m = tuple_longitude.size ();
@@ -2198,9 +2198,9 @@ Model::Acncrjbf::evaluate_dx (const Met_Element& met_element,
 
 Real
 Model::Acncrjbf::evaluate_dx (const Met_Element& met_element,
-                           const Lat_Long& lat_long,
-                           const Level& level,
-                           const size_t l) const
+                              const Lat_Long& lat_long,
+                              const Level& level,
+                              const size_t l) const
 {
    size_t i, j;
    acquire_ij (i, j, lat_long);
@@ -2209,10 +2209,10 @@ Model::Acncrjbf::evaluate_dx (const Met_Element& met_element,
 
 Real
 Model::Acncrjbf::evaluate_dx (const Met_Element& met_element,
-                           const size_t i,
-                           const size_t j,
-                           const Level& level,
-                           const size_t l) const
+                              const size_t i,
+                              const size_t j,
+                              const Level& level,
+                              const size_t l) const
 {
 
    // Note k could be different upstream / downstream
@@ -2241,9 +2241,9 @@ Model::Acncrjbf::evaluate_dx (const Met_Element& met_element,
 
 Real
 Model::Acncrjbf::evaluate_dx (const Met_Element& met_element,
-                           const Lat_Long& lat_long,
-                           const size_t k,
-                           const size_t l) const
+                              const Lat_Long& lat_long,
+                              const size_t k,
+                              const size_t l) const
 {
    // calculation along constant k
    size_t i, j;
@@ -2253,10 +2253,10 @@ Model::Acncrjbf::evaluate_dx (const Met_Element& met_element,
 
 Real
 Model::Acncrjbf::evaluate_dx (const Met_Element& met_element,
-                           const size_t i,
-                           const size_t j,
-                           const size_t k,
-                           const size_t l) const
+                              const size_t i,
+                              const size_t j,
+                              const size_t k,
+                              const size_t l) const
 {
 
    // calculation along constant k
@@ -2277,8 +2277,8 @@ Model::Acncrjbf::evaluate_dx (const Met_Element& met_element,
 
 Real
 Model::Acncrjbf::evaluate_dy (const Met_Element& met_element,
-                           const Lat_Long& lat_long,
-                           const size_t l) const
+                              const Lat_Long& lat_long,
+                              const size_t l) const
 {
    size_t i, j;
    acquire_ij (i, j, lat_long);
@@ -2287,9 +2287,9 @@ Model::Acncrjbf::evaluate_dy (const Met_Element& met_element,
 
 Real
 Model::Acncrjbf::evaluate_dy (const Met_Element& met_element,
-                           const size_t i,
-                           const size_t j,
-                           const size_t l) const
+                              const size_t i,
+                              const size_t j,
+                              const size_t l) const
 {
 
    const Integer n = tuple_latitude.size ();
@@ -2307,9 +2307,9 @@ Model::Acncrjbf::evaluate_dy (const Met_Element& met_element,
 
 Real
 Model::Acncrjbf::evaluate_dy (const Met_Element& met_element,
-                           const Lat_Long& lat_long,
-                           const Level& level,
-                           const size_t l) const
+                              const Lat_Long& lat_long,
+                              const Level& level,
+                              const size_t l) const
 {
    size_t i, j;
    acquire_ij (i, j, lat_long);
@@ -2318,10 +2318,10 @@ Model::Acncrjbf::evaluate_dy (const Met_Element& met_element,
 
 Real
 Model::Acncrjbf::evaluate_dy (const Met_Element& met_element,
-                           const size_t i,
-                           const size_t j,
-                           const Level& level,
-                           const size_t l) const
+                              const size_t i,
+                              const size_t j,
+                              const Level& level,
+                              const size_t l) const
 {
 
    // Note k could be different upstream / downstream
@@ -2448,17 +2448,17 @@ Model::Acncrjbf::evaluate_dz (const Met_Element& met_element,
 
 Real
 Model::Acncrjbf::evaluate_tendency (const Met_Element& met_element,
-                                 const Lat_Long& lat_long,
-                                 const size_t l) const
+                                    const Lat_Long& lat_long,
+                                    const size_t l) const
 {
    return evaluate_dt (met_element, lat_long, l);
 }
 
 Real
 Model::Acncrjbf::evaluate_tendency (const Met_Element& met_element,
-                                 const Lat_Long& lat_long,
-                                 const size_t l,
-                                 const Wind& wind_bg) const
+                                    const Lat_Long& lat_long,
+                                    const size_t l,
+                                    const Wind& wind_bg) const
 {
 
    const Met_Element& me = met_element;
@@ -2473,19 +2473,19 @@ Model::Acncrjbf::evaluate_tendency (const Met_Element& met_element,
 
 Real
 Model::Acncrjbf::evaluate_tendency (const Met_Element& met_element,
-                                 const Lat_Long& lat_long,
-                                 const Level& level,
-                                 const size_t l) const
+                                    const Lat_Long& lat_long,
+                                    const Level& level,
+                                    const size_t l) const
 {
    return evaluate_dt (met_element, lat_long, level, l);
 }
 
 Real
 Model::Acncrjbf::evaluate_tendency (const Met_Element& met_element,
-                                 const Lat_Long& lat_long,
-                                 const Level& level,
-                                 const size_t l,
-                                 const Wind& wind_bg) const
+                                    const Lat_Long& lat_long,
+                                    const Level& level,
+                                    const size_t l,
+                                    const Wind& wind_bg) const
 {
 
    const Met_Element& me = met_element;
@@ -2500,9 +2500,9 @@ Model::Acncrjbf::evaluate_tendency (const Met_Element& met_element,
 
 Real
 Model::Acncrjbf::evaluate_wind_advection (const Met_Element& met_element,
-                                       const Lat_Long& lat_long,
-                                       const size_t l,
-                                       const Wind& wind) const
+                                          const Lat_Long& lat_long,
+                                          const size_t l,
+                                          const Wind& wind) const
 {
    size_t i, j;
    acquire_ij (i, j, lat_long);
@@ -2511,10 +2511,10 @@ Model::Acncrjbf::evaluate_wind_advection (const Met_Element& met_element,
 
 Real
 Model::Acncrjbf::evaluate_wind_advection (const Met_Element& met_element,
-                                       const size_t i,
-                                       const size_t j,
-                                       const size_t l,
-                                       const Wind& wind) const
+                                          const size_t i,
+                                          const size_t j,
+                                          const size_t l,
+                                          const Wind& wind) const
 {
    const Real ddx = evaluate_dx (met_element, i, j, l);
    const Real ddy = evaluate_dy (met_element, i, j, l);
@@ -2523,10 +2523,10 @@ Model::Acncrjbf::evaluate_wind_advection (const Met_Element& met_element,
 
 Real
 Model::Acncrjbf::evaluate_wind_advection (const Met_Element& met_element,
-                                       const Lat_Long& lat_long,
-                                       const Level& level,
-                                       const size_t l,
-                                       const Wind& wind) const
+                                          const Lat_Long& lat_long,
+                                          const Level& level,
+                                          const size_t l,
+                                          const Wind& wind) const
 {
    size_t i, j;
    acquire_ij (i, j, lat_long);
@@ -2535,11 +2535,11 @@ Model::Acncrjbf::evaluate_wind_advection (const Met_Element& met_element,
 
 Real
 Model::Acncrjbf::evaluate_wind_advection (const Met_Element& met_element,
-                                       const size_t i,
-                                       const size_t j,
-                                       const Level& level,
-                                       const size_t l,
-                                       const Wind& wind) const
+                                          const size_t i,
+                                          const size_t j,
+                                          const Level& level,
+                                          const size_t l,
+                                          const Wind& wind) const
 {
 
    size_t k, k_rho;
@@ -2556,9 +2556,9 @@ Model::Acncrjbf::evaluate_wind_advection (const Met_Element& met_element,
 
 Real
 Model::Acncrjbf::evaluate_h_advection (const Met_Element& met_element,
-                                    const Lat_Long& lat_long,
-                                    const size_t l,
-                                    const Wind& wind_bg) const
+                                       const Lat_Long& lat_long,
+                                       const size_t l,
+                                       const Wind& wind_bg) const
 {
    size_t i, j;
    acquire_ij (i, j, lat_long);
@@ -2567,10 +2567,10 @@ Model::Acncrjbf::evaluate_h_advection (const Met_Element& met_element,
 
 Real
 Model::Acncrjbf::evaluate_h_advection (const Met_Element& met_element,
-                                    const size_t i,
-                                    const size_t j,
-                                    const size_t l,
-                                    const Wind& wind_bg) const
+                                       const size_t i,
+                                       const size_t j,
+                                       const size_t l,
+                                       const Wind& wind_bg) const
 {
 
    const Real u = evaluate (U, i, j, l);
@@ -2584,10 +2584,10 @@ Model::Acncrjbf::evaluate_h_advection (const Met_Element& met_element,
 
 Real
 Model::Acncrjbf::evaluate_h_advection (const Met_Element& met_element,
-                                    const Lat_Long& lat_long,
-                                    const Level& level,
-                                    const size_t l,
-                                    const Wind& wind_bg) const
+                                       const Lat_Long& lat_long,
+                                       const Level& level,
+                                       const size_t l,
+                                       const Wind& wind_bg) const
 {
    size_t i, j;
    acquire_ij (i, j, lat_long);
@@ -2596,11 +2596,11 @@ Model::Acncrjbf::evaluate_h_advection (const Met_Element& met_element,
 
 Real
 Model::Acncrjbf::evaluate_h_advection (const Met_Element& met_element,
-                                    const size_t i,
-                                    const size_t j,
-                                    const Level& level,
-                                    const size_t l,
-                                    const Wind& wind_bg) const
+                                       const size_t i,
+                                       const size_t j,
+                                       const Level& level,
+                                       const size_t l,
+                                       const Wind& wind_bg) const
 {
 
    size_t k, k_rho;
@@ -2619,9 +2619,9 @@ Model::Acncrjbf::evaluate_h_advection (const Met_Element& met_element,
 
 Real
 Model::Acncrjbf::evaluate_v_advection (const Met_Element& met_element,
-                                    const Lat_Long& lat_long,
-                                    const Level& level,
-                                    const size_t l) const
+                                       const Lat_Long& lat_long,
+                                       const Level& level,
+                                       const size_t l) const
 {
    size_t i, j, k, k_w;
    acquire_ij (i, j, lat_long);
@@ -2630,10 +2630,10 @@ Model::Acncrjbf::evaluate_v_advection (const Met_Element& met_element,
 
 Real
 Model::Acncrjbf::evaluate_v_advection (const Met_Element& met_element,
-                                    const size_t i,
-                                    const size_t j,
-                                    const Level& level,
-                                    const size_t l) const
+                                       const size_t i,
+                                       const size_t j,
+                                       const Level& level,
+                                       const size_t l) const
 {
 
    size_t k, k_w;
@@ -2653,11 +2653,11 @@ Model::Acncrjbf::evaluate_v_advection (const Met_Element& met_element,
 
 Real
 Model::Acncrjbf::evaluate_s_tendency (const Met_Element& met_element,
-                                   const Real azimuth,
-                                   const Lat_Long& lat_long,
-                                   const Level& level,
-                                   const size_t l,
-                                   const Real u_bg) const
+                                      const Real azimuth,
+                                      const Lat_Long& lat_long,
+                                      const Level& level,
+                                      const size_t l,
+                                      const Real u_bg) const
 {
    size_t i, j;
    acquire_ij (i, j, lat_long);
@@ -2666,12 +2666,12 @@ Model::Acncrjbf::evaluate_s_tendency (const Met_Element& met_element,
 
 Real
 Model::Acncrjbf::evaluate_s_tendency (const Met_Element& met_element,
-                                   const Real azimuth,
-                                   const size_t i,
-                                   const size_t j,
-                                   const Level& level,
-                                   const size_t l,
-                                   const Real u_bg) const
+                                      const Real azimuth,
+                                      const size_t i,
+                                      const size_t j,
+                                      const Level& level,
+                                      const size_t l,
+                                      const Real u_bg) const
 {
    const Met_Element& me = met_element;
    const Real t = evaluate_dt (me, i, j, level, l);
@@ -2681,11 +2681,11 @@ Model::Acncrjbf::evaluate_s_tendency (const Met_Element& met_element,
 
 Real
 Model::Acncrjbf::evaluate_s_advection (const Met_Element& met_element,
-                                    const Real azimuth,
-                                    const Lat_Long& lat_long,
-                                    const Level& level,
-                                    const size_t l,
-                                    const Real u_bg) const
+                                       const Real azimuth,
+                                       const Lat_Long& lat_long,
+                                       const Level& level,
+                                       const size_t l,
+                                       const Real u_bg) const
 {
    size_t i, j;
    acquire_ij (i, j, lat_long);
@@ -2694,12 +2694,12 @@ Model::Acncrjbf::evaluate_s_advection (const Met_Element& met_element,
 
 Real
 Model::Acncrjbf::evaluate_s_advection (const Met_Element& met_element,
-                                    const Real azimuth,
-                                    const size_t i,
-                                    const size_t j,
-                                    const Level& level,
-                                    const size_t l,
-                                    const Real u_bg) const
+                                       const Real azimuth,
+                                       const size_t i,
+                                       const size_t j,
+                                       const Level& level,
+                                       const size_t l,
+                                       const Real u_bg) const
 {
 
    size_t k, k_rho;
@@ -2726,10 +2726,10 @@ Model::Acncrjbf::evaluate_s_advection (const Met_Element& met_element,
 
 Real
 Model::Acncrjbf::evaluate_n_advection (const Met_Element& met_element,
-                                    const Real azimuth,
-                                    const Lat_Long& lat_long,
-                                    const Level& level,
-                                    const size_t l) const
+                                       const Real azimuth,
+                                       const Lat_Long& lat_long,
+                                       const Level& level,
+                                       const size_t l) const
 {
    size_t i, j;
    acquire_ij (i, j, lat_long);
@@ -2738,11 +2738,11 @@ Model::Acncrjbf::evaluate_n_advection (const Met_Element& met_element,
 
 Real
 Model::Acncrjbf::evaluate_n_advection (const Met_Element& met_element,
-                                    const Real azimuth,
-                                    const size_t i,
-                                    const size_t j,
-                                    const Level& level,
-                                    const size_t l) const
+                                       const Real azimuth,
+                                       const size_t i,
+                                       const size_t j,
+                                       const Level& level,
+                                       const size_t l) const
 {
 
    size_t k, k_rho;
@@ -2770,9 +2770,9 @@ Model::Acncrjbf::evaluate_n_advection (const Met_Element& met_element,
 
 Real
 Model::Acncrjbf::evaluate_normal_speed (const Real azimuth,
-                                     const Lat_Long& lat_long,
-                                     const Level& level,
-                                     const size_t l) const
+                                        const Lat_Long& lat_long,
+                                        const Level& level,
+                                        const size_t l) const
 {
    size_t i, j;
    acquire_ij (i, j, lat_long);
@@ -2781,10 +2781,10 @@ Model::Acncrjbf::evaluate_normal_speed (const Real azimuth,
 
 Real
 Model::Acncrjbf::evaluate_normal_speed (const Real azimuth,
-                                     const size_t i,
-                                     const size_t j,
-                                     const Level& level,
-                                     const size_t l) const
+                                        const size_t i,
+                                        const size_t j,
+                                        const Level& level,
+                                        const size_t l) const
 {
 
    size_t k;
@@ -2801,10 +2801,10 @@ Model::Acncrjbf::evaluate_normal_speed (const Real azimuth,
 
 Real
 Model::Acncrjbf::evaluate_along_speed (const Real azimuth,
-                                    const Lat_Long& lat_long,
-                                    const Level& level,
-                                    const size_t l,
-                                    const Real u_bg) const
+                                       const Lat_Long& lat_long,
+                                       const Level& level,
+                                       const size_t l,
+                                       const Real u_bg) const
 {
    size_t i, j;
    acquire_ij (i, j, lat_long);
@@ -2813,11 +2813,11 @@ Model::Acncrjbf::evaluate_along_speed (const Real azimuth,
 
 Real
 Model::Acncrjbf::evaluate_along_speed (const Real azimuth,
-                                    const size_t i,
-                                    const size_t j,
-                                    const Level& level,
-                                    const size_t l,
-                                    const Real u_bg) const
+                                       const size_t i,
+                                       const size_t j,
+                                       const Level& level,
+                                       const size_t l,
+                                       const Real u_bg) const
 {
 
    size_t k;
@@ -2834,9 +2834,9 @@ Model::Acncrjbf::evaluate_along_speed (const Real azimuth,
 
 Real
 Model::Acncrjbf::evaluate_richardson (const Real azimuth,
-                                   const Lat_Long& lat_long,
-                                   const Level& level,
-                                   const size_t l) const
+                                      const Lat_Long& lat_long,
+                                      const Level& level,
+                                      const size_t l) const
 {
    size_t i, j;
    acquire_ij (i, j, lat_long);
@@ -2845,10 +2845,10 @@ Model::Acncrjbf::evaluate_richardson (const Real azimuth,
 
 Real
 Model::Acncrjbf::evaluate_richardson (const Real azimuth,
-                                   const size_t i,
-                                   const size_t j,
-                                   const Level& level,
-                                   const size_t l) const
+                                      const size_t i,
+                                      const size_t j,
+                                      const Level& level,
+                                      const size_t l) const
 {
 
    size_t k_rho, k_theta;
@@ -2903,10 +2903,10 @@ Model::Acncrjbf::evaluate_richardson (const Real azimuth,
 
 Real
 Model::Acncrjbf::evaluate_scorer (const Real azimuth,
-                               const Lat_Long& lat_long,
-                               const Level& level,
-                               const size_t l,
-                               const Real u_bg) const
+                                  const Lat_Long& lat_long,
+                                  const Level& level,
+                                  const size_t l,
+                                  const Real u_bg) const
 {
    size_t i, j;
    acquire_ij (i, j, lat_long);
@@ -2915,11 +2915,11 @@ Model::Acncrjbf::evaluate_scorer (const Real azimuth,
 
 Real
 Model::Acncrjbf::evaluate_scorer (const Real azimuth,
-                               const size_t i,
-                               const size_t j,
-                               const Level& level,
-                               const size_t l,
-                               const Real u_bg) const
+                                  const size_t i,
+                                  const size_t j,
+                                  const Level& level,
+                                  const size_t l,
+                                  const Real u_bg) const
 {
 
    size_t k_rho, k_theta;
@@ -3102,8 +3102,8 @@ Model::Acncrjbf::evaluate_scorer_b (const Real azimuth,
 
 Real
 Model::Acncrjbf::evaluate_brunt_vaisala (const Lat_Long& lat_long,
-                                      const Level& level,
-                                      const size_t l) const
+                                         const Level& level,
+                                         const size_t l) const
 {
    size_t i, j;
    acquire_ij (i, j, lat_long);
@@ -3112,9 +3112,9 @@ Model::Acncrjbf::evaluate_brunt_vaisala (const Lat_Long& lat_long,
 
 Real
 Model::Acncrjbf::evaluate_brunt_vaisala (const size_t i,
-                                      const size_t j,
-                                      const Level& level,
-                                      const size_t l) const
+                                         const size_t j,
+                                         const Level& level,
+                                         const size_t l) const
 {
 
    size_t k;
@@ -3317,7 +3317,7 @@ Model::Acncrjbf::get_color (const Product& product,
 
 Raster*
 Model::Acncrjbf::get_terrain_raster_ptr (const Size_2D& size_2d,
-                                      const Transform_2D& transform) const
+                                         const Transform_2D& transform) const
 {
 
 
@@ -3440,10 +3440,10 @@ Model::Acncrjbf::get_surface_raster_ptr (const Size_2D& size_2d,
 
 Raster*
 Model::Acncrjbf::get_uppers_raster_ptr (const Size_2D& size_2d,
-                                     const Transform_2D& transform,
-                                     const Model::Product& product,
-                                     const Dtime& dtime,
-                                     const Level& level) const
+                                        const Transform_2D& transform,
+                                        const Model::Product& product,
+                                        const Dtime& dtime,
+                                        const Level& level) const
 {
 
    Raster* raster_ptr = new Raster (size_2d);
@@ -3483,13 +3483,40 @@ Model::Acncrjbf::get_uppers_raster_ptr (const Size_2D& size_2d,
 
 }
 
+Raster* 
+Model::Acncrjbf::get_geo_raster_ptr (const Size_2D& size_2d,
+                                     const Transform_2D& transform,
+                                     const Product& product,
+                                     const Dtime& dtime,
+                                     const Level& level) const
+{
+
+   if (product.enumeration == Model::Product::TERRAIN)
+   {
+      return get_terrain_raster_ptr (size_2d, transform);
+   }
+   else
+   if (level.type == Level::SURFACE ||
+       product.enumeration == Model::Product::FFDI ||
+       product.enumeration == Model::Product::MSLP ||
+       product.enumeration == Model::Product::PRECIP_RATE)
+   {
+      return get_surface_raster_ptr (size_2d, transform, product, dtime);
+   }
+   else
+   {
+      return get_uppers_raster_ptr (size_2d, transform, product, dtime, level);
+   }
+
+}
+
 Raster*
 Model::Acncrjbf::get_cross_section_raster_ptr (const Box_2D& box_2d,
-                                            const Transform_2D& transform,
-                                            const Model::Product& product,
-                                            const Dtime& dtime,
-                                            const Journey& journey,
-                                            const Real u_bg) const
+                                               const Transform_2D& transform,
+                                               const Model::Product& product,
+                                               const Dtime& dtime,
+                                               const Journey& journey,
+                                               const Real u_bg) const
 {
 
    Raster* raster_ptr = new Raster (box_2d);
@@ -3862,11 +3889,11 @@ Model::Acncrjbf::get_cross_section_raster_ptr (const Box_2D& box_2d,
 
 Raster*
 Model::Acncrjbf::get_time_cross_raster_ptr (const Box_2D& box_2d,
-                                         const Transform_2D& transform,
-                                         const Model::Product& product,
-                                         const Location& location,
-                                         const Dtime::Span& time_span,
-                                         const Real azimuth) const
+                                            const Transform_2D& transform,
+                                            const Model::Product& product,
+                                            const Location& location,
+                                            const Dtime::Span& time_span,
+                                            const Real azimuth) const
 {
 
    Raster* raster_ptr = new Raster (box_2d);
@@ -3910,6 +3937,9 @@ Model::Acncrjbf::get_time_cross_raster_ptr (const Box_2D& box_2d,
 
       switch (product.enumeration)
       {
+
+         // Scorer, Scorer_A and Scorer_B needs special treatment
+         // because of greater accuracies needed in vertical differentiation
 
          case Model::Product::SCORER:
          {
@@ -4023,6 +4053,32 @@ Model::Acncrjbf::get_time_cross_raster_ptr (const Box_2D& box_2d,
                   switch (product.enumeration)
                   {
 
+                     // Should not reach here: should be processed earlier with vertical profile
+                     case Model::Product::SCORER:
+                     {
+                        const Real datum = evaluate_scorer (
+                           azimuth, i, j, level, l);
+                        color = Model::Stage::get_color (p, datum);
+                        break;
+                     }
+
+                     // Should not reach here: should be processed earlier with vertical profile
+                     case Model::Product::SCORER_A:
+                     {
+                        const Real datum = evaluate_scorer_a ( azimuth, i, j, level, l);
+                        color = Model::Stage::get_color (p, datum);
+                        break;
+                     }
+
+                     // Should not reach here: should be processed earlier with vertical profile
+                     case Model::Product::SCORER_B:
+                     {
+                        const Real datum = evaluate_scorer_b (
+                           azimuth, i, j, level, l);
+                        color = Model::Stage::get_color (p, datum);
+                        break;
+                     }
+
                      case Model::Product::WIND:
                      {
                         const Real u = evaluate (U, i, j, level, l);
@@ -4044,29 +4100,6 @@ Model::Acncrjbf::get_time_cross_raster_ptr (const Box_2D& box_2d,
                      case Model::Product::RICHARDSON:
                      {
                         const Real datum = evaluate_richardson (
-                           azimuth, i, j, level, l);
-                        color = Model::Stage::get_color (p, datum);
-                        break;
-                     }
-
-                     case Model::Product::SCORER:
-                     {
-                        const Real datum = evaluate_scorer (azimuth, i, j, level, l);
-                        color = Model::Stage::get_color (p, datum);
-                        break;
-                     }
-
-                     case Model::Product::SCORER_A:
-                     {
-                        const Real datum = evaluate_scorer_a (
-                           azimuth, i, j, level, l);
-                        color = Model::Stage::get_color (p, datum);
-                        break;
-                     }
-
-                     case Model::Product::SCORER_B:
-                     {
-                        const Real datum = evaluate_scorer_b (
                            azimuth, i, j, level, l);
                         color = Model::Stage::get_color (p, datum);
                         break;
@@ -4249,10 +4282,10 @@ Model::Acncrjbf::get_time_cross_raster_ptr (const Box_2D& box_2d,
 }
 Raster*
 Model::Acncrjbf::get_time_cross_raster_ptr (const Box_2D& box_2d,
-                                         const Transform_2D& transform,
-                                         const Model::Product& product,
-                                         const Track& track,
-                                         const bool lagrangian) const
+                                            const Transform_2D& transform,
+                                            const Model::Product& product,
+                                            const Track& track,
+                                            const bool lagrangian) const
 {
 
    Raster* raster_ptr = new Raster (box_2d);
@@ -4585,10 +4618,10 @@ Model::Acncrjbf::get_uppers_l (const Dtime& dtime) const
 
 Track
 Model::Acncrjbf::get_trajectory (Lat_Long lat_long,
-                              Level level,
-                              Dtime dtime,
-                              const Real finish_tau,
-                              const vector<Product>& product_vector) const
+                                 Level level,
+                                 Dtime dtime,
+                                 const Real finish_tau,
+                                 const vector<Product>& product_vector) const
 {
 
    Track trajectory (dtime);
@@ -4698,7 +4731,7 @@ Model::Acncrjbf::get_trajectory (Lat_Long lat_long,
 
 void
 Model::Acncrjbf::survey_trajectory (Track& trajectory,
-                                 const vector<Product>& product_vector) const
+                                    const vector<Product>& product_vector) const
 {
 
    const Level surface ("Surface");
@@ -4832,7 +4865,7 @@ Model::Acncrjbf::survey_trajectory (Track& trajectory,
 
 Aws::Obs
 Model::Acncrjbf::get_aws_obs (const Lat_Long& lat_long,
-                           const Dtime& dtime) const
+                              const Dtime& dtime) const
 {
 
    size_t i, j;
@@ -4858,7 +4891,7 @@ Model::Acncrjbf::get_aws_obs (const Lat_Long& lat_long,
 
 const Aws::Repository*
 Model::Acncrjbf::get_aws_repository_ptr (const Lat_Long& lat_long,
-                                      const Dtime::Set& time_set) const
+                                         const Dtime::Set& time_set) const
 {
 
    Aws::Repository* aws_repository_ptr = new Aws::Repository ();
@@ -4883,8 +4916,8 @@ Model::Acncrjbf::get_aws_repository_ptr (const Lat_Long& lat_long,
 
 Sounding*
 Model::Acncrjbf::get_sounding_ptr (const Lat_Long& lat_long,
-                                const Dtime& dtime,
-                                const Real ceiling) const
+                                   const Dtime& dtime,
+                                   const Real ceiling) const
 {
 
    Sounding* sounding_ptr = new Sounding ();
@@ -4900,9 +4933,9 @@ Model::Acncrjbf::get_sounding_ptr (const Lat_Long& lat_long,
 
 Sounding*
 Model::Acncrjbf::get_sounding_ptr (const Lat_Long::List& lat_long_list,
-                                const Dtime& dtime,
-                                const Real ceiling,
-                                const Thermo_Diagram& thermo_diagram) const
+                                   const Dtime& dtime,
+                                   const Real ceiling,
+                                   const Thermo_Diagram& thermo_diagram) const
 {
 
    const bool is_singular = (lat_long_list.size () == 1);
@@ -4949,9 +4982,9 @@ Model::Acncrjbf::get_sounding_ptr (const Lat_Long::List& lat_long_list,
 
 Tokens
 Model::Acncrjbf::get_marker_tokens (const Lat_Long& lat_long,
-                                 const Dtime& dtime,
-                                 const Product& product,
-                                 const Level& level) const
+                                    const Dtime& dtime,
+                                    const Product& product,
+                                    const Level& level) const
 {
    Tokens tokens;
 

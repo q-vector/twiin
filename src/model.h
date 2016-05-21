@@ -150,21 +150,11 @@ namespace twiin
                          const Dtime& dtime) const = 0;
 
                virtual Raster*
-               get_terrain_raster_ptr (const Size_2D& size_2d,
-                                       const Transform_2D& transform) const = 0;
-
-               virtual Raster*
-               get_surface_raster_ptr (const Size_2D& size_2d,
-                                       const Transform_2D& transform,
-                                       const Product& product,
-                                       const Dtime& dtime) const = 0;
-
-               virtual Raster*
-               get_uppers_raster_ptr (const Size_2D& size_2d,
-                                      const Transform_2D& transform,
-                                      const Product& product,
-                                      const Dtime& dtime,
-                                      const Level& level) const = 0;
+               get_geo_raster_ptr (const Size_2D& size_2d,
+                                   const Transform_2D& transform,
+                                   const Product& product = Product ("TERRAIN"),
+                                   const Dtime& dtime = Dtime (),
+                                   const Level& level = Level ()) const = 0;
 
                virtual Raster*
                get_cross_section_raster_ptr (const Box_2D& box_2d,
@@ -894,6 +884,13 @@ namespace twiin
                                       const Model::Product& product,
                                       const Dtime& dtime,
                                       const Level& level) const;
+
+               Raster*
+               get_geo_raster_ptr (const Size_2D& size_2d,
+                                   const Transform_2D& transform,
+                                   const Product& product = Product ("TERRAIN"),
+                                   const Dtime& dtime = Dtime (),
+                                   const Level& level = Level ()) const;
 
                Raster*
                get_cross_section_raster_ptr (const Box_2D& box_2d,
