@@ -4313,9 +4313,10 @@ Model::Acncrjbf::get_time_cross_raster_ptr (const Box_2D& box_2d,
       Dtime dtime (t);
       if (dtime < start_time || dtime > end_time) { continue; }
 
+      // The following is necessary: trace lat_long will drift with time
       const size_t l = get_uppers_l (dtime);
-//      dtime = valid_uppers_time_vector[l];
-//      if (dtime < start_time || dtime > end_time) { continue; }
+      dtime = valid_uppers_time_vector[l];
+      if (dtime < start_time || dtime > end_time) { continue; }
 
       const Lat_Long& lat_long = track.get_lat_long (dtime);
       const Lat_Long& ll = lat_long;

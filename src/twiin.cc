@@ -2170,7 +2170,8 @@ Twiin::set_title (Title& title,
    const Lat_Long& lat_long (location);
    const Dstring& ll_str = lat_long.get_string (4, true, true, true);
    //title.set ("", stage_str, location.get_long_str (), basetime_str, ll_str);
-   title.set (ll_str, stage_str, location.get_long_str (), basetime_str, "");
+   title.set (ll_str, (meteogram_mode == "no_nwp" ? "" : stage_str),
+      location.get_long_str (), basetime_str, "");
 }
 
 void
@@ -3117,7 +3118,7 @@ Twiin::render_meteogram_mesh (const RefPtr<Context>& cr,
       Domain_2D (domain_t, domain_pressure),
                  minor_t_interval, 1, minor_color,
                  middle_t_interval, GSL_NAN, middle_color,
-                 major_t_interval, 10, major_color);
+                 major_t_interval, 5, major_color);
 
    mesh_temperature.set_offset_multiplier_y (-K, 1);
    mesh_pressure.set_offset_multiplier_y (0, 1e-2);
@@ -3172,6 +3173,19 @@ Twiin::render_meteogram_mesh (const RefPtr<Context>& cr,
    Color::black ().cairo (cr);
    speed_label.cairo (cr, transform_speed);
    cr->restore ();
+
+   if (!ignore_pressure)
+   {
+      cr->save ();
+      const Real pressure_centre = (domain_pressure.start + domain_pressure.end) / 2;
+      const Point_2D pressure_point (domain_t.start, pressure_centre);
+      Label pressure_label ("MSL Pressure", pressure_point, 'c', 't', -70);
+      pressure_label.set_text_angle (3 * M_PI / 2);
+      cr->set_font_size (14);
+      Color::black ().cairo (cr);
+      pressure_label.cairo (cr, transform_pressure);
+      cr->restore ();
+   }
 
    mesh_temperature.render_label_y (cr, transform_temperature, 2,
       start_t, "%.0f\u00b0C", Label::REAL, 'r', 'c', 5);
@@ -3408,26 +3422,39 @@ Twiin::render_meteogram (const RefPtr<Context>& cr,
       domain_direction, domain_speed, domain_pressure,
       transform_temperature, transform_direction,
       transform_speed, transform_pressure, ignore_pressure);
- 
+
+   if (meteogram_mode == "both")
+   {
+      render_meteogram (cr, transform_temperature, transform_direction,
+         transform_speed, transform_pressure, *aws_repository_ptr,
+         0.2, 2, true, ignore_pressure);
+      render_meteogram (cr, transform_temperature, transform_direction,
+         transform_speed, transform_pressure, *model_aws_repository_ptr, 0.9,
+         3, false, ignore_pressure);
+   }
+   else
    // nwp data
-   if (meteogram_mode != "no_nwp")
+   if (meteogram_mode == "no_aws")
    {
       // draw nwp
       const Real alpha = 0.3;
-      const Real ring_size = 4.0;
+      const Real ring_size = 2.5;
       const bool fill = false;
       render_meteogram (cr, transform_temperature, transform_direction,
          transform_speed, transform_pressure, *model_aws_repository_ptr,
          alpha, ring_size, fill, ignore_pressure);
    }
-
+   else
    // aws data
-   if (meteogram_mode != "no_aws" || aws_repository_ptr != NULL)
+   if (meteogram_mode == "no_nwp" || aws_repository_ptr != NULL)
    {
       // draw aws
-      const Real alpha = 0.999;
-      const Real ring_size = 0.8;
-      const bool fill = true;
+      //const Real alpha = 0.999;
+      //const Real ring_size = 0.8;
+      //const bool fill = true;
+      const Real alpha = 0.3;
+      const Real ring_size = 2.5;
+      const bool fill = false;
       render_meteogram (cr, transform_temperature, transform_direction,
          transform_speed, transform_pressure, *aws_repository_ptr, alpha,
          ring_size, fill, ignore_pressure);
