@@ -2208,7 +2208,7 @@ Twiin::render_stages (const RefPtr<Context>& cr,
 
    cr->set_line_width (4);
    Color::hsb (0.00, 0.00, 0.00, 0.5).cairo (cr);
-   const Tokens stage_tokens ("N4000 N1200 N0440");
+   const Tokens stage_tokens ("N4000 N1300 N0440");
 
    for (auto iterator = stage_tokens.begin ();
         iterator != stage_tokens.end (); iterator++)
