@@ -31,7 +31,6 @@ main (int argc,
    {
       { "annotation",       1, 0, 'a' },
       { "bludge",           0, 0, 'b' },
-      { "config",           1, 0, 'c' },
       { "filename",         1, 0, 'F' },
       { "format",           1, 0, 'f' },
       { "geometry",         1, 0, 'g' },
@@ -41,6 +40,7 @@ main (int argc,
       { "output-dir",       1, 0, 'o' },
       { "ignore-pressure",  0, 0, 'P' },
       { "product",          1, 0, 'p' },
+      { "rc",               1, 0, 'r' },
       { "no-stage",         0, 0, 'S' },
       { "stage",            1, 0, 's' },
       { "title",            1, 0, 'T' },
@@ -74,7 +74,7 @@ main (int argc,
    bool is_vertical_profile = false;
    Dstring location_str ("");
    Multi_Journey multi_journey;
-   Dstring config_file_path (Dstring (getenv ("HOME")) + "/.twiin.rc");
+   Dstring rc_file_path (Dstring (getenv ("HOME")) + "/.twiin.rc");
 
    int c;
    int option_index = 0;
@@ -94,12 +94,6 @@ main (int argc,
          case 'b':
          {
             is_bludge = true;
-            break;
-         }
-
-         case 'c':
-         {
-            config_file_path = (Dstring (optarg));
             break;
          }
 
@@ -158,6 +152,12 @@ main (int argc,
          case 'p':
          {
             product_str = (Dstring (optarg));
+            break;
+         }
+
+         case 'r':
+         {
+            rc_file_path = (Dstring (optarg));
             break;
          }
 

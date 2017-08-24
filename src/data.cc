@@ -8,13 +8,13 @@ using namespace denise;
 using namespace Cairo;
 using namespace twiin;
 
-Data::Data (const Config_File& config_file)
-   : model (config_file),
-     hrit (config_file)
+Data::Data (const Rc_File& rc_file)
+   : model (rc_file),
+     hrit (rc_file)
 {
 
-   for (auto iterator = config_file.begin ();
-        iterator != config_file.end (); iterator++)
+   for (auto iterator = rc_file.begin ();
+        iterator != rc_file.end (); iterator++)
    {
 
       const Tokens tokens (*(iterator), " \f\n\t");

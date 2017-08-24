@@ -156,6 +156,13 @@ namespace twiin
                                    const Dtime& dtime = Dtime (),
                                    const Level& level = Level ()) const = 0;
 
+               virtual Scalar_Data_2D*
+               get_geo_scalar_data_2d_ptr (const Size_2D& size_2d,
+                                           const Transform_2D& transform,
+                                           const Product& product,
+                                           const Dtime& dtime = Dtime (),
+                                           const Level& level = Level ()) const = 0;
+
                virtual Raster*
                get_cross_section_raster_ptr (const Box_2D& box_2d,
                                              const Transform_2D& transform,
@@ -163,6 +170,14 @@ namespace twiin
                                              const Dtime& dtime,
                                              const Journey& journey,
                                              const Real u_bg = 0) const = 0;
+
+               virtual Scalar_Data_2D*
+               get_cross_section_scalar_data_2d_ptr (const Box_2D& box_2d,
+                                                     const Transform_2D& transform,
+                                                     const Product& product,
+                                                     const Dtime& dtime,
+                                                     const Journey& journey,
+                                                     const Real u_bg = 0) const = 0;
 
                virtual Raster*
                get_time_cross_raster_ptr (const Box_2D& box_2d,
@@ -177,7 +192,7 @@ namespace twiin
                                           const Transform_2D& transform,
                                           const Model::Product& product,
                                           const Track& track,
-                                          const bool lagrangian = false) const = 0;
+                                          const bool eulerian = true) const = 0;
 
                virtual Track
                get_trajectory (Lat_Long lat_long,
@@ -230,7 +245,7 @@ namespace twiin
                   public:
 
                      Map (const Model& model,
-                          const Config_File& config_file);
+                          const Rc_File& rc_file);
 
                      ~Map ();
 
@@ -371,7 +386,7 @@ namespace twiin
 
                Acncrjbf (const Model& model,
                          const Dstring& stage_str,
-                         const Config_File& config_file);
+                         const Rc_File& rc_file);
 
                ~Acncrjbf ();
 
@@ -862,8 +877,19 @@ namespace twiin
                           const Lat_Long& lat_long,
                           const size_t l) const;
 
+               Real
+               get_value (const Product& product,
+                          const Lat_Long& lat_long,
+                          const size_t l) const;
+
                Color
                get_color (const Product& product,
+                          const Lat_Long& lat_long,
+                          const Level& level,
+                          const size_t l) const;
+
+               Real
+               get_value (const Product& product,
                           const Lat_Long& lat_long,
                           const Level& level,
                           const size_t l) const;
@@ -872,11 +898,21 @@ namespace twiin
                get_terrain_raster_ptr (const Size_2D& size_2d,
                                        const Transform_2D& transform) const;
 
+               Scalar_Data_2D*
+               get_terrain_scalar_data_2d_ptr (const Size_2D& size_2d,
+                                               const Transform_2D& transform) const;
+
 	       Raster*
                get_surface_raster_ptr (const Size_2D& size_2d,
                                        const Transform_2D& transform,
                                        const Model::Product& product,
                                        const Dtime& dtime) const;
+
+               Scalar_Data_2D*
+               get_surface_scalar_data_2d_ptr (const Size_2D& size_2d,
+                                               const Transform_2D& transform,
+                                               const Model::Product& product,
+                                               const Dtime& dtime) const;
 
                Raster*
                get_uppers_raster_ptr (const Size_2D& size_2d,
@@ -885,12 +921,26 @@ namespace twiin
                                       const Dtime& dtime,
                                       const Level& level) const;
 
+               Scalar_Data_2D*
+               get_uppers_scalar_data_2d_ptr (const Size_2D& size_2d,
+                                              const Transform_2D& transform,
+                                              const Model::Product& product,
+                                              const Dtime& dtime,
+                                              const Level& level) const;
+
                Raster*
                get_geo_raster_ptr (const Size_2D& size_2d,
                                    const Transform_2D& transform,
                                    const Product& product = Product ("TERRAIN"),
                                    const Dtime& dtime = Dtime (),
                                    const Level& level = Level ()) const;
+
+               Scalar_Data_2D*
+               get_geo_scalar_data_2d_ptr (const Size_2D& size_2d,
+                                           const Transform_2D& transform,
+                                           const Product& product,
+                                           const Dtime& dtime = Dtime (),
+                                           const Level& level = Level ()) const;
 
                Raster*
                get_cross_section_raster_ptr (const Box_2D& box_2d,
@@ -899,6 +949,14 @@ namespace twiin
                                              const Dtime& dtime,
                                              const Journey& journey,
                                              const Real u_bg = 0) const;
+
+               Scalar_Data_2D*
+               get_cross_section_scalar_data_2d_ptr (const Box_2D& box_2d,
+                                                     const Transform_2D& transform,
+                                                     const Product& product,
+                                                     const Dtime& dtime,
+                                                     const Journey& journey,
+                                                     const Real u_bg = 0) const;
 
                Raster*
                get_time_cross_raster_ptr (const Box_2D& box_2d,
@@ -913,7 +971,7 @@ namespace twiin
                                           const Transform_2D& transform,
                                           const Model::Product& product,
                                           const Track& track,
-                                          const bool lagrangian = false) const;
+                                          const bool eulerian = true) const;
 
                size_t
                get_surface_l (const Dtime& dtime) const;
@@ -966,7 +1024,7 @@ namespace twiin
 
       public:
 
-         Model (const Config_File& config_file);
+         Model (const Rc_File& rc_file);
 
          ~Model ();
 

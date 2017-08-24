@@ -306,12 +306,12 @@ Hrit::Hrit (const Dstring& data_path)
    init (data_path);
 }
 
-Hrit::Hrit (const Config_File& config_file)
+Hrit::Hrit (const Rc_File& rc_file)
    : channel_tokens ("IR1 IR2 IR3 IR4 VIS")
 {
 
-   for (auto iterator = config_file.begin ();
-        iterator != config_file.end (); iterator++)
+   for (auto iterator = rc_file.begin ();
+        iterator != rc_file.end (); iterator++)
    {
 
       const Dstring input_line = *(iterator);
@@ -428,7 +428,7 @@ Hrit::get_datum (Hrit::Disk& disk,
 
    Real x, y;
 
-   navigation.transform (x, y, lat_long.latitude, lat_long.longitude);
+   navigation.t (x, y, lat_long.latitude, lat_long.longitude);
    const Integer line = Integer (round (y));
    const Integer element = Integer (round (x));
 
@@ -525,7 +525,7 @@ Hrit::get_raster_ptr (const Size_2D& size_2d,
       {
 
          const Real y = Real (j);
-         transform.reverse (latitude, longitude, x, y);
+         transform.r (latitude, longitude, x, y);
 
          const Color& color = Hrit::get_color (channel_str,
             disk_ptr_map, navigation_map, lat_long);

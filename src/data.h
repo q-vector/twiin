@@ -39,7 +39,7 @@ namespace twiin
 
       public:
 
-         Data (const Config_File& config_file);
+         Data (const Rc_File& rc_file);
 
          ~Data ();
 

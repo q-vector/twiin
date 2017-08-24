@@ -1,5 +1,6 @@
 #include <getopt.h>
 #include <denise/dstring.h>
+#include <denise/visualize.h>
 #include "twiin.h"
 #include "hrit.h"
 #include "model.h"
@@ -17,14 +18,14 @@ using namespace twiin;
 
 
 Twiin::Transform_Ptr_Map::Transform_Ptr_Map (const Size_2D& size_2d,
-                                             const Config_File& config_file)
+                                             const Rc_File& rc_file)
 {
 
    typedef Geodetic_Transform Gt;
    const Point_2D centre (size_2d.i/2, size_2d.j/2);
 
-   for (auto iterator = config_file.begin ();
-        iterator != config_file.end (); iterator++)
+   for (auto iterator = rc_file.begin ();
+        iterator != rc_file.end (); iterator++)
    {
 
       const Tokens tokens (*(iterator), " \f\t\n");
@@ -98,9 +99,9 @@ Twiin::get_file_path (const Dstring& format,
                       const Dtime& dtime,
                       const Lat_Long& lat_long,
                       const Real distance,
-                      const bool lagrangian) const
+                      const bool eulerian) const
 {
-   const Dstring pov_str (lagrangian ? "LAGRANGIAN" : "EULERIAN");
+   const Dstring pov_str (eulerian ? "EULERIAN" : "LAGRANGIAN");
    const Dstring& time_str = dtime.get_string ("%Y%m%d%H%M");
    const Dstring& ll_str = lat_long.get_string (false, Dstring ("%.4f"));
 
@@ -128,9 +129,9 @@ Twiin::get_file_path (const Dstring& format,
                       const Dstring& stage,
                       const Model::Product& product,
                       const Dstring& track_id,
-                      const bool lagrangian) const
+                      const bool eulerian) const
 {
-   const Dstring pov_str (lagrangian ? "LAGRANGIAN" : "EULERIAN");
+   const Dstring pov_str (eulerian ? "EULERIAN" : "LAGRANGIAN");
    const Dstring& file_name = stage + "-" + product.get_string () + "-" +
       track_id + "-" + pov_str + "." + format;
    return output_dir + "/" + file_name;
@@ -186,10 +187,10 @@ Twiin::get_file_path (const Dstring& format,
 }
 
 Twiin::Twiin (const Size_2D& size_2d,
-              const Config_File& config_file,
+              const Rc_File& rc_file,
               const Dstring& output_dir)
    : size_2d (size_2d),
-     config_file (config_file),
+     rc_file (rc_file),
      output_dir (output_dir)
 {
 }
@@ -216,11 +217,11 @@ Twiin::gui (const Dstring& stage_str,
    const Dtime::Set time_set (time_str);
    const Dtime& dtime = time_set.get_start ();
 
-   const Data data (config_file);
+   const Data data (rc_file);
 
    Gtk::Window gtk_window;
-   Twiin::Gui gui (gtk_window, size_2d, config_file, data,
-      stage, product, level, dtime, journey_tokens, zoom_str);
+   Twiin::Gui gui (gtk_window, size_2d, rc_file, data, stage, product,
+      level, dtime, journey_tokens, zoom_str);
    gtk_window.add (gui);
    gtk_window.show_all_children ();
    gtk_window.show ();
@@ -246,16 +247,17 @@ Twiin::plan (const Dstring& stage_str,
              const Dstring& filename,
              const Dstring& color_bar_str,
              const Dstring& scale_bar_str,
-             const list<Polygon>& polygon_list,
+             const Tokens& polygon_tokens,
              const bool no_stage,
              const bool no_wind_barb,
+             const Tokens& contour_tokens,
              const bool is_bludge) const
 {
 
    Gshhs* gshhs_ptr = NULL;
 
-   for (auto iterator = config_file.begin ();
-        iterator != config_file.end (); iterator++)
+   for (auto iterator = rc_file.begin ();
+        iterator != rc_file.end (); iterator++)
    {
 
       const Tokens tokens (*(iterator), " \f\t\n");
@@ -277,10 +279,10 @@ Twiin::plan (const Dstring& stage_str,
    const Tokens product_tokens (product_str, ":");
    const Tokens track_id_tokens (track_id_str, ":");
 
-   Transform_Ptr_Map transform_ptr_map (size_2d, config_file);
+   Transform_Ptr_Map transform_ptr_map (size_2d, rc_file);
 
    Title title (size_2d);
-   const Data data (config_file);
+   const Data data (rc_file);
    const Model& model = data.get_model ();
    const Hrit& hrit = data.get_hrit ();
    const Station::Map& station_map = data.get_station_map ();
@@ -350,9 +352,9 @@ cout << valid_time_vector.size () << endl;
                      size_2d, format, file_path);
                   RefPtr<Context> cr = denise::get_cr (surface);
 
-                  Twiin::render (cr, transform, size_2d, data,
-                     dtime, level, s, p, polygon_list, no_stage,
-                     no_wind_barb);
+                  Twiin::render (cr, transform, size_2d, data, dtime, level,
+                     s, p, polygon_tokens, no_stage, no_wind_barb,
+                     contour_tokens);
 
                   if (gshhs_ptr != NULL)
                   {
@@ -475,16 +477,17 @@ Twiin::plan (const Dstring& stage_str,
              const Dstring& filename,
              const Dstring& color_bar_str,
              const Dstring& scale_bar_str,
-             const list<Polygon>& polygon_list,
+             const Tokens& polygon_tokens,
              const bool no_stage,
              const bool no_wind_barb,
+             const Tokens& contour_tokens,
              const bool is_bludge) const
 {
 
    Gshhs* gshhs_ptr = NULL;
 
-   for (auto iterator = config_file.begin ();
-        iterator != config_file.end (); iterator++)
+   for (auto iterator = rc_file.begin ();
+        iterator != rc_file.end (); iterator++)
    {
 
       const Tokens tokens (*(iterator), " \f\t\n");
@@ -505,10 +508,10 @@ Twiin::plan (const Dstring& stage_str,
    const Tokens product_tokens (product_str, ":");
    const Tokens track_id_tokens (track_id_str, ":");
 
-   Transform_Ptr_Map transform_ptr_map (size_2d, config_file);
+   Transform_Ptr_Map transform_ptr_map (size_2d, rc_file);
 
    Title title (size_2d);
-   const Data data (config_file);
+   const Data data (rc_file);
    const Model& model = data.get_model ();
    const Hrit& hrit = data.get_hrit ();
    const Station::Map& station_map = data.get_station_map ();
@@ -600,8 +603,9 @@ Twiin::plan (const Dstring& stage_str,
                      size_2d, format, file_path);
                   RefPtr<Context> cr = denise::get_cr (surface);
 
-                  Twiin::render (cr, transform, size_2d, data, dtime,
-                     level, s, p, polygon_list, no_stage, no_wind_barb);
+                  Twiin::render (cr, transform, size_2d, data, dtime, level,
+                     s, p, polygon_tokens, no_stage, no_wind_barb,
+                     contour_tokens);
 
                   if (gshhs_ptr != NULL)
                   {
@@ -689,6 +693,7 @@ Twiin::plan (const Dstring& stage_str,
 void
 Twiin::cross_section (const Dstring& stage_str,
                       const Dstring& product_str,
+                      const Tokens& contour_tokens,
                       const Tokens& journey_tokens,
                       const Dstring& time_str,
                       const Real height,
@@ -706,7 +711,7 @@ Twiin::cross_section (const Dstring& stage_str,
    const Tokens product_tokens (product_str, ":");
 
    Title title (size_2d);
-   const Data data (config_file);
+   const Data data (rc_file);
    const Model& model = data.get_model ();
 
    const Real margin_l = 50;
@@ -785,6 +790,17 @@ Twiin::cross_section (const Dstring& stage_str,
                   Twiin::render_cross_section (cr, transform, box_2d,
                      domain_z, stage, product, dtime, journey, u_bg);
 
+                  if (contour_tokens.size () > 0)
+                  {
+                     for (auto iterator = contour_tokens.begin ();
+                          iterator != contour_tokens.end (); iterator++)
+                     {
+                        const Dstring& contour_str = *(iterator);
+                        render_cross_section_contour (cr, transform, box_2d,
+                           domain_z, stage, contour_str, dtime, journey, u_bg);
+                     }
+                  }
+
                   Twiin::render_color_bar (cr, size_2d, p);
 
                   if (title_tokens.size () == 0)
@@ -815,6 +831,7 @@ Twiin::cross_section (const Dstring& stage_str,
 void
 Twiin::cross_section (const Dstring& stage_str,
                       const Dstring& product_str,
+                      const Tokens& contour_tokens,
                       const Dstring& track_id_str,
                       const Track::Map& track_map,
                       const Real distance,
@@ -823,7 +840,7 @@ Twiin::cross_section (const Dstring& stage_str,
                       const Dstring& format,
                       const Tokens& title_tokens,
                       const Dstring& filename,
-                      const bool lagrangian,
+                      const bool eulerian,
                       const bool is_bludge) const
 {
 
@@ -834,7 +851,7 @@ Twiin::cross_section (const Dstring& stage_str,
    const Tokens track_id_tokens (track_id_str, ":");
 
    Title title (size_2d);
-   const Data data (config_file);
+   const Data data (rc_file);
    const Model& model = data.get_model ();
 
    const Real margin_l = 50;
@@ -901,10 +918,10 @@ Twiin::cross_section (const Dstring& stage_str,
                transform.scale (w / span_x, h / span_z);
                transform.translate (margin_l, size_2d.j - margin_b);
 
-               const Real u_bg = (lagrangian ? speed : 0);
+               const Real u_bg = (eulerian ? 0 : speed);
 
                const Dstring& file_path = (filename == "") ? get_file_path (
-                  format, s, product, dtime, ll, distance, lagrangian) :
+                  format, s, product, dtime, ll, distance, eulerian) :
                   output_dir + "/" + filename;
                cout << file_path;
                if (is_bludge) { cout << " will be made" << endl; continue; }
@@ -926,6 +943,17 @@ Twiin::cross_section (const Dstring& stage_str,
                   Twiin::render_cross_section (cr, transform, box_2d,
                      domain_z, stage, product, dtime, journey, u_bg);
 
+                  if (contour_tokens.size () > 0)
+                  {
+                     for (auto iterator = contour_tokens.begin ();
+                          iterator != contour_tokens.end (); iterator++)
+                     {
+                        const Dstring& contour_str = *(iterator);
+                        render_cross_section_contour (cr, transform, box_2d,
+                           domain_z, stage, contour_str, dtime, journey, u_bg);
+                     }
+                  }
+
                   cr->save ();
                   cr->set_line_width (4);
                   Color::black (0.2).cairo (cr);
@@ -938,7 +966,7 @@ Twiin::cross_section (const Dstring& stage_str,
                   if (title_tokens.size () == 0)
                   {
                      Twiin::set_title (title, basetime, s, product,
-                        dtime, ll, distance, lagrangian);
+                        dtime, ll, distance, eulerian);
                   }
                   else
                   {
@@ -983,7 +1011,7 @@ Twiin::time_cross (const Dstring& stage_str,
    const Domain_1D domain_z (0, height);
 
    Title title (size_2d);
-   const Data data (config_file);
+   const Data data (rc_file);
    const Model& model = data.get_model ();
    const Station::Map& station_map = data.get_station_map ();
 
@@ -1089,7 +1117,7 @@ Twiin::time_cross (const Dstring& stage_str,
                    const Dstring& format,
                    const Tokens& title_tokens,
                    const Dstring& filename,
-                   const bool lagrangian,
+                   const bool eulerian,
                    const bool is_bludge) const
 {
 
@@ -1101,7 +1129,7 @@ Twiin::time_cross (const Dstring& stage_str,
    const Domain_1D domain_z (0, height);
 
    Title title (size_2d);
-   const Data data (config_file);
+   const Data data (rc_file);
    const Model& model = data.get_model ();
 
    const Real margin_l = 50;
@@ -1149,7 +1177,7 @@ Twiin::time_cross (const Dstring& stage_str,
             transform.translate (margin_l, size_2d.j - margin_b);
 
             const Dstring& file_path = (filename == "") ?
-               get_file_path (format, s, product, track_id, lagrangian) :
+               get_file_path (format, s, product, track_id, eulerian) :
                output_dir + "/" + filename;
             cout << file_path;
             if (is_bludge) { cout << " will be made" << endl; continue; }
@@ -1169,14 +1197,14 @@ Twiin::time_cross (const Dstring& stage_str,
                if (s2d.i < 0 || s2d.j < 0) { continue; }
 
                Twiin::render_time_cross (cr, transform, box_2d,
-                  domain_z, stage, product, track, lagrangian);
+                  domain_z, stage, product, track, eulerian);
 
                Twiin::render_color_bar (cr, size_2d, p);
 
                if (title_tokens.size () == 0)
                {
                   Twiin::set_title (title, basetime, s,
-                     product, track_id, lagrangian);
+                     product, track_id, eulerian);
                }
                else
                {
@@ -1214,7 +1242,7 @@ Twiin::meteogram (const Dstring& stage_str,
    const Tokens location_tokens (location_str, ":");
 
    Title title (size_2d);
-   const Data data (config_file);
+   const Data data (rc_file);
    const Model& model = data.get_model ();
    const Station::Map& station_map = data.get_station_map ();
    const Aws::Repository& aws_repository = data.get_aws_repository ();
@@ -1290,7 +1318,7 @@ Twiin::vertical_profile (const Dstring& stage_str,
    const Tokens location_tokens (location_str, ":");
 
    Title title (size_2d);
-   const Data data (config_file);
+   const Data data (rc_file);
    const Model& model = data.get_model ();
    const Station::Map& station_map = data.get_station_map ();
 
@@ -1428,7 +1456,7 @@ Twiin::vertical_profile (const Dstring& stage_str,
    const Tokens track_id_tokens (track_id_str, ":");
 
    Title title (size_2d);
-   const Data data (config_file);
+   const Data data (rc_file);
    const Model& model = data.get_model ();
    const Station::Map& station_map = data.get_station_map ();
 
@@ -1545,7 +1573,7 @@ Twiin::Andrea::twiin_trajectory_generate (const Dstring& identifier,
       }
    }
 
-   const Data data (config_file);
+   const Data data (rc_file);
    const Model& model = data.get_model ();
    const Track& trajectory = model.get_stage (stage_str).get_trajectory (
       lat_long, level, dtime, finish_tau, product_vector);
@@ -1571,7 +1599,7 @@ Twiin::Andrea::twiin_trajectory_survey (const Dstring& identifier,
       }
    }
 
-   const Data data (config_file);
+   const Data data (rc_file);
    const Model& model = data.get_model ();
    Track& trajectory = trajectory_map.at (identifier);
    model.get_stage (stage_str).survey_trajectory (trajectory, product_vector);
@@ -1762,6 +1790,8 @@ Twiin::Andrea::twiin_surface_plan (const Dstring& surface_identifier,
    Dstring scale_bar_str = "lb:10";
    bool no_stage = true;
    bool no_wind_barb = true;
+   Tokens contour_tokens;
+   Tokens polygon_tokens;
 
    for (auto iterator = arguments.begin ();
         iterator != arguments.end (); iterator++)
@@ -1774,16 +1804,17 @@ Twiin::Andrea::twiin_surface_plan (const Dstring& surface_identifier,
       if (option == "scale_bar") { scale_bar_str = value; }
       if (option == "stage")     { no_stage = !is_yes; }
       if (option == "wind_barb") { no_wind_barb = !is_yes; }
+      if (option == "contour")   { contour_tokens.push_back (value); }
    }
 
    Color::white ().cairo (cr);
    cr->paint ();
 
-   const Data data (config_file);
+   const Data data (rc_file);
    const Model& model = data.get_model ();
    const Station::Map& station_map = data.get_station_map ();
-   Twiin::render (cr, geodetic_transform, size_2d, data, dtime,
-      level, stage, product, polygon_list, no_stage, no_wind_barb);
+   Twiin::render (cr, geodetic_transform, size_2d, data, dtime, level, stage,
+      product, polygon_tokens, no_stage, no_wind_barb, contour_tokens);
 
    Twiin::render_scale_bar (cr, geodetic_transform, size_2d, scale_bar_str);
    Twiin::render_color_bar (cr, size_2d, product, color_bar_str);
@@ -1832,7 +1863,7 @@ Twiin::Andrea::twiin_time_series_aws (const Tokens& arguments)
    Tokens product_tokens;
    Dtime::Span time_span;
 
-   const Data data (config_file);
+   const Data data (rc_file);
    const Aws::Repository& aws_repository = data.get_aws_repository ();
 
    for (auto iterator = arguments.begin ();
@@ -1923,9 +1954,9 @@ Twiin::Andrea::parse (const Tokens& tokens)
 
 }
 
-Twiin::Andrea::Andrea (const Config_File& config_file)
+Twiin::Andrea::Andrea (const Rc_File& rc_file)
    : andrea::Andrea (""),
-     config_file (config_file)
+     rc_file (rc_file)
 {
 }
 
@@ -1943,11 +1974,11 @@ Twiin::usage ()
    cout << "  -a  --annotation=STR               annotation as dots or journeys" << endl;
    cout << "  -b  --bludge                       do noting" << endl;
    cout << "  -C  --color-bar=r:10               location / size of color bar" << endl;
-   cout << "  -c  --config=CONFIG_FILE           specify config file location" << endl;
+   cout << "  -E  --eulerian                     specify Eulerian Frame" << endl;
    cout << "  -F  --filename=FILENAME            filename of output file" << endl;
    cout << "  -f  --format=eps|pdf|png           eps or pdf or png" << endl;
-   cout << "  -g  --geometry=HEIGHTxWIDTH        geometry of image produced" << endl;
    cout << "  -G  --gui                          GUI Mode" << endl;
+   cout << "  -g  --geometry=HEIGHTxWIDTH        geometry of image produced" << endl;
    cout << "  -h  --height=STR                   cross section height" << endl;
    cout << "  -I  --plot-first-char-of-track-id  display this help and exit" << endl;
    cout << "  -i  --interactive                  interactive mode" << endl;
@@ -1963,6 +1994,7 @@ Twiin::usage ()
    cout << "  -o  --output-dir=STR               output directory" << endl;
    cout << "  -P  --ignore-pressure              don't render pressure in meteogram" << endl;
    cout << "  -p  --product=PRODUCT_STR          model product" << endl;
+   cout << "  -r  --rc=RC_FILE                   specify rc file location" << endl;
    cout << "  -S  --no-stage                     don't draw stage boxes" << endl;
    cout << "  -s  --stage=STAGE_STR              specify stage identifier" << endl;
    cout << "  -T  --title=STR                    colon separated title tokens" << endl;
@@ -2059,7 +2091,7 @@ Twiin::set_title (Title& title,
                   const Dtime& dtime,
                   const Lat_Long& lat_long,
                   const Real distance,
-                  const bool lagrangian)
+                  const bool eulerian)
 {
 
    const Real forecast_hour = dtime.t - basetime.t;
@@ -2071,7 +2103,7 @@ Twiin::set_title (Title& title,
    const Dstring& ll_str = lat_long.get_string (4, true, true, true);
    const Dstring& where_str = ll_str + Dstring::render ("\u00b1%.0f km", d);
 
-   const Dstring pov_str (lagrangian ? "Lagrangian" : "Eulerian");
+   const Dstring pov_str (eulerian ? "Eulerian" : "Lagrangian");
 
    const Dstring fmt ("%Y.%m.%d %H:%M UTC");
    const Dstring& time_str = dtime.get_string (fmt);
@@ -2102,9 +2134,9 @@ Twiin::set_title (Title& title,
                   const Dstring& stage_str,
                   const Model::Product& product,
                   const Dstring& track_id,
-                  const bool lagrangian)
+                  const bool eulerian)
 {
-   const Dstring pov_str (lagrangian ? "Lagrangian" : "Eulerian");
+   const Dstring pov_str (eulerian ? "Eulerian" : "Lagrangian");
    const Dstring& basetime_str = basetime.get_string ();
    const Dstring stage_product = stage_str + " / " + product.get_description ();
    title.set (track_id, "", stage_product, basetime_str, pov_str);
@@ -2175,24 +2207,38 @@ Twiin::set_title (Title& title,
 }
 
 void
-Twiin::render_polygon_list (const RefPtr<Context>& cr,
-                            const Geodetic_Transform& transform,
-                            const list<Polygon>& polygon_list)
+Twiin::render_polygons (const RefPtr<Context>& cr,
+                        const Geodetic_Transform& transform,
+                        const Tokens& polygon_tokens)
 {
 
-   cr->save ();
-   cr->set_line_width (4);
-   Color::hsb (0.00, 0.00, 0.00, 0.5).cairo (cr);
+   for (auto iterator = polygon_tokens.begin ();
+        iterator != polygon_tokens.end (); iterator++)
 
-   for (auto iterator = polygon_list.begin ();
-        iterator != polygon_list.end (); iterator++)
    {
-      const Polygon& polygon = *(iterator);
+
+      const Dstring& polygon_str = *(iterator);
+      const Tokens tokens (polygon_str, "@");
+      const Integer n = tokens.size ();
+      const Dstring& polygon_file_path = tokens[0];
+
+      igzstream file (polygon_file_path);
+      Polygon polygon (file);
+      file.close ();
+
+      cr->save ();
+
+      if (n > 1) { cr->set_line_width (stof (tokens[1])); }
+      (n > 2 ? (tokens[2]) : Color::black ()).cairo (cr);
+      if (n > 3) { Dashes (tokens[3]).cairo (cr); }
+
       polygon.cairo (cr, transform);
       cr->stroke ();
+
+      cr->restore ();
+
    }
 
-   cr->restore ();
 
 }
 
@@ -2261,6 +2307,45 @@ Twiin::render_product (const RefPtr<Context>& cr,
 }
 
 void
+Twiin::render_contour (const RefPtr<Context>& cr,
+                       const Geodetic_Transform& transform,
+                       const Size_2D& size_2d,
+                       const Data& data,
+                       const Dtime& dtime,
+                       const Dstring& stage_str,
+                       const Dstring& contour_str)
+{
+
+   const Tokens contour_tokens (contour_str, "@");
+   const Integer n = contour_tokens.size ();
+
+   const Model::Product product (contour_tokens[0]);
+   const Level level (contour_tokens[1]);
+   const Tuple level_tuple (contour_tokens[2]);
+
+   const Model& model = data.get_model ();
+   const Model::Stage& stage = model.get_stage (stage_str);
+
+   cr->save ();
+
+   if (n > 3) { cr->set_line_width (stof (contour_tokens[3])); }
+   (n > 4 ? (contour_tokens[4]) : Color::black ()).cairo (cr);
+   if (n > 5) { Dashes (contour_tokens[5]).cairo (cr); }
+
+   Scalar_Data_2D* scalar_data_2d_ptr = stage.get_geo_scalar_data_2d_ptr (
+      size_2d, transform, product, dtime, level);
+
+   const Contour contour (*scalar_data_2d_ptr, level_tuple);
+   const Affine_Transform_2D null_transform;
+
+   contour.render_isolines (cr, null_transform);
+   delete scalar_data_2d_ptr;
+
+   cr->restore ();
+
+}
+
+void
 Twiin::render_wind_barbs (const RefPtr<Context>& cr,
                           const Geodetic_Transform& transform,
                           const Size_2D& size_2d,
@@ -2300,7 +2385,7 @@ Twiin::render_wind_barbs (const RefPtr<Context>& cr,
       for (point.y = start_y; point.y < height; point.y += h)
       {
 
-         transform.reverse (latitude, longitude, point.x, point.y);
+         transform.r (latitude, longitude, point.x, point.y);
          if (stage.out_of_bounds (lat_long)) { continue; }
 
          Real u = stage.evaluate (U, ll, level, dtime);
@@ -2672,9 +2757,10 @@ Twiin::render (const RefPtr<Context>& cr,
                const Level& level,
                const Dstring& stage_str,
                const Model::Product product,
-               const list<Polygon>& polygon_list,
+               const Tokens& polygon_tokens,
                const bool no_stage,
-               const bool no_wind_barb)
+               const bool no_wind_barb,
+               const Tokens& contour_tokens)
 {
 
    cr->save ();
@@ -2686,7 +2772,18 @@ Twiin::render (const RefPtr<Context>& cr,
    render_product (cr, transform, size_2d, data,
       product, dtime, level, stage_str);
 
-   render_polygon_list (cr, transform, polygon_list);
+   render_polygons (cr, transform, polygon_tokens);
+
+   if (contour_tokens.size () > 0)
+   {
+      for (auto iterator = contour_tokens.begin ();
+           iterator != contour_tokens.end (); iterator++)
+      {
+         const Dstring& contour_str = *(iterator);
+         render_contour (cr, transform, size_2d, data,
+            dtime, stage_str, contour_str);
+      }
+   }
 
    if (!no_wind_barb)
    {
@@ -2801,7 +2898,7 @@ Twiin::render_cross_section_arrows (const RefPtr<Context>& cr,
    for (Integer i = index_2d.i; i < index_2d.i + size_2d.i; i += Integer (h))
    {
 
-      transform.reverse (x, z, Real (i), 0);
+      transform.r (x, z, Real (i), 0);
       if (x < 0 || x > distance) { continue; }
 
       const Lat_Long lat_long = journey.get_lat_long (x, geodesy);
@@ -2816,7 +2913,7 @@ Twiin::render_cross_section_arrows (const RefPtr<Context>& cr,
       for (Integer j = index_2d.j; j < index_2d.j + size_2d.j; j += Integer (h))
       {
 
-         transform.reverse (x, z, Real (i), Real (j));
+         transform.r (x, z, Real (i), Real (j));
          if (z < topography) { continue; }
 
          const Real u = stage.evaluate (U, lat_long, level, l);
@@ -2881,6 +2978,43 @@ Twiin::render_cross_section (const RefPtr<Context>& cr,
       const Index_2D anchor = box_2d.get_ne ();
       Label (u_bg_string, box_2d.get_ne (), 'r', 't', 10).cairo (cr);
    }
+
+   cr->restore ();
+
+}
+
+void
+Twiin::render_cross_section_contour (const RefPtr<Context>& cr,
+                                     const Transform_2D& transform,
+                                     const Box_2D& box_2d,
+                                     const Domain_1D& domain_z,
+                                     const Model::Stage& stage,
+                                     const Dstring& contour_str,
+                                     const Dtime& dtime,
+                                     const Journey& journey,
+                                     const Real u_bg)
+{
+
+   const Tokens contour_tokens (contour_str, "@");
+   const Integer n = contour_tokens.size ();
+
+   const Model::Product product (contour_tokens[0]);
+   const Tuple level_tuple (contour_tokens[1]);
+
+   cr->save ();
+
+   if (n > 2) { cr->set_line_width (stof (contour_tokens[2])); }
+   (n > 3 ? (contour_tokens[3]) : Color::black ()).cairo (cr);
+   if (n > 4) { Dashes (contour_tokens[4]).cairo (cr); }
+
+   Scalar_Data_2D* scalar_data_2d_ptr =
+      stage.get_cross_section_scalar_data_2d_ptr (
+         box_2d, transform, product, dtime, journey, u_bg);
+   const Contour contour (*scalar_data_2d_ptr, level_tuple);
+   const Affine_Transform_2D null_transform;
+
+   contour.render_isolines (cr, null_transform);
+   delete scalar_data_2d_ptr;
 
    cr->restore ();
 
@@ -3010,7 +3144,7 @@ Twiin::render_time_cross (const RefPtr<Context>& cr,
                           const Model::Stage& stage,
                           const Model::Product& product,
                           const Track& track,
-                          const bool lagrangian)
+                          const bool eulerian)
 {
 
    cr->save ();
@@ -3019,7 +3153,7 @@ Twiin::render_time_cross (const RefPtr<Context>& cr,
    cr->paint ();
 
    Raster* raster_ptr = stage.get_time_cross_raster_ptr (
-      box_2d, transform, product, track, lagrangian);
+      box_2d, transform, product, track, eulerian);
    raster_ptr->blit (cr);
    delete raster_ptr;
 
@@ -3734,7 +3868,7 @@ Twiin::Gui::process_cross_section (const Integer route_id)
 
 Twiin::Gui::Gui (Gtk::Window& gtk_window,
                  const Size_2D& size_2d,
-                 const Config_File& config_file,
+                 const Rc_File& rc_file,
                  const Data& data,
                  const Dstring& stage_str,
                  const Model::Product& product,
@@ -3742,7 +3876,7 @@ Twiin::Gui::Gui (Gtk::Window& gtk_window,
                  const Dtime& dtime,
                  const Tokens& journey_tokens,
                  const Dstring& zoom_str)
-   : Map_Console (gtk_window, size_2d, config_file),
+   : Map_Console (gtk_window, size_2d, rc_file),
      Time_Canvas (*this, 12),
      Level_Canvas (*this, 12),
      product_panel (*this, 12),
@@ -3834,8 +3968,8 @@ Twiin::Gui::Gui (Gtk::Window& gtk_window,
 
    Map_Console::Overlay_Store& overlay_store = get_overlay_store ();
 
-   for (auto iterator = config_file.begin ();
-        iterator != config_file.end (); iterator++)
+   for (auto iterator = rc_file.begin ();
+        iterator != rc_file.end (); iterator++)
    {
 
       const Tokens tokens (*(iterator));
@@ -3953,9 +4087,11 @@ Twiin::Gui::render_image_buffer (const RefPtr<Context>& cr)
       dynamic_cast<Geodetic_Transform&>(get_transform ());
    const Dtime& dtime = get_time_chooser ().get_time ();
    const Level& level = get_level_panel ().get_level ();
+   const Tokens contour_tokens;
+   const Tokens polygon_tokens;
 
-   Twiin::render (cr, transform, size_2d, data, dtime,
-      level, stage_str, product, polygon_list, false, false);
+   Twiin::render (cr, transform, size_2d, data, dtime, level, stage_str,
+      product, polygon_tokens, false, false, contour_tokens);
    render_mesh (cr);
    render_overlays (cr);
 

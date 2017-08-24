@@ -21,12 +21,14 @@ main (int argc,
 
    static struct option long_options[] =
    {
+      { "help",                         0, 0, '?' },
       { "azimuth",                      1, 0, 'A' },
       { "annotation",                   1, 0, 'a' },
       { "polygon",                      1, 0, 'B' },
       { "bludge",                       0, 0, 'b' },
       { "color-bar",                    1, 0, 'C' },
-      { "config",                       1, 0, 'c' },
+      { "c",                            1, 0, 'c' },
+      { "eulerian",                     0, 0, 'E' },
       { "filename",                     1, 0, 'F' },
       { "format",                       1, 0, 'f' },
       { "gui",                          0, 0, 'G' },
@@ -46,6 +48,7 @@ main (int argc,
       { "output-dir",                   1, 0, 'o' },
       { "ignore-pressure",              0, 0, 'P' },
       { "product",                      1, 0, 'p' },
+      { "rc",                           1, 0, 'r' },
       { "no-stage",                     0, 0, 'S' },
       { "stage",                        1, 0, 's' },
       { "title",                        1, 0, 'T' },
@@ -56,7 +59,6 @@ main (int argc,
       { "time-cross",                   0, 0, 'X' },
       { "cross-section",                0, 0, 'x' },
       { "zoom",                         1, 0, 'z' },
-      { "help",                         0, 0, '?' },
       { NULL, 0, 0, 0 }
    };
 
@@ -75,12 +77,13 @@ main (int argc,
    Tokens title_tokens;
    bool is_bludge = false;
    bool is_cross_section = false;
+
    bool is_time_cross = false;
    bool is_gui = false;
    bool is_interactive = false;
    bool is_meteogram = false;
    Dstring meteogram_mode ("both");
-   bool lagrangian = false;
+   bool eulerian = true;
    bool ignore_pressure = false;
    bool no_stage = false;
    bool no_wind_barb = false;
@@ -92,15 +95,16 @@ main (int argc,
    Real height = 8000;
    Dstring location_str ("");
    Tokens journey_tokens;
+   Tokens contour_tokens;
+   Tokens polygon_tokens;
    Track::Map track_map;
    Dstring track_id_str ("");
    bool track_id_initial = false;
-   Dstring config_file_path (Dstring (getenv ("HOME")) + "/.twiin.rc");
-   list<Polygon> polygon_list;
+   Dstring rc_file_path (Dstring (getenv ("HOME")) + "/.twiin.rc");
 
    int c;
    int option_index = 0;
-   char optstring[] = "A:a:B:bC:c:d:F:f:Gg:h:IiJ:j:K:Ll:M:m:O:o:Pp:Ss:T:t:u:vVWXxz:?";
+   char optstring[] = "A:a:B:bC:c:d:EF:f:Gg:h:IiJ:j:K:L:l:M:m:O:o:Pp:r:Ss:T:t:u:vVWXxz:?";
    while ((c = getopt_long (argc, argv, optstring,
           long_options, &option_index)) != -1)
    {
@@ -122,7 +126,7 @@ main (int argc,
 
          case 'B':
          {
-            polygon_list.push_back (Polygon (optarg));
+            polygon_tokens.push_back (Dstring (optarg));
             break;
          }
 
@@ -140,13 +144,19 @@ main (int argc,
 
          case 'c':
          {
-            config_file_path = (Dstring (optarg));
+            contour_tokens.push_back (Dstring (optarg));
             break;
          }
 
          case 'd':
          {
             distance = stof (Dstring (optarg));
+            break;
+         }
+
+         case 'E':
+         {
+            eulerian = false;
             break;
          }
 
@@ -218,12 +228,6 @@ main (int argc,
             break;
          }
 
-         case 'L':
-         {
-            lagrangian = true;
-            break;
-         }
-
          case 'l':
          {
             level_str = (Dstring (optarg));
@@ -273,6 +277,12 @@ main (int argc,
          case 'p':
          {
             product_str = (Dstring (optarg));
+            break;
+         }
+
+         case 'r':
+         {
+            rc_file_path = (Dstring (optarg));
             break;
          }
 
@@ -367,12 +377,12 @@ main (int argc,
       const bool location_specified = (location_str != "");
       const bool track_specified = (track_id_str != "");
 
-      const Config_File config_file (config_file_path);
-      Twiin twiin (size_2d, config_file, output_dir);
+      const Rc_File rc_file (rc_file_path);
+      Twiin twiin (size_2d, rc_file, output_dir);
 
       if (is_interactive)
       {
-         Twiin::Andrea andrea (config_file);
+         Twiin::Andrea andrea (rc_file);
          andrea.loop ();
       }
       else
@@ -393,15 +403,15 @@ main (int argc,
          {
             if (journey_specified)
             {
-               twiin.cross_section (stage_str, product_str, journey_tokens,
-                  time_str, height, format, title_tokens, filename,
-                  u_bg, is_bludge);
+               twiin.cross_section (stage_str, product_str, contour_tokens,
+                  journey_tokens, time_str, height, format, title_tokens,
+                  filename, u_bg, is_bludge);
             }
             if (track_specified)
             {
-               twiin.cross_section (stage_str, product_str, track_id_str,
-                  track_map, distance, time_str, height, format,
-                  title_tokens, filename, lagrangian, is_bludge);
+               twiin.cross_section (stage_str, product_str, contour_tokens,
+                  track_id_str, track_map, distance, time_str, height, format,
+                  title_tokens, filename, eulerian, is_bludge);
             }
          }
          else
@@ -415,7 +425,7 @@ main (int argc,
             if (track_specified)
             {
                twiin.time_cross (stage_str, product_str, track_id_str,
-                  track_map, height, format, title_tokens, filename, lagrangian,
+                  track_map, height, format, title_tokens, filename, eulerian,
                   is_bludge);
             }
          }
@@ -450,8 +460,8 @@ main (int argc,
                twiin.plan (stage_str, product_str, level_str, time_str,
                   zoom_str, track_id_str, track_id_initial, track_map,
                   annotation_tokens, format, title_tokens, filename,
-                  color_bar_str, scale_bar_str, polygon_list, no_stage,
-                  no_wind_barb, is_bludge);
+                  color_bar_str, scale_bar_str, polygon_tokens, no_stage,
+                  no_wind_barb, contour_tokens, is_bludge);
             }
             else
             if (track_specified)
@@ -459,7 +469,8 @@ main (int argc,
                twiin.plan (stage_str, product_str, time_str, zoom_str,
                   track_id_str, track_id_initial, track_map, annotation_tokens,
                   format, title_tokens, filename, color_bar_str, scale_bar_str,
-                  polygon_list, no_stage, no_wind_barb, is_bludge);
+                  polygon_tokens, no_stage, no_wind_barb, contour_tokens,
+                  is_bludge);
             }
          }
       }

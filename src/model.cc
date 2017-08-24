@@ -930,13 +930,13 @@ Model::Stage::get_color (const Model::Product& product,
 
 }
 Model::Stage::Map::Map (const Model& model,
-                        const Config_File& config_file)
+                        const Rc_File& rc_file)
 {
 
    Tokens stage_tokens;
 
-   for (auto iterator = config_file.begin ();
-        iterator != config_file.end (); iterator++)
+   for (auto iterator = rc_file.begin ();
+        iterator != rc_file.end (); iterator++)
    {
 
       const Tokens tokens (*(iterator), " \f\n\t");
@@ -961,7 +961,7 @@ Model::Stage::Map::Map (const Model& model,
         iterator != stage_tokens.end (); iterator++)
    {
       const Dstring s (*iterator);
-      insert (make_pair (s, new Model::Acncrjbf (model, s, config_file)));
+      insert (make_pair (s, new Model::Acncrjbf (model, s, rc_file)));
    }
 
 }
@@ -1067,8 +1067,8 @@ Model::Acncrjbf::Vertical_Coefficients::get_k (const Real z,
 
 void
 Model::Acncrjbf::fill_valid_time (set<Dtime>& valid_time_set,
-                               vector<Dtime>& valid_time_vector,
-                               const Dstring& nc_varname)
+                                  vector<Dtime>& valid_time_vector,
+                                  const Dstring& nc_varname)
 {
 
    if (nc_file_ptr_map.size () == 0) { return; }
@@ -1133,8 +1133,8 @@ Model::Acncrjbf::fill_valid_time ()
 
 void
 Model::Acncrjbf::acquire_ij (size_t& i,
-                          size_t& j,
-                          const Lat_Long& lat_long) const
+                             size_t& j,
+                             const Lat_Long& lat_long) const
 {
    const Real& latitude = lat_long.latitude;
    const Real& longitude = lat_long.longitude;
@@ -1144,10 +1144,10 @@ Model::Acncrjbf::acquire_ij (size_t& i,
 
 void
 Model::Acncrjbf::acquire_k (size_t& k,
-                         const Met_Element& met_element,
-                         const size_t i,
-                         const size_t j,
-                         const Level& level) const
+                            const Met_Element& met_element,
+                            const size_t i,
+                            const size_t j,
+                            const Level& level) const
 {
 
    const Model::Acncrjbf::Vertical_Coefficients& vc = vertical_coefficients;
@@ -1306,14 +1306,14 @@ Model::Acncrjbf::fill_sounding (Sounding& sounding,
 }
 
 Model::Acncrjbf::Acncrjbf (const Model& model,
-                     const Dstring& stage_str,
-                     const Config_File& config_file)
+                           const Dstring& stage_str,
+                           const Rc_File& rc_file)
    : model (model),
      stage_str (stage_str)
 {
 
-   for (auto iterator = config_file.begin ();
-        iterator != config_file.end (); iterator++)
+   for (auto iterator = rc_file.begin ();
+        iterator != rc_file.end (); iterator++)
    {
 
       const Tokens tokens (*(iterator), " \f\n\t");
@@ -3161,8 +3161,8 @@ Model::Acncrjbf::get_topography (const size_t i,
 
 Color
 Model::Acncrjbf::get_color (const Product& product,
-                         const Lat_Long& lat_long,
-                         const size_t l) const
+                            const Lat_Long& lat_long,
+                            const size_t l) const
 {
 
    switch (product.enumeration)
@@ -3216,11 +3216,65 @@ Model::Acncrjbf::get_color (const Product& product,
 
 }
 
+Real
+Model::Acncrjbf::get_value (const Product& product,
+                            const Lat_Long& lat_long,
+                            const size_t l) const
+{
+
+   switch (product.enumeration)
+   {
+
+      case Product::WIND:
+      {
+         const Real u = evaluate (U, lat_long, l);
+         const Real v = evaluate (V, lat_long, l);
+         const Real speed = sqrt (u*u + v*v);
+         return speed;
+      }
+
+      case Product::Q_TENDENCY:
+      {
+         const Real datum = evaluate_tendency (Q, lat_long, l);
+         return datum;
+      }
+
+      case Product::Q_ADVECTION:
+      case Product::Q_H_ADVECTION:
+      {
+         const Real datum = evaluate_h_advection (Q, lat_long, l);
+         return datum;
+      }
+
+      case Product::THETA_TENDENCY:
+      {
+         const Real datum = evaluate_tendency (THETA, lat_long, l);
+         return datum;
+      }
+
+      case Product::THETA_ADVECTION:
+      case Product::THETA_H_ADVECTION:
+      {
+         const Real datum = evaluate_h_advection (THETA, lat_long, l);
+         return datum;
+      }
+
+      default:
+      {
+         const Met_Element met_element = product.get_met_element ();
+         const Real datum = evaluate (met_element, lat_long, l);
+         return datum;
+      }
+
+   }
+
+}
+
 Color
 Model::Acncrjbf::get_color (const Product& product,
-                         const Lat_Long& lat_long,
-                         const Level& level,
-                         const size_t l) const
+                            const Lat_Long& lat_long,
+                            const Level& level,
+                            const size_t l) const
 {
 
    switch (product.enumeration)
@@ -3315,6 +3369,102 @@ Model::Acncrjbf::get_color (const Product& product,
 
 }
 
+Real
+Model::Acncrjbf::get_value (const Product& product,
+                            const Lat_Long& lat_long,
+                            const Level& level,
+                            const size_t l) const
+{
+
+   switch (product.enumeration)
+   {
+
+      case Product::WIND:
+      {
+
+         size_t i, j, k;
+         acquire_ij (i, j, lat_long);
+         acquire_k (k, U, i, j, level);
+         if (k < 0 || k > 69) { return GSL_NAN; }
+
+         const Real u = evaluate (U, i, j, k, l);
+         const Real v = evaluate (V, i, j, k, l);
+         const Real speed = sqrt (u*u + v*v);
+         return speed;
+
+      }
+
+      case Product::Q_TENDENCY:
+      {
+         const Real datum = evaluate_tendency (Q, lat_long, level, l);
+         return datum;
+      }
+
+      case Product::Q_ADVECTION:
+      {
+         const Real h = evaluate_h_advection (Q, lat_long, level, l);
+         const Real v = evaluate_v_advection (Q, lat_long, level, l);
+         const Real datum = h + v;
+         return datum;
+      }
+
+      case Product::Q_H_ADVECTION:
+      {
+         const Real datum = evaluate_h_advection (Q, lat_long, level, l);
+         return datum;
+      }
+
+      case Product::Q_V_ADVECTION:
+      {
+         const Real datum = evaluate_v_advection (Q, lat_long, level, l);
+         return datum;
+      }
+
+      case Product::THETA_TENDENCY:
+      {
+         const Real datum = evaluate_tendency (THETA, lat_long, level, l);
+         return datum;
+      }
+
+      case Product::THETA_ADVECTION:
+      {
+         const Real h = evaluate_h_advection (THETA, lat_long, level, l);
+         const Real v = evaluate_v_advection (THETA, lat_long, level, l);
+         const Real datum = h + v;
+         return datum;
+      }
+
+      case Product::THETA_H_ADVECTION:
+      {
+         const Real datum = evaluate_h_advection (THETA, lat_long, level, l);
+         return datum;
+      }
+
+      case Product::THETA_V_ADVECTION:
+      {
+         const Real datum = evaluate_v_advection (THETA, lat_long, level, l);
+         return datum;
+      }
+
+      default:
+      {
+ 
+         const Met_Element met_element = product.get_met_element ();
+
+         size_t i, j, k;
+         acquire_ij (i, j, lat_long);
+         acquire_k (k, met_element, i, j, level);
+         if (k < 0 || k > 69) { return GSL_NAN; }
+
+         const Real datum = evaluate (met_element, i, j, k, l);
+         return datum;
+
+      }
+
+   }
+
+}
+
 Raster*
 Model::Acncrjbf::get_terrain_raster_ptr (const Size_2D& size_2d,
                                          const Transform_2D& transform) const
@@ -3342,7 +3492,7 @@ Model::Acncrjbf::get_terrain_raster_ptr (const Size_2D& size_2d,
       {
 
          const Real y = Real (j);
-         transform.reverse (latitude, longitude, x, y);
+         transform.r (latitude, longitude, x, y);
 
          if (out_of_bounds (lat_long))
          {
@@ -3359,19 +3509,19 @@ Model::Acncrjbf::get_terrain_raster_ptr (const Size_2D& size_2d,
          if (i != 0 && i != size_2d.i - 1 && j != 0 && i != size_2d.j - 1)
          {
 
-            transform.reverse (latitude, longitude, Real (i+1), Real (j));
+            transform.r (latitude, longitude, Real (i+1), Real (j));
             oob = out_of_bounds (lat_long);
             const Real datum_e = oob ? GSL_NAN : get_topography (lat_long);
 
-            transform.reverse (latitude, longitude, Real (i-1), Real (j));
+            transform.r (latitude, longitude, Real (i-1), Real (j));
             oob = out_of_bounds (lat_long);
             const Real datum_w = oob ? GSL_NAN : get_topography (lat_long);
 
-            transform.reverse (latitude, longitude, Real (i), Real (j+1));
+            transform.r (latitude, longitude, Real (i), Real (j+1));
             oob = out_of_bounds (lat_long);
             const Real datum_n = oob ? GSL_NAN : get_topography (lat_long);
 
-            transform.reverse (latitude, longitude, Real (i), Real (j-1));
+            transform.r (latitude, longitude, Real (i), Real (j-1));
             oob = out_of_bounds (lat_long);
             const Real datum_s = oob ? GSL_NAN : get_topography (lat_long);
 
@@ -3394,11 +3544,58 @@ Model::Acncrjbf::get_terrain_raster_ptr (const Size_2D& size_2d,
 
 }
 
+Scalar_Data_2D*
+Model::Acncrjbf::get_terrain_scalar_data_2d_ptr (const Size_2D& size_2d,
+                                                 const Transform_2D& transform) const
+{
+
+
+   const Domain_2D domain_2d (0, size_2d.i, 0, size_2d.j);
+   Scalar_Data_2D* scalar_data_2d_ptr = new Scalar_Data_2D (size_2d, domain_2d);
+   Scalar_Data_2D& scalar_data_2d = *scalar_data_2d_ptr;
+
+   Lat_Long lat_long;
+   Real& latitude = lat_long.latitude;
+   Real& longitude = lat_long.longitude;
+
+   Real orog, lsm;
+
+   bool oob;
+   Real scale_factor = 0.0025;
+
+   for (Integer i = 0; i < size_2d.i; i++)
+   {
+
+      const Real x = Real (i);
+
+      for (Integer j = 0; j < size_2d.j; j++)
+      {
+
+         const Real y = Real (j);
+         transform.r (latitude, longitude, x, y);
+
+         if (out_of_bounds (lat_long))
+         {
+            scalar_data_2d.set_datum (i, j, GSL_NAN);
+            continue;
+         }
+
+         const Real topography = get_topography (lat_long);
+         scalar_data_2d.set_datum (i, j, topography);
+
+      }
+
+   }
+
+   return scalar_data_2d_ptr;
+
+}
+
 Raster*
 Model::Acncrjbf::get_surface_raster_ptr (const Size_2D& size_2d,
-                                      const Transform_2D& transform,
-                                      const Model::Product& product,
-                                      const Dtime& dtime) const
+                                         const Transform_2D& transform,
+                                         const Model::Product& product,
+                                         const Dtime& dtime) const
 {
 
    Raster* raster_ptr = new Raster (size_2d);
@@ -3419,7 +3616,7 @@ Model::Acncrjbf::get_surface_raster_ptr (const Size_2D& size_2d,
       {
 
          const Real y = Real (j);
-         transform.reverse (latitude, longitude, x, y);
+         transform.r (latitude, longitude, x, y);
 
          if (out_of_bounds (lat_long))
          {
@@ -3438,6 +3635,50 @@ Model::Acncrjbf::get_surface_raster_ptr (const Size_2D& size_2d,
 
 }
 
+Scalar_Data_2D*
+Model::Acncrjbf::get_surface_scalar_data_2d_ptr (const Size_2D& size_2d,
+                                                 const Transform_2D& transform,
+                                                 const Model::Product& product,
+                                                 const Dtime& dtime) const
+{
+
+   const Domain_2D domain_2d (0, size_2d.i, 0, size_2d.j);
+   Scalar_Data_2D* scalar_data_2d_ptr = new Scalar_Data_2D (size_2d, domain_2d);
+   Scalar_Data_2D& scalar_data_2d = *scalar_data_2d_ptr;
+
+   Lat_Long lat_long;
+   Real& latitude = lat_long.latitude;
+   Real& longitude = lat_long.longitude;
+
+   const size_t l = get_surface_l (dtime);
+
+   for (Integer i = 0; i < size_2d.i; i++)
+   {
+
+      const Real x = Real (i);
+
+      for (Integer j = 0; j < size_2d.j; j++)
+      {
+
+         const Real y = Real (j);
+         transform.r (latitude, longitude, x, y);
+
+         if (out_of_bounds (lat_long))
+         {
+            scalar_data_2d.set_datum (i, j, GSL_NAN);
+            continue;
+         }
+
+         const Real datum = get_value (product, lat_long, l);
+         scalar_data_2d.set_datum (i, j, datum);
+
+      }
+
+   }
+
+   return scalar_data_2d_ptr;
+
+}
 Raster*
 Model::Acncrjbf::get_uppers_raster_ptr (const Size_2D& size_2d,
                                         const Transform_2D& transform,
@@ -3464,7 +3705,7 @@ Model::Acncrjbf::get_uppers_raster_ptr (const Size_2D& size_2d,
       {
 
          const Real y = Real (j);
-         transform.reverse (latitude, longitude, x, y);
+         transform.r (latitude, longitude, x, y);
 
          if (out_of_bounds (lat_long))
          {
@@ -3480,6 +3721,52 @@ Model::Acncrjbf::get_uppers_raster_ptr (const Size_2D& size_2d,
    }
 
    return raster_ptr;
+
+}
+
+Scalar_Data_2D*
+Model::Acncrjbf::get_uppers_scalar_data_2d_ptr (const Size_2D& size_2d,
+                                                const Transform_2D& transform,
+                                                const Model::Product& product,
+                                                const Dtime& dtime,
+                                                const Level& level) const
+{
+
+   const Domain_2D domain_2d (0, size_2d.i, 0, size_2d.j);
+   Scalar_Data_2D* scalar_data_2d_ptr = new Scalar_Data_2D (size_2d, domain_2d);
+   Scalar_Data_2D& scalar_data_2d = *scalar_data_2d_ptr;
+
+   Lat_Long lat_long;
+   Real& latitude = lat_long.latitude;
+   Real& longitude = lat_long.longitude;
+
+   const size_t l = get_uppers_l (dtime);
+
+   for (Integer i = 0; i < size_2d.i; i++)
+   {
+
+      const Real x = Real (i);
+
+      for (Integer j = 0; j < size_2d.j; j++)
+      {
+
+         const Real y = Real (j);
+         transform.r (latitude, longitude, x, y);
+
+         if (out_of_bounds (lat_long))
+         {
+            scalar_data_2d.set_datum (i, j, GSL_NAN);
+            continue;
+         }
+
+         const Real datum = get_value (product, lat_long, level, l);
+         scalar_data_2d.set_datum (i, j, datum);
+
+      }
+
+   }
+
+   return scalar_data_2d_ptr;
 
 }
 
@@ -3506,6 +3793,35 @@ Model::Acncrjbf::get_geo_raster_ptr (const Size_2D& size_2d,
    else
    {
       return get_uppers_raster_ptr (size_2d, transform, product, dtime, level);
+   }
+
+}
+
+Scalar_Data_2D* 
+Model::Acncrjbf::get_geo_scalar_data_2d_ptr (const Size_2D& size_2d,
+                                             const Transform_2D& transform,
+                                             const Product& product,
+                                             const Dtime& dtime,
+                                             const Level& level) const
+{
+
+   if (product.enumeration == Model::Product::TERRAIN)
+   {
+      return get_terrain_scalar_data_2d_ptr (size_2d, transform);
+   }
+   else
+   if (level.type == Level::SURFACE ||
+       product.enumeration == Model::Product::FFDI ||
+       product.enumeration == Model::Product::MSLP ||
+       product.enumeration == Model::Product::PRECIP_RATE)
+   {
+      return get_surface_scalar_data_2d_ptr (
+         size_2d, transform, product, dtime);
+   }
+   else
+   {
+      return get_uppers_scalar_data_2d_ptr (
+         size_2d, transform, product, dtime, level);
    }
 
 }
@@ -3542,8 +3858,8 @@ Model::Acncrjbf::get_cross_section_raster_ptr (const Box_2D& box_2d,
    {
 
       const Integer ii = i - index_2d.i;
-      //transform.reverse (x, ceiling, Real (i), Real (index_2d.j));
-      transform.reverse (x, ceiling, Real (i), Real (0));
+      //transform.r (x, ceiling, Real (i), Real (index_2d.j));
+      transform.r (x, ceiling, Real (i), Real (0));
 
       if (x < 0 || x > distance) { continue; }
       const Lat_Long& lat_long = journey.get_lat_long (x, geodesy);
@@ -3568,7 +3884,7 @@ Model::Acncrjbf::get_cross_section_raster_ptr (const Box_2D& box_2d,
             {
 
                const Integer jj = j - index_2d.j;
-               transform.reverse (x, z, Real (i), Real (j));
+               transform.r (x, z, Real (i), Real (j));
 
                if (z < topography) { color = Color::black (); }
                else
@@ -3600,7 +3916,7 @@ Model::Acncrjbf::get_cross_section_raster_ptr (const Box_2D& box_2d,
             {
 
                const Integer jj = j - index_2d.j;
-               transform.reverse (x, z, Real (i), Real (j));
+               transform.r (x, z, Real (i), Real (j));
 
                if (z < topography) { color = Color::black (); }
                else
@@ -3632,7 +3948,7 @@ Model::Acncrjbf::get_cross_section_raster_ptr (const Box_2D& box_2d,
             {
 
                const Integer jj = j - index_2d.j;
-               transform.reverse (x, z, Real (i), Real (j));
+               transform.r (x, z, Real (i), Real (j));
 
                if (z < topography) { color = Color::black (); }
                else
@@ -3658,7 +3974,7 @@ Model::Acncrjbf::get_cross_section_raster_ptr (const Box_2D& box_2d,
             for (Integer j = index_2d.j; j < index_2d.j + size_2d.j; j++)
             {
 
-               transform.reverse (x, z, Real (i), Real (j));
+               transform.r (x, z, Real (i), Real (j));
 
                if (z < topography) { color = Color::black (); }
                else
@@ -3887,6 +4203,354 @@ Model::Acncrjbf::get_cross_section_raster_ptr (const Box_2D& box_2d,
 
 }
 
+Scalar_Data_2D*
+Model::Acncrjbf::get_cross_section_scalar_data_2d_ptr (const Box_2D& box_2d,
+                                                       const Transform_2D& transform,
+                                                       const Model::Product& product,
+                                                       const Dtime& dtime,
+                                                       const Journey& journey,
+                                                       const Real u_bg) const
+{
+
+   const Index_2D& index_2d = box_2d.index_2d;
+   const Size_2D& size_2d = box_2d.size_2d;
+   const Real start_x = index_2d.i;
+   const Real end_x = index_2d.i + size_2d.i;
+   const Real start_y = index_2d.j;
+   const Real end_y = index_2d.j + size_2d.j;
+   const Domain_2D domain_2d (start_x, end_x, start_y, end_y);
+   Scalar_Data_2D* scalar_data_2d_ptr = new Scalar_Data_2D (size_2d, domain_2d);
+   Scalar_Data_2D& scalar_data_2d = *scalar_data_2d_ptr;
+
+   Real datum;
+   const size_t l = get_uppers_l (dtime);
+
+   const bool is_speed = (product.enumeration == Model::Product::SPEED);
+   const Model::Product& p = (is_speed ?
+      Model::Product ("SPEED_HIGHER") : product);
+
+   Real x, ceiling;
+   Level level (Level::HEIGHT, GSL_NAN);
+   Real& z = level.value;
+
+   const Geodesy geodesy;
+   const Real distance = journey.get_distance (geodesy);
+
+   for (Integer i = index_2d.i; i < index_2d.i + size_2d.i; i++)
+   {
+
+      const Integer ii = i - index_2d.i;
+      //transform.r (x, ceiling, Real (i), Real (index_2d.j));
+      transform.r (x, ceiling, Real (i), Real (0));
+
+      if (x < 0 || x > distance) { continue; }
+      const Lat_Long& lat_long = journey.get_lat_long (x, geodesy);
+      const Lat_Long& ll = lat_long;
+      if (out_of_bounds (ll)) { continue; }
+
+      const Real topography = get_topography (ll);
+      const Real azimuth = journey.get_azimuth_forward (x, geodesy);
+
+      switch (product.enumeration)
+      {
+
+         case Model::Product::SCORER:
+         {
+
+            const Sounding* sounding_ptr = get_sounding_ptr (
+               lat_long, dtime, ceiling);
+            const Real_Profile* profile_ptr =
+               sounding_ptr->get_scorer_profile_ptr (azimuth, u_bg);
+
+            for (Integer j = index_2d.j; j < index_2d.j + size_2d.j; j++)
+            {
+
+               const Integer jj = j - index_2d.j;
+               transform.r (x, z, Real (i), Real (j));
+
+               if (z < topography) { datum = GSL_NAN; }
+               else
+               {
+                  const Real pressure = sounding_ptr->get_pressure (z);
+                  datum = profile_ptr->get_ordinate (pressure);
+               }
+
+               scalar_data_2d.set_datum (ii, jj, datum);
+
+            }
+
+            delete profile_ptr;
+            delete sounding_ptr;
+            break;
+
+         };
+
+         case Model::Product::SCORER_A:
+         {
+
+            const Sounding* sounding_ptr = get_sounding_ptr (
+               lat_long, dtime, ceiling);
+            const Real_Profile* profile_ptr =
+               sounding_ptr->get_scorer_a_profile_ptr (azimuth, u_bg);
+
+            for (Integer j = index_2d.j; j < index_2d.j + size_2d.j; j++)
+            {
+
+               const Integer jj = j - index_2d.j;
+               transform.r (x, z, Real (i), Real (j));
+
+               if (z < topography) { datum = GSL_NAN; }
+               else
+               {
+                  const Real pressure = sounding_ptr->get_pressure (z);
+                  datum = profile_ptr->get_ordinate (pressure);
+               }
+
+               scalar_data_2d.set_datum (ii, jj, datum);
+
+            }
+
+            delete profile_ptr;
+            delete sounding_ptr;
+            break;
+
+         };
+
+         case Model::Product::SCORER_B:
+         {
+
+            const Sounding* sounding_ptr = get_sounding_ptr (
+               lat_long, dtime, ceiling);
+            const Real_Profile* profile_ptr =
+               sounding_ptr->get_scorer_b_profile_ptr (azimuth, u_bg);
+
+            for (Integer j = index_2d.j; j < index_2d.j + size_2d.j; j++)
+            {
+
+               const Integer jj = j - index_2d.j;
+               transform.r (x, z, Real (i), Real (j));
+
+               if (z < topography) { datum = GSL_NAN; }
+               else
+               {
+                  const Real pressure = sounding_ptr->get_pressure (z);
+                  datum = profile_ptr->get_ordinate (pressure);
+               }
+
+               scalar_data_2d.set_datum (ii, jj, datum);
+
+            }
+
+            delete profile_ptr;
+            delete sounding_ptr;
+            break;
+
+         };
+
+         default:
+         {
+
+            for (Integer j = index_2d.j; j < index_2d.j + size_2d.j; j++)
+            {
+
+               transform.r (x, z, Real (i), Real (j));
+
+               if (z < topography) { datum = GSL_NAN; }
+               else
+               {
+
+                  switch (product.enumeration)
+                  {
+
+                     case Model::Product::WIND:
+                     {
+                        const Real u = evaluate (U, ll, level, l);
+                        const Real v = evaluate (V, ll, level, l);
+                        const Wind wind (u, v);
+                        datum = wind.get_speed ();
+                        break;
+                     }
+
+                     case Model::Product::BRUNT_VAISALA:
+                     {
+                        datum = evaluate_brunt_vaisala (ll, level, l);
+                        break;
+                     }
+
+                     case Model::Product::RICHARDSON:
+                     {
+                        datum = evaluate_richardson (azimuth, ll, level, l);
+                        break;
+                     }
+
+                     case Model::Product::SCORER:
+                     {
+                        datum = evaluate_scorer (azimuth, ll, level, l, u_bg);
+                        break;
+                     }
+
+                     case Model::Product::SCORER_A:
+                     {
+                        datum = evaluate_scorer_a (azimuth, ll, level, l, u_bg);
+                        break;
+                     }
+
+                     case Model::Product::SCORER_B:
+                     {
+                        datum = evaluate_scorer_b (azimuth, ll, level, l, u_bg);
+                        break;
+                     }
+
+                     case Model::Product::ALONG_SPEED:
+                     {
+                        datum = evaluate_along_speed (
+                           azimuth, ll, level, l, u_bg);
+                        break;
+                     }
+
+                     case Model::Product::NORMAL_SPEED:
+                     {
+                        datum = evaluate_normal_speed (
+                           azimuth, lat_long, level, l);
+                        break;
+                     }
+
+                     case Model::Product::Q_TENDENCY:
+                     {
+                        size_t i, j;
+                        datum = evaluate_s_tendency (
+                           Q, azimuth, lat_long, level, l, u_bg);
+                        break;
+                     }
+
+                     case Model::Product::Q_ADVECTION:
+                     {
+                        const Real h = evaluate_h_advection (Q, ll, level, l);
+                        const Real v = evaluate_v_advection (Q, ll, level, l);
+                        datum = h + v;
+                        break;
+                     }
+
+                     case Model::Product::Q_H_ADVECTION:
+                     {
+                        datum = evaluate_h_advection (Q, ll, level, l);
+                        break;
+                     }
+
+                     case Model::Product::Q_V_ADVECTION:
+                     {
+                        datum = evaluate_v_advection (Q, ll, level, l);
+                        break;
+                     }
+
+                     case Model::Product::Q_S_ADVECTION:
+                     {
+                        datum = evaluate_s_advection (Q, azimuth, ll, level, l, u_bg);
+                        break;
+                     }
+
+                     case Model::Product::Q_N_ADVECTION:
+                     {
+                        datum = evaluate_n_advection (Q, azimuth, ll, level, l);
+                        break;
+                     }
+
+                     case Model::Product::Q_SV_ADVECTION:
+                     {
+                        const Real s = evaluate_s_advection (Q, azimuth, ll, level, l, u_bg);
+                        const Real v = evaluate_v_advection (Q, ll, level, l);
+                        datum = s + v;
+                        break;
+                     }
+
+                     case Model::Product::Q_NV_ADVECTION:
+                     {
+                        const Real n = evaluate_n_advection (Q, azimuth, ll, level, l);
+                        const Real v = evaluate_v_advection (Q, ll, level, l);
+                        datum = n + v;
+                        break;
+                     }
+
+                     case Model::Product::THETA_TENDENCY:
+                     {
+                        datum = evaluate_s_tendency (
+                           THETA, azimuth, lat_long, level, l, u_bg);
+                        break;
+                     }
+
+                     case Model::Product::THETA_ADVECTION:
+                     {
+                        const Real h = evaluate_h_advection (THETA, ll, level, l);
+                        const Real v = evaluate_v_advection (THETA, ll, level, l);
+                        datum = h + v;
+                        break;
+                     }
+
+                     case Model::Product::THETA_H_ADVECTION:
+                     {
+                        datum = evaluate_h_advection (THETA, ll, level, l);
+                        break;
+                     }
+
+                     case Model::Product::THETA_V_ADVECTION:
+                     {
+                        datum = evaluate_v_advection (THETA, ll, level, l);
+                        break;
+                     }
+
+                     case Model::Product::THETA_S_ADVECTION:
+                     {
+                        datum = evaluate_s_advection (THETA, azimuth, ll, level, l, u_bg);
+                        break;
+                     }
+
+                     case Model::Product::THETA_N_ADVECTION:
+                     {
+                        datum = evaluate_n_advection (THETA, azimuth, ll, level, l);
+                        break;
+                     }
+
+                     case Model::Product::THETA_SV_ADVECTION:
+                     {
+                        const Real s = evaluate_s_advection (THETA, azimuth, ll, level, l, u_bg);
+                        const Real v = evaluate_v_advection (THETA, ll, level, l);
+                        datum = s + v;
+                        break;
+                     }
+
+                     case Model::Product::THETA_NV_ADVECTION:
+                     {
+                        const Real n = evaluate_n_advection (THETA, azimuth, ll, level, l);
+                        const Real v = evaluate_v_advection (THETA, ll, level, l);
+                        datum = n + v;
+                        break;
+                     }
+
+                     default:
+                     {
+                        const Met_Element met_element = product.get_met_element ();
+                        datum = evaluate (met_element, ll, level, l);
+                        break;
+                     }
+
+                  }
+
+               }
+
+               scalar_data_2d.set_datum (i - index_2d.i, j - index_2d.j, datum);
+
+            }
+
+         }
+
+      }
+
+   }
+
+   return scalar_data_2d_ptr;
+
+}
+
 Raster*
 Model::Acncrjbf::get_time_cross_raster_ptr (const Box_2D& box_2d,
                                             const Transform_2D& transform,
@@ -3918,8 +4582,8 @@ Model::Acncrjbf::get_time_cross_raster_ptr (const Box_2D& box_2d,
    {
 
       const Integer iii = ii - index_2d.i;
-      //transform.reverse (t, ceiling, Real (ii), Real (index_2d.j));
-      transform.reverse (t, ceiling, Real (ii), Real (0));
+      //transform.r (t, ceiling, Real (ii), Real (index_2d.j));
+      transform.r (t, ceiling, Real (ii), Real (0));
 
       Dtime dtime (t);
       if (dtime < start_time || dtime > end_time) { continue; }
@@ -3953,7 +4617,7 @@ Model::Acncrjbf::get_time_cross_raster_ptr (const Box_2D& box_2d,
             {
 
                const Integer jjj = jj - index_2d.j;
-               transform.reverse (t, z, Real (ii), Real (jj));
+               transform.r (t, z, Real (ii), Real (jj));
 
                if (z < topography) { color = Color::black (); }
                else
@@ -3985,7 +4649,7 @@ Model::Acncrjbf::get_time_cross_raster_ptr (const Box_2D& box_2d,
             {
 
                const Integer jjj = jj - index_2d.j;
-               transform.reverse (t, z, Real (ii), Real (jj));
+               transform.r (t, z, Real (ii), Real (jj));
 
                if (z < topography) { color = Color::black (); }
                else
@@ -4017,7 +4681,7 @@ Model::Acncrjbf::get_time_cross_raster_ptr (const Box_2D& box_2d,
             {
 
                const Integer jjj = jj - index_2d.j;
-               transform.reverse (t, z, Real (ii), Real (jj));
+               transform.r (t, z, Real (ii), Real (jj));
 
                if (z < topography) { color = Color::black (); }
                else
@@ -4044,7 +4708,7 @@ Model::Acncrjbf::get_time_cross_raster_ptr (const Box_2D& box_2d,
             {
 
                const Integer jjj = jj - index_2d.j;
-               transform.reverse (t, z, Real (ii), Real (jj));
+               transform.r (t, z, Real (ii), Real (jj));
 
                if (z < topography) { color = Color::black (); }
                else
@@ -4285,7 +4949,7 @@ Model::Acncrjbf::get_time_cross_raster_ptr (const Box_2D& box_2d,
                                             const Transform_2D& transform,
                                             const Model::Product& product,
                                             const Track& track,
-                                            const bool lagrangian) const
+                                            const bool eulerian) const
 {
 
    Raster* raster_ptr = new Raster (box_2d);
@@ -4309,7 +4973,7 @@ Model::Acncrjbf::get_time_cross_raster_ptr (const Box_2D& box_2d,
    for (Integer ii = index_2d.i; ii < index_2d.i + size_2d.i; ii++)
    {
 
-      transform.reverse (t, z, Real (ii), Real (index_2d.j));
+      transform.r (t, z, Real (ii), Real (index_2d.j));
       Dtime dtime (t);
       if (dtime < start_time || dtime > end_time) { continue; }
 
@@ -4331,7 +4995,7 @@ Model::Acncrjbf::get_time_cross_raster_ptr (const Box_2D& box_2d,
       for (Integer jj = index_2d.j; jj < index_2d.j + size_2d.j; jj++)
       {
 
-         transform.reverse (t, z, Real (ii), Real (jj));
+         transform.r (t, z, Real (ii), Real (jj));
 
          if (z < topography) { color = Color::black (); }
          else
@@ -4360,7 +5024,7 @@ Model::Acncrjbf::get_time_cross_raster_ptr (const Box_2D& box_2d,
 
                case Model::Product::RICHARDSON:
                {
-                  const Real u_bg = (lagrangian ? motion.get_speed () : 0);
+                  const Real u_bg = (eulerian ? 0 : motion.get_speed ());
                   const Real datum = evaluate_richardson (
                      motion.get_direction (), i, j, level, l);
                   color = Model::Stage::get_color (p, datum);
@@ -4369,7 +5033,7 @@ Model::Acncrjbf::get_time_cross_raster_ptr (const Box_2D& box_2d,
 
                case Model::Product::SCORER:
                {
-                  const Real u_bg = (lagrangian ? motion.get_speed () : 0);
+                  const Real u_bg = (eulerian ? 0 : motion.get_speed ());
                   const Real datum = evaluate_scorer (
                      motion.get_direction (), i, j, level, l, u_bg);
                   color = Model::Stage::get_color (p, datum);
@@ -4378,7 +5042,7 @@ Model::Acncrjbf::get_time_cross_raster_ptr (const Box_2D& box_2d,
 
                case Model::Product::SCORER_A:
                {
-                  const Real u_bg = (lagrangian ? motion.get_speed () : 0);
+                  const Real u_bg = (eulerian ? 0 : motion.get_speed ());
                   const Real datum = evaluate_scorer_a (
                      motion.get_direction (), i, j, level, l, u_bg);
                   color = Model::Stage::get_color (p, datum);
@@ -4387,7 +5051,7 @@ Model::Acncrjbf::get_time_cross_raster_ptr (const Box_2D& box_2d,
 
                case Model::Product::SCORER_B:
                {
-                  const Real u_bg = (lagrangian ? motion.get_speed () : 0);
+                  const Real u_bg = (eulerian ? 0 : motion.get_speed ());
                   const Real datum = evaluate_scorer_b (
                      motion.get_direction (), i, j, level, l, u_bg);
                   color = Model::Stage::get_color (p, datum);
@@ -4396,7 +5060,7 @@ Model::Acncrjbf::get_time_cross_raster_ptr (const Box_2D& box_2d,
 
                case Model::Product::ALONG_SPEED:
                {
-                  const Real u_bg = (lagrangian ? motion.get_speed () : 0);
+                  const Real u_bg = (eulerian ? 0 : motion.get_speed ());
                   const Real datum = evaluate_along_speed (
                      motion.get_direction (), i, j, level, l, u_bg);
                   color = Model::Stage::get_color (p, datum);
@@ -4413,7 +5077,7 @@ Model::Acncrjbf::get_time_cross_raster_ptr (const Box_2D& box_2d,
 
                case Model::Product::Q_TENDENCY:
                {
-                  const Real u_bg = (lagrangian ? motion.get_speed () : 0);
+                  const Real u_bg = (eulerian ? 0 : motion.get_speed ());
                   const Real datum = evaluate_s_tendency (
                      Q, motion.get_direction (), i, j, level, l, u_bg);
                   color = Model::Stage::get_color (p, datum);
@@ -4445,7 +5109,7 @@ Model::Acncrjbf::get_time_cross_raster_ptr (const Box_2D& box_2d,
 
                case Model::Product::Q_S_ADVECTION:
                {
-                  const Real u_bg = (lagrangian ? motion.get_speed () : 0);
+                  const Real u_bg = (eulerian ? 0 : motion.get_speed ());
                   const Real datum = evaluate_s_advection (Q,
                      motion.get_direction (), i, j, level, l, u_bg);
                   color = Model::Stage::get_color (p, datum);
@@ -4462,7 +5126,7 @@ Model::Acncrjbf::get_time_cross_raster_ptr (const Box_2D& box_2d,
 
                case Model::Product::Q_SV_ADVECTION:
                {
-                  const Real u_bg = (lagrangian ? motion.get_speed () : 0);
+                  const Real u_bg = (eulerian ? 0 : motion.get_speed ());
                   const Real v = evaluate_v_advection (Q, i, j, level, l);
                   const Real s = evaluate_s_advection (Q,
                      motion.get_direction (), i, j, level, l, u_bg);
@@ -4483,7 +5147,7 @@ Model::Acncrjbf::get_time_cross_raster_ptr (const Box_2D& box_2d,
 
                case Model::Product::THETA_TENDENCY:
                {
-                  const Real u_bg = (lagrangian ? motion.get_speed () : 0);
+                  const Real u_bg = (eulerian ? 0 : motion.get_speed ());
                   const Real datum = evaluate_s_tendency (
                      THETA, motion.get_direction (), i, j, level, l, u_bg);
                   color = Model::Stage::get_color (p, datum);
@@ -4515,7 +5179,7 @@ Model::Acncrjbf::get_time_cross_raster_ptr (const Box_2D& box_2d,
 
                case Model::Product::THETA_S_ADVECTION:
                {
-                  const Real u_bg = (lagrangian ? motion.get_speed () : 0);
+                  const Real u_bg = (eulerian ? 0 : motion.get_speed ());
                   const Real datum = evaluate_s_advection (THETA,
                      motion.get_direction (), i, j, level, l, u_bg);
                   color = Model::Stage::get_color (p, datum);
@@ -4532,7 +5196,7 @@ Model::Acncrjbf::get_time_cross_raster_ptr (const Box_2D& box_2d,
 
                case Model::Product::THETA_SV_ADVECTION:
                {
-                  const Real u_bg = (lagrangian ? motion.get_speed () : 0);
+                  const Real u_bg = (eulerian ? 0 : motion.get_speed ());
                   const Real v = evaluate_v_advection (THETA, i, j, level, l);
                   const Real s = evaluate_s_advection (THETA,
                      motion.get_direction (), i, j, level, l, u_bg);
@@ -5148,12 +5812,12 @@ Model::Acncrjbf::get_marker_tokens (const Lat_Long& lat_long,
 
 }
 
-Model::Model (const Config_File& config_file)
-   : stage_map (*this, config_file)
+Model::Model (const Rc_File& rc_file)
+   : stage_map (*this, rc_file)
 {
 
-   for (auto iterator = config_file.begin ();
-        iterator != config_file.end (); iterator++)
+   for (auto iterator = rc_file.begin ();
+        iterator != rc_file.end (); iterator++)
    {
 
       const Tokens tokens (*(iterator), " \f\n\t");

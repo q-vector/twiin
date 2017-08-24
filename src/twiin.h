@@ -33,7 +33,7 @@ namespace twiin
             public:
 
                Transform_Ptr_Map (const Size_2D& size_2d,
-                                  const Config_File& config_file);
+                                  const Rc_File& rc_file);
 
                ~Transform_Ptr_Map ();
 
@@ -42,8 +42,8 @@ namespace twiin
          const Size_2D
          size_2d;
 
-         const Config_File
-         config_file;
+         const Rc_File
+         rc_file;
 
          const Dstring
          output_dir;
@@ -69,7 +69,7 @@ namespace twiin
                         const Dtime& dtime,
                         const Lat_Long& lat_long,
                         const Real distance,
-                        const bool lagrangian) const;
+                        const bool eulerian) const;
 
          Dstring
          get_file_path (const Dstring& format,
@@ -82,7 +82,7 @@ namespace twiin
                         const Dstring& stage,
                         const Model::Product& product,
                         const Dstring& track_id,
-                        const bool lagrangian) const;
+                        const bool eulerian) const;
 
          Dstring
          get_file_path (const Dstring& format,
@@ -112,7 +112,7 @@ namespace twiin
       public:
 
          Twiin (const Size_2D& size_2d,
-                const Config_File& config_file,
+                const Rc_File& rc_file,
                 const Dstring& output_dir);
 
 #ifndef ENABLE_GTKMM
@@ -141,9 +141,10 @@ namespace twiin
                const Dstring& filename,
                const Dstring& color_bar_str,
                const Dstring& scale_bar_str,
-               const list<Polygon>& polygon_list,
+               const Tokens& polygon_tokens,
                const bool no_stage,
                const bool no_wind_barb,
+               const Tokens& contour_tokens,
                const bool is_bludge) const;
 
          void
@@ -160,14 +161,16 @@ namespace twiin
                const Dstring& filename,
                const Dstring& color_bar_str,
                const Dstring& scale_bar_str,
-               const list<Polygon>& polygon_list,
+               const Tokens& polygon_tokens,
                const bool no_stage,
                const bool no_wind_barb,
+               const Tokens& contour_tokens,
                const bool is_bludge) const;
 
          void
          cross_section (const Dstring& stage_str,
                         const Dstring& product_str,
+                        const Tokens& contour_tokens,
                         const Tokens& journey_tokens,
                         const Dstring& time_str,
                         const Real height,
@@ -180,6 +183,7 @@ namespace twiin
          void
          cross_section (const Dstring& stage_str,
                         const Dstring& product_str,
+                        const Tokens& contour_tokens,
                         const Dstring& track_id_str,
                         const Track::Map& track_map,
                         const Real distance,
@@ -188,7 +192,7 @@ namespace twiin
                         const Dstring& format,
                         const Tokens& title_tokens,
                         const Dstring& filename,
-                        const bool lagrangian,
+                        const bool eulerian,
                         const bool is_bludge) const;
 
          void
@@ -212,7 +216,7 @@ namespace twiin
                      const Dstring& format,
                      const Tokens& title_tokens,
                      const Dstring& filename,
-                     const bool lagrangian,
+                     const bool eulerian,
                      const bool is_bludge) const;
 
          void
@@ -250,14 +254,11 @@ namespace twiin
 
             private:
 
-               const Config_File
-               config_file;
+               const Rc_File
+               rc_file;
 
                Track::Map
                trajectory_map;
-
-               list<Polygon>
-               polygon_list;
 
                void
                twiin_trajectory_generate (const Dstring& identifier,
@@ -317,7 +318,7 @@ namespace twiin
 
             public:
 
-               Andrea (const Config_File& config_file);
+               Andrea (const Rc_File& rc_file);
 
          };
 
@@ -350,7 +351,7 @@ namespace twiin
                     const Dtime& dtime,
                     const Lat_Long& lat_long,
                     const Real distance,
-                    const bool lagrangian);
+                    const bool eulerian);
 
          static void
          set_title (Title& title,
@@ -365,7 +366,7 @@ namespace twiin
                     const Dstring& stage_str,
                     const Model::Product& product,
                     const Dstring& track_id,
-                    const bool lagrangian);
+                    const bool eulerian);
 
          static void
          set_title (Title& title,
@@ -389,9 +390,9 @@ namespace twiin
                     const Dstring& meteogram_mode);
 
          static void
-         render_polygon_list (const RefPtr<Context>& cr,
-                              const Geodetic_Transform& transform,
-                              const list<Polygon>& polygon_list);
+         render_polygons (const RefPtr<Context>& cr,
+                          const Geodetic_Transform& transform,
+                          const Tokens& polygon_tokens);
 
          static void
          render_stages (const RefPtr<Context>& cr,
@@ -407,6 +408,15 @@ namespace twiin
                          const Dtime& dtime,
                          const Level& level,
                          const Dstring& stage_str);
+
+         static void
+         render_contour (const RefPtr<Context>& cr,
+                         const Geodetic_Transform& transform,
+                         const Size_2D& size_2d,
+                         const Data& data,
+                         const Dtime& dtime,
+                         const Dstring& stage_str,
+                         const Dstring& contour_str);
 
          static void
          render_wind_barbs (const RefPtr<Context>& cr,
@@ -465,9 +475,10 @@ namespace twiin
                  const Level& level,
                  const Dstring& stage_str,
                  const Model::Product product,
-                 const list<Polygon>& polygon_list,
+                 const Tokens& polygon_tokens,
                  const bool no_stage,
-                 const bool no_wind_barb);
+                 const bool no_wind_barb,
+                 const Tokens& contour_token);
 
          static void
          render_cross_section_w (const RefPtr<Context>& cr,
@@ -503,6 +514,17 @@ namespace twiin
                                const Dtime& dtime,
                                const Journey& journey,
                                const Real u_bg = 0);
+
+         static void
+         render_cross_section_contour (const RefPtr<Context>& cr,
+                                       const Transform_2D& transform,
+                                       const Box_2D& box_2d,
+                                       const Domain_1D& domain_z,
+                                       const Model::Stage& stage,
+                                       const Dstring& contour_str,
+                                       const Dtime& dtime,
+                                       const Journey& journey,
+                                       const Real u_bg = 0);
 
          static void
          render_time_cross_w (const RefPtr<Context>& cr,
@@ -541,7 +563,7 @@ namespace twiin
                             const Model::Stage& stage,
                             const Model::Product& product,
                             const Track& track,
-                            const bool lagrangian = false);
+                            const bool eulerian = true);
 
          static void
          render_meteogram_mesh (const RefPtr<Context>& cr,
@@ -656,9 +678,6 @@ namespace twiin
                Level
                level;
 
-               list<Polygon>
-               polygon_list;
-
                Tokens
                get_tokens (const Marker& marker) const;
 
@@ -684,7 +703,7 @@ namespace twiin
 
                Gui (Gtk::Window& gtk_window,
                         const Size_2D& size_2d,
-                        const Config_File& config_file,
+                        const Rc_File& rc_file,
                         const Data& data,
                         const Dstring& stage_str,
                         const Model::Product& product,
