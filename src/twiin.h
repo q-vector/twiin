@@ -178,6 +178,7 @@ namespace twiin
                         const Tokens& title_tokens,
                         const Dstring& filename,
                         const Real u_bg,
+                        const bool no_arrows,
                         const bool is_bludge) const;
 
          void
@@ -193,6 +194,7 @@ namespace twiin
                         const Tokens& title_tokens,
                         const Dstring& filename,
                         const bool eulerian,
+                        const bool no_arrows,
                         const bool is_bludge) const;
 
          void
@@ -227,7 +229,7 @@ namespace twiin
                     const Tokens& title_tokens,
                     const Dstring& filename,
                     const bool ignore_pressure,
-                    const Dstring& meteogram_mode,
+                    const Dstring& meteogram_str,
                     const bool is_bludge) const;
 
          void
@@ -387,7 +389,7 @@ namespace twiin
                     const Dtime& basetime,
                     const Dstring& stage_str,
                     const Location& location,
-                    const Dstring& meteogram_mode);
+                    const Dstring& meteogram_str);
 
          static void
          render_polygons (const RefPtr<Context>& cr,
@@ -513,7 +515,8 @@ namespace twiin
                                const Model::Product& product,
                                const Dtime& dtime,
                                const Journey& journey,
-                               const Real u_bg = 0);
+                               const Real u_bg = 0,
+                               const bool no_arrows = false);
 
          static void
          render_cross_section_contour (const RefPtr<Context>& cr,
@@ -598,7 +601,7 @@ namespace twiin
                            const Location& location,
                            const Dstring& time_str,
                            const bool ignore_pressure,
-                           const Dstring& meteogram_mode);
+                           const Dstring& meteogram_str);
 
          static void
          render_vertical_profile (const RefPtr<Context>& cr,

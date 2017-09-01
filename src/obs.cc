@@ -197,6 +197,7 @@ Aws::Obs::Obs (const Real temperature,
                const Real dew_point,
                const Real wind_direction,
                const Real wind_speed,
+               const Real ten_min_wind_speed,
                const Real station_p,
                const Real mslp,
                const Real wind_gust)
@@ -204,6 +205,7 @@ Aws::Obs::Obs (const Real temperature,
      dew_point (dew_point),
      wind_direction (wind_direction),
      wind_speed (wind_speed),
+     ten_min_wind_speed (ten_min_wind_speed),
      station_p (station_p),
      mslp (mslp),
      wind_gust (wind_gust)
@@ -215,6 +217,7 @@ Aws::Obs::Obs (const Aws::Obs& obs)
      dew_point (obs.dew_point),
      wind_direction (obs.wind_direction),
      wind_speed (obs.wind_speed),
+     ten_min_wind_speed (obs.ten_min_wind_speed),
      station_p (obs.station_p),
      mslp (obs.mslp),
      wind_gust (obs.wind_gust)
@@ -428,9 +431,11 @@ Aws::Repository::ingest (const Dstring& file_path)
       const Real wind_gust  = Aws::Repository::to_real (tokens[6]);
       const Real station_p  = Aws::Repository::to_real (tokens[7]) * 1e2;
       const Real mslp       = Aws::Repository::to_real (tokens[8]) * 1e2;
+      const Real ten_min_wind_speed = Aws::Repository::to_real (tokens[9]);
 
       Aws::Key key (station_id, dtime);
-      Aws::Obs obs (t, t_d, wind_dir, wind_speed, station_p, mslp, wind_gust);
+      Aws::Obs obs (t, t_d, wind_dir, wind_speed,
+         ten_min_wind_speed, station_p, mslp, wind_gust);
 
       insert (key, obs);
 
@@ -490,7 +495,8 @@ if (i < 20)
       const Real mslp       = mslp_bin * 10.0;
 
       Aws::Key key (station_id, dtime);
-      Aws::Obs obs (t, t_d, wind_dir, wind_speed, station_p, mslp, wind_gust);
+      Aws::Obs obs (t, t_d, wind_dir, wind_speed,
+         wind_speed, station_p, mslp, wind_gust);
       insert (key, obs);
 
 i++;

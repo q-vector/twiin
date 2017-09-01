@@ -116,31 +116,35 @@ namespace twiin
 
             public:
 
-               const Real
+               Real
                temperature;
 
-               const Real
+               Real
                dew_point;
 
-               const Real
+               Real
                wind_direction;
 
-               const Real
+               Real
                wind_speed;
 
-               const Real
+               Real
+               ten_min_wind_speed;
+
+               Real
                wind_gust;
 
-               const Real
+               Real
                station_p;
 
-               const Real
+               Real
                mslp;
 
                Obs (const Real temperature,
                     const Real dew_point,
                     const Real wind_direction,
                     const Real wind_speed,
+                    const Real ten_min_wind_speed,
                     const Real station_p,
                     const Real mslp,
                     const Real wind_gust = GSL_NAN);

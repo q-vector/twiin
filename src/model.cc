@@ -21,6 +21,7 @@ Model::Product::Product (const Product& product)
 Model::Product::Product (const Dstring& str)
 {
         if (str == "TERRAIN")            { enumeration = Product::TERRAIN; }
+   else if (str == "TERRAIN_MONOCHROME") { enumeration = Product::TERRAIN_MONOCHROME; }
    else if (str == "TERRAIN_WATER")      { enumeration = Product::TERRAIN_WATER; }
    else if (str == "P_THETA")            { enumeration = Product::P_THETA; }
    else if (str == "P_RHO")              { enumeration = Product::P_RHO; }
@@ -35,7 +36,11 @@ Model::Product::Product (const Dstring& str)
    else if (str == "TD")                 { enumeration = Product::TD; }
    else if (str == "RH")                 { enumeration = Product::RH; }
    else if (str == "THETA")              { enumeration = Product::THETA; }
+   else if (str == "THETA_MONOCHROME")   { enumeration = Product::THETA_MONOCHROME; }
+   else if (str == "THETA_28C")          { enumeration = Product::THETA_28C; }
    else if (str == "Q")                  { enumeration = Product::Q; }
+   else if (str == "Q_MONOCHROME")       { enumeration = Product::Q_MONOCHROME; }
+   else if (str == "Q_3GKG")             { enumeration = Product::Q_3GKG; }
    else if (str == "THETA_E")            { enumeration = Product::THETA_E; }
    else if (str == "THETA_V")            { enumeration = Product::THETA_V; }
    else if (str == "RHO")                { enumeration = Product::RHO; }
@@ -81,6 +86,7 @@ Model::Product::get_string () const
    switch (enumeration)
    {
       case Product::TERRAIN:            return "TERRAIN";
+      case Product::TERRAIN_MONOCHROME: return "TERRAIN";
       case Product::TERRAIN_WATER:      return "TERRAIN_WATER";
       case Product::P_THETA:            return "P_THETA";
       case Product::P_RHO:              return "P_RHO";
@@ -95,7 +101,11 @@ Model::Product::get_string () const
       case Product::TD:                 return "TD";
       case Product::RH:                 return "RH";
       case Product::THETA:              return "THETA";
+      case Product::THETA_MONOCHROME:   return "THETA";
+      case Product::THETA_28C:          return "THETA";
       case Product::Q:                  return "Q";
+      case Product::Q_MONOCHROME:       return "Q";
+      case Product::Q_3GKG:             return "Q";
       case Product::THETA_E:            return "THETA_E";
       case Product::THETA_V:            return "THETA_V";
       case Product::RHO:                return "RHO";
@@ -142,6 +152,7 @@ Model::Product::get_description () const
    switch (enumeration)
    {
       case Product::TERRAIN:            return "Terrain";
+      case Product::TERRAIN_MONOCHROME: return "Terrain";
       case Product::TERRAIN_WATER:      return "Terrain Water";
       case Product::P_THETA:            return "P_\u03b8";
       case Product::P_RHO:              return "P_\u03c1";
@@ -156,7 +167,11 @@ Model::Product::get_description () const
       case Product::TD:                 return "Dew Point";
       case Product::RH:                 return "Relative Humidity";
       case Product::THETA:              return "Potential Temperature";
+      case Product::THETA_MONOCHROME:   return "Potential Temperature";
+      case Product::THETA_28C:          return "Potential Temperature";
       case Product::Q:                  return "Specific Humidity";
+      case Product::Q_MONOCHROME:       return "Specific Humidity";
+      case Product::Q_3GKG:             return "Specific Humidity";
       case Product::THETA_E:            return "Equivalent Potential Temperature";
       case Product::THETA_V:            return "Virtual Potential Temperature";
       case Product::RHO:                return "Density";
@@ -205,7 +220,11 @@ Model::Product::get_met_element () const
       case Product::TD:                 return denise::TD;
       case Product::RH:                 return denise::RH;
       case Product::THETA:              return denise::THETA;
+      case Product::THETA_MONOCHROME:   return denise::THETA;
+      case Product::THETA_28C:          return denise::THETA;
       case Product::Q:                  return denise::Q;
+      case Product::Q_MONOCHROME:       return denise::Q;
+      case Product::Q_3GKG:             return denise::Q;
       case Product::THETA_E:            return denise::THETA_E;
       case Product::THETA_V:            return denise::THETA_V;
       case Product::RHO:                return denise::RHO;
@@ -248,9 +267,13 @@ Model::Product::get_unit () const
       case Product::TD:                 return "\u00b0C";
       case Product::RH:                 return "%%";
       case Product::THETA:              return "\u00b0C";
+      case Product::THETA_MONOCHROME:   return "\u00b0C";
+      case Product::THETA_28C:          return "\u00b0C";
       case Product::THETA_V:            return "\u00b0C";
       case Product::THETA_E:            return "\u00b0C";
       case Product::Q:                  return "g kg\u207b\u00b9";
+      case Product::Q_MONOCHROME:       return "g kg\u207b\u00b9";
+      case Product::Q_3GKG:             return "g kg\u207b\u00b9";
       case Product::RHO:                return "kgm\u207b\u00b9";
       case Product::W:                  return "ms\u207b\u00b9";
       case Product::W_TRANSLUCENT:      return "ms\u207b\u00b9";
@@ -282,6 +305,7 @@ Model::Product::get_unit () const
       case Product::PRECIP_RATE:        return "mm hr\u207b\u00b9";
       case Product::WIND:               return "degree";
       case Product::TERRAIN:            return "m";
+      case Product::TERRAIN_MONOCHROME: return "m";
       case Product::BRUNT_VAISALA:      return "s\u207b\u00b9";
       case Product::RICHARDSON:         return "";
       case Product::SCORER:             return "m\u207b\u00b2";
@@ -316,7 +340,15 @@ Model::Product::get_tick_tuple () const
       case Model::Product::THETA:
       case Model::Product::THETA_V:
       {
-         return Tuple ("0:10:20:30:40:50:60");
+         //return Tuple ("0:10:20:30:40:50:60");
+         return Tuple ("10:20:30:40");
+      }
+
+      case Model::Product::THETA_MONOCHROME:
+      case Model::Product::THETA_28C:
+      {
+         //return Tuple ("0:10:20:30:40:50:60");
+         return Tuple ("20:30:40");
       }
 
       case Model::Product::THETA_E:
@@ -325,6 +357,8 @@ Model::Product::get_tick_tuple () const
       }
 
       case Model::Product::Q:
+      case Model::Product::Q_MONOCHROME:
+      case Model::Product::Q_3GKG:
       {
          return Tuple ("0:1:2:3:4:5:6:7:8:9:10");
       }
@@ -416,6 +450,11 @@ Model::Product::get_tick_tuple () const
          return Tuple ("0:200:400:600:800:1000:1200:1400:1600:1800:2000");
       }
 
+      case Model::Product::TERRAIN_MONOCHROME:
+      {
+         return Tuple ("0:200:400:600:800:1000:1200");
+      }
+
       case Model::Product::BRUNT_VAISALA:
       {
          return Tuple ("1e-3:1.8e-3:3.2e-3:5.6e-3:1e-2:1.8e-2:3.2e-2:5.6e-2:1e-1");
@@ -493,17 +532,16 @@ Model::Stage::get_color (const Model::Product& product,
       case Model::Product::THETA:
       case Model::Product::THETA_V:
       {
-/*
-         const Real jump = 28+K;
+/* Sigmoid Curve at 30C
+         const Real jump = 30 + K;
          const Real deviate = datum - jump;
          const Real x = atan (deviate / 1);
          const Real odd = (Integer (floor ((datum-K) / 1)) % 2);
-         const Real fluctuation = (odd ? 0.03 : -0.03);
-         //const Domain_1D d1d (-M_PI_2, M_PI_2);
-         //const Real brightness = d1d.normalize (x) * 0.5 + 0.45;
-         const Real brightness = 0.75;
-         return Color::hsb (0.0, 0.0, brightness + fluctuation);
+         const Domain_1D d1d (-M_PI_2, M_PI_2);
+         const Real brightness = d1d.normalize (x) * 0.5 + 0.45;
+         return Color::hsb (0.0, 0.0, brightness);
 */
+/* coloured strips 4K
          const Real fluc_mag = 0.2;
          const Real celsius = datum - K;
          //const Real odd = (Integer (floor (celsius / 1)) % 2);
@@ -512,6 +550,30 @@ Model::Stage::get_color (const Model::Product& product,
          const Real fluctuation = fluc_mag * sin (celsius * M_PI / 2);
          const Real brightness = 0.75;
          return Color::hsb (hue, 0.2, brightness + fluctuation);
+*/
+         const Real celsius = datum - K;
+         const Real c = floor (celsius / 2) * 2;
+         const Real saturation = Domain_1D (35, 20).normalize (c);
+         const Real brightness = Domain_1D (5, 35).normalize (c);
+         return Color::hsb (0.02, saturation, brightness);
+      }
+
+      case Model::Product::THETA_MONOCHROME:
+      {
+         const Real celsius = datum - K;
+         const Real c = floor (celsius / 2) * 2;
+         //const Real saturation = Domain_1D (35, 20).normalize (c);
+         const Real brightness = Domain_1D (5, 35).normalize (c);
+         return Color::hsb (0.02, 0, brightness);
+      }
+
+      case Model::Product::THETA_28C:
+      {
+         const Real celsius = datum - K;
+         const Real c = floor (celsius / 2) * 2;
+         const Real saturation = exp (fabs (celsius - 29) / -0.5);
+         const Real brightness = Domain_1D (5, 35).normalize (c);
+         return Color::hsb (0.06, saturation, brightness);
       }
 
       case Model::Product::THETA_E:
@@ -524,10 +586,31 @@ Model::Stage::get_color (const Model::Product& product,
 
       case Model::Product::Q:
       {
+/* Blue 0.2 bands
          const Real d = datum * 1e3;
          const Real saturation = Domain_1D (0, 10).normalize (d);
          const Real odd = (Integer (floor (d / 0.2)) % 2);
          const Real brightness = (odd ? 0.82 : 0.78);
+         return Color::hsb (0.58, saturation, brightness);
+*/
+         const Real d = floor (datum * 1e3);
+         const Real saturation = Domain_1D (0, 10).normalize (d);
+         const Real brightness = Domain_1D (20, 0).normalize (d);
+         return Color::hsb (0.58, saturation, brightness);
+      }
+
+      case Model::Product::Q_MONOCHROME:
+      {
+         const Real d = floor (datum * 1e3);
+         const Real brightness = Domain_1D (10, 0).normalize (d);
+         return Color::hsb (0.58, 0, brightness);
+      }
+
+      case Model::Product::Q_3GKG:
+      {
+         const Real d = datum * 1e3;
+         const Real saturation = exp (fabs (d - 3) / -0.3);
+         const Real brightness = Domain_1D (10, 0).normalize (floor (d));
          return Color::hsb (0.58, saturation, brightness);
       }
 
@@ -812,6 +895,13 @@ Model::Stage::get_color (const Model::Product& product,
          return Color::hsb (hue, 0.54, brightness);
       }
 
+      case Model::Product::TERRAIN_MONOCHROME:
+      {
+         const Real z = floor (datum / 200.0) * 200.0;
+         const Real brightness = (2000 - z) / 2000;
+         return Color::hsb (0, 0, brightness);
+      }
+
       case Model::Product::TERRAIN_WATER:
       {
          //const Real h = std::min (std::max (datum / 2000.0, 0.0), 1.0);
@@ -846,6 +936,7 @@ Model::Stage::get_color (const Model::Product& product,
       case Model::Product::SCORER_A:
       case Model::Product::SCORER_B:
       {
+/*
          if (!gsl_finite (datum)) { return Color::gray (0.5); }
          if (datum > 1e-6) { return Color::transparent (); }
          const bool negative = datum < 0;
@@ -868,6 +959,15 @@ Model::Stage::get_color (const Model::Product& product,
          //const Real fluctuation = 0;
          //const Real brightness = 0.98 + fluctuation;
          return Color::hsb (hue, saturation, brightness);
+*/
+         const Real b_h = 0.8;
+         const Real b_l = 0.25;
+         if (!gsl_finite (datum)) { return Color::transparent (); }
+         if (datum > 1e-6) { return Color::transparent (); }
+         if (datum < 3.2e-8) { return Color::hsb (0.05, 0.6, b_l); }
+         const Real e = log10 (fabs (datum));
+         const Real brightness = (b_h - b_l) / (-6 + 8) * (e + 8) + b_l;
+         return Color::hsb (0.3, 0.4, brightness);
       }
 
       default:
@@ -1496,6 +1596,7 @@ Model::Acncrjbf::get_valid_time_set (const Product& product,
    {
 
       case Product::TERRAIN:
+      case Product::TERRAIN_MONOCHROME:
       case Product::TERRAIN_WATER:
       {
          return get_valid_surface_time_set ();
@@ -1505,6 +1606,8 @@ Model::Acncrjbf::get_valid_time_set (const Product& product,
       case Product::P_THETA:
       case Product::P_RHO:
       case Product::Q:
+      case Product::Q_MONOCHROME:
+      case Product::Q_3GKG:
       case Product::Q_TENDENCY:
       case Product::Q_L_TENDENCY:
       case Product::Q_ADVECTION:
@@ -1531,6 +1634,8 @@ Model::Acncrjbf::get_valid_time_set (const Product& product,
       case Product::W_TRANSLUCENT:
       case Product::VORTICITY:
       case Product::THETA:
+      case Product::THETA_MONOCHROME:
+      case Product::THETA_28C:
       case Product::THETA_E:
       case Product::THETA_V:
       case Product::THETA_TENDENCY:
@@ -2020,7 +2125,7 @@ Model::Acncrjbf::evaluate (const Met_Element& met_element,
 Real
 Model::Acncrjbf::evaluate (const Met_Element& met_element,
                            const Lat_Long& lat_long,
-                              const size_t k,
+                           const size_t k,
                            const Dtime& dtime) const
 {
 
@@ -3204,6 +3309,12 @@ Model::Acncrjbf::get_color (const Product& product,
          const Real datum = evaluate_h_advection (THETA, lat_long, l);
          return Model::Stage::get_color (product, datum);
       }
+
+      case Product::TERRAIN_MONOCHROME:
+      {
+         const Real datum = get_topography (lat_long);
+         return Model::Stage::get_color (product, datum);
+      };
 
       default:
       {
@@ -5550,7 +5661,8 @@ Model::Acncrjbf::get_aws_obs (const Lat_Long& lat_long,
    const Real wind_direction = wind.get_direction ();
    const Real wind_speed = wind.get_speed ();
 
-   return Aws::Obs (t, t_d, wind_direction, wind_speed, surface_p, mslp);   
+   return Aws::Obs (t, t_d, wind_direction, wind_speed,
+      wind_speed, surface_p, mslp);   
 
 }
 
@@ -5673,6 +5785,8 @@ Model::Acncrjbf::get_marker_tokens (const Lat_Long& lat_long,
       }
 
       case Product::THETA:
+      case Product::THETA_MONOCHROME:
+      case Product::THETA_28C:
       {
          const Real datum = evaluate (THETA, lat_long, level, dtime);
          if (gsl_isnan (datum)) { return tokens; }
@@ -5689,6 +5803,8 @@ Model::Acncrjbf::get_marker_tokens (const Lat_Long& lat_long,
       }
 
       case Product::Q:
+      case Product::Q_MONOCHROME:
+      case Product::Q_3GKG:
       {
          const Real datum = evaluate (Q, lat_long, level, dtime);
          if (gsl_isnan (datum)) { return tokens; }

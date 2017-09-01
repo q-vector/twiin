@@ -82,7 +82,7 @@ main (int argc,
    bool is_gui = false;
    bool is_interactive = false;
    bool is_meteogram = false;
-   Dstring meteogram_mode ("both");
+   Dstring meteogram_str ("both");
    bool eulerian = true;
    bool ignore_pressure = false;
    bool no_stage = false;
@@ -252,7 +252,7 @@ main (int argc,
             is_gui = false;
             is_interactive = false;
             is_meteogram = true;
-            meteogram_mode = optarg;
+            meteogram_str = optarg;
             break;
          }
 
@@ -401,17 +401,18 @@ main (int argc,
 
          if (is_cross_section)
          {
+            const bool no_arrows = no_wind_barb;
             if (journey_specified)
             {
                twiin.cross_section (stage_str, product_str, contour_tokens,
                   journey_tokens, time_str, height, format, title_tokens,
-                  filename, u_bg, is_bludge);
+                  filename, u_bg, no_arrows, is_bludge);
             }
             if (track_specified)
             {
                twiin.cross_section (stage_str, product_str, contour_tokens,
                   track_id_str, track_map, distance, time_str, height, format,
-                  title_tokens, filename, eulerian, is_bludge);
+                  title_tokens, filename, eulerian, no_arrows, is_bludge);
             }
          }
          else
@@ -436,7 +437,7 @@ main (int argc,
             {
                twiin.meteogram (stage_str, location_str, time_str,
                   format, title_tokens, filename, ignore_pressure,
-                  meteogram_mode, is_bludge);
+                  meteogram_str, is_bludge);
             }
          }
          else

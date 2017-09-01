@@ -416,7 +416,7 @@ cout << valid_time_vector.size () << endl;
                      const Real zz = std::min (z, 5000.0);
                      const Real hue = (zz / 5000) * 0.833;
                      const Point_2D& point = transform.transform (lat_long);
-                     const Color& color = !bw_track ? Color::hsb (hue, 0.8, 0.6) :
+                     const Color& color = !bw_track ? Color::hsb (hue, 0.9, 0.9) :
                         (c == '^' ? Color::black () : Color::white ());
                      Color::black (0.5).cairo (cr);
                      Label (track_id_icon, point + Point_2D (2, 2), 'c', 'c').cairo (cr);
@@ -701,6 +701,7 @@ Twiin::cross_section (const Dstring& stage_str,
                       const Tokens& title_tokens,
                       const Dstring& filename,
                       const Real u_bg,
+                      const bool no_arrows,
                       const bool is_bludge) const
 {
 
@@ -788,7 +789,7 @@ Twiin::cross_section (const Dstring& stage_str,
                   if (s2d.i < 0 || s2d.j < 0) { continue; }
 
                   Twiin::render_cross_section (cr, transform, box_2d,
-                     domain_z, stage, product, dtime, journey, u_bg);
+                     domain_z, stage, product, dtime, journey, u_bg, no_arrows);
 
                   if (contour_tokens.size () > 0)
                   {
@@ -841,6 +842,7 @@ Twiin::cross_section (const Dstring& stage_str,
                       const Tokens& title_tokens,
                       const Dstring& filename,
                       const bool eulerian,
+                      const bool no_arrows,
                       const bool is_bludge) const
 {
 
@@ -941,7 +943,7 @@ Twiin::cross_section (const Dstring& stage_str,
                   if (s2d.i < 0 || s2d.j < 0) { continue; }
 
                   Twiin::render_cross_section (cr, transform, box_2d,
-                     domain_z, stage, product, dtime, journey, u_bg);
+                     domain_z, stage, product, dtime, journey, u_bg, no_arrows);
 
                   if (contour_tokens.size () > 0)
                   {
@@ -1234,7 +1236,7 @@ Twiin::meteogram (const Dstring& stage_str,
                   const Tokens& title_tokens,
                   const Dstring& filename,
                   const bool ignore_pressure,
-                  const Dstring& meteogram_mode,
+                  const Dstring& meteogram_str,
                   const bool is_bludge) const
 {
 
@@ -1276,11 +1278,11 @@ Twiin::meteogram (const Dstring& stage_str,
             RefPtr<Context> cr = denise::get_cr (surface);
 
             Twiin::render_meteogram (cr, size_2d, stage, aws_repository,
-               location, time_str, ignore_pressure, meteogram_mode);
+               location, time_str, ignore_pressure, meteogram_str);
 
             if (title_tokens.size () == 0)
             {
-               Twiin::set_title (title, basetime, s, location, meteogram_mode);
+               Twiin::set_title (title, basetime, s, location, meteogram_str);
             }
             else
             {
@@ -2195,14 +2197,14 @@ Twiin::set_title (Title& title,
                   const Dtime& basetime,
                   const Dstring& stage_str,
                   const Location& location,
-                  const Dstring& meteogram_mode)
+                  const Dstring& meteogram_str)
 {
-   const Dstring& basetime_str = meteogram_mode == "no_nwp" ?
+   const Dstring& basetime_str = meteogram_str == "no_nwp" ?
       "" : "Model Basetime: " + basetime.get_string ();
    const Lat_Long& lat_long (location);
    const Dstring& ll_str = lat_long.get_string (4, true, true, true);
    //title.set ("", stage_str, location.get_long_str (), basetime_str, ll_str);
-   title.set (ll_str, (meteogram_mode == "no_nwp" ? "" : stage_str),
+   title.set (ll_str, (meteogram_str == "no_nwp" ? "" : stage_str),
       location.get_long_str (), basetime_str, "");
 }
 
@@ -2335,7 +2337,7 @@ Twiin::render_contour (const RefPtr<Context>& cr,
    Scalar_Data_2D* scalar_data_2d_ptr = stage.get_geo_scalar_data_2d_ptr (
       size_2d, transform, product, dtime, level);
 
-   const Contour contour (*scalar_data_2d_ptr, level_tuple);
+   const Contour contour (*scalar_data_2d_ptr, level_tuple, true);
    const Affine_Transform_2D null_transform;
 
    contour.render_isolines (cr, null_transform);
@@ -2943,7 +2945,8 @@ Twiin::render_cross_section (const RefPtr<Context>& cr,
                              const Model::Product& product,
                              const Dtime& dtime,
                              const Journey& journey,
-                             const Real u_bg)
+                             const Real u_bg,
+                             const bool no_arrows)
 {
 
    cr->save ();
@@ -2957,15 +2960,20 @@ Twiin::render_cross_section (const RefPtr<Context>& cr,
    delete raster_ptr;
 
    if (product.enumeration == Model::Product::RHO ||
-       product.enumeration == Model::Product::THETA)
+       product.enumeration == Model::Product::THETA ||
+       product.enumeration == Model::Product::THETA_MONOCHROME ||
+       product.enumeration == Model::Product::THETA_28C)
    {
       //render_cross_section_w (cr, transform, box_2d, stage, dtime, journey);
    }
 
    render_cross_section_mesh (cr, transform, domain_z, journey);
 
-   render_cross_section_arrows (cr, transform, box_2d, stage,
-      product, dtime, journey, u_bg);
+   if (!no_arrows)
+   {
+      render_cross_section_arrows (cr, transform, box_2d,
+         stage, product, dtime, journey, u_bg);
+   }
 
    //render_cross_section_streamlines (cr, transform, box_2d, stage,
    //   product, dtime, journey, u_bg);
@@ -3001,20 +3009,20 @@ Twiin::render_cross_section_contour (const RefPtr<Context>& cr,
    const Model::Product product (contour_tokens[0]);
    const Tuple level_tuple (contour_tokens[1]);
 
+   Scalar_Data_2D* scalar_data_2d_ptr =
+      stage.get_cross_section_scalar_data_2d_ptr (
+         box_2d, transform, product, dtime, journey, u_bg);
+   const Contour contour (*scalar_data_2d_ptr, level_tuple, true);
+   delete scalar_data_2d_ptr;
+
    cr->save ();
 
    if (n > 2) { cr->set_line_width (stof (contour_tokens[2])); }
    (n > 3 ? (contour_tokens[3]) : Color::black ()).cairo (cr);
    if (n > 4) { Dashes (contour_tokens[4]).cairo (cr); }
 
-   Scalar_Data_2D* scalar_data_2d_ptr =
-      stage.get_cross_section_scalar_data_2d_ptr (
-         box_2d, transform, product, dtime, journey, u_bg);
-   const Contour contour (*scalar_data_2d_ptr, level_tuple);
    const Affine_Transform_2D null_transform;
-
    contour.render_isolines (cr, null_transform);
-   delete scalar_data_2d_ptr;
 
    cr->restore ();
 
@@ -3158,7 +3166,9 @@ Twiin::render_time_cross (const RefPtr<Context>& cr,
    delete raster_ptr;
 
    if (product.enumeration == Model::Product::RHO ||
-       product.enumeration == Model::Product::THETA)
+       product.enumeration == Model::Product::THETA ||
+       product.enumeration == Model::Product::THETA_MONOCHROME ||
+       product.enumeration == Model::Product::THETA_28C)
    {
       //render_time_cross_w (cr, transform, box_2d, stage, track);
    }
@@ -3407,8 +3417,15 @@ Twiin::render_meteogram (const RefPtr<Context>& cr,
       if (fill) { cr->fill (); }
       else { cr->fill_preserve (); Color::black ().cairo (cr); cr->stroke (); }
 
-      const Real speed = obs.wind_speed;
       const Real gust = obs.wind_gust;
+      const Point_2D p_gust (dtime.t, gust);
+      const Point_2D& tp_gust = t_speed.transform (p_gust);
+      ring.cairo (cr, tp_gust);
+      Color::hsb (0.500, 0.80, 0.80, alpha).cairo (cr);
+      if (fill) { cr->fill (); }
+      else { cr->fill_preserve (); Color::black ().cairo (cr); cr->stroke (); }
+
+      const Real speed = obs.wind_speed;
       const Point_2D p_speed (dtime.t, speed);
       const Point_2D& tp_speed = t_speed.transform (p_speed);
       ring.cairo (cr, tp_speed);
@@ -3416,10 +3433,11 @@ Twiin::render_meteogram (const RefPtr<Context>& cr,
       if (fill) { cr->fill (); }
       else { cr->fill_preserve (); Color::black ().cairo (cr); cr->stroke (); }
 
-      const Point_2D p_gust (dtime.t, gust);
-      const Point_2D& tp_gust = t_speed.transform (p_gust);
-      ring.cairo (cr, tp_gust);
-      Color::hsb (0.500, 0.80, 0.80, alpha).cairo (cr);
+      const Real ten_min_speed = obs.ten_min_wind_speed;
+      const Point_2D p_ten_min_speed (dtime.t, ten_min_speed);
+      const Point_2D& tp_ten_min_speed = t_speed.transform (p_ten_min_speed);
+      ring.cairo (cr, tp_ten_min_speed);
+      Color::hsb (0.667, 0.80, 0.80, alpha).cairo (cr);
       if (fill) { cr->fill (); }
       else { cr->fill_preserve (); Color::black ().cairo (cr); cr->stroke (); }
 
@@ -3447,7 +3465,7 @@ Twiin::render_meteogram (const RefPtr<Context>& cr,
                          const Location& location,
                          const Dstring& time_str,
                          const bool ignore_pressure,
-                         const Dstring& meteogram_mode)
+                         const Dstring& meteogram_str)
 {
 
    cr->save ();
@@ -3557,18 +3575,18 @@ Twiin::render_meteogram (const RefPtr<Context>& cr,
       transform_temperature, transform_direction,
       transform_speed, transform_pressure, ignore_pressure);
 
-   if (meteogram_mode == "both")
+   if (meteogram_str == "both")
    {
       render_meteogram (cr, transform_temperature, transform_direction,
          transform_speed, transform_pressure, *aws_repository_ptr,
-         0.2, 2, true, ignore_pressure);
+         0.4, 2, true, ignore_pressure);
       render_meteogram (cr, transform_temperature, transform_direction,
-         transform_speed, transform_pressure, *model_aws_repository_ptr, 0.9,
-         3, false, ignore_pressure);
+         transform_speed, transform_pressure, *model_aws_repository_ptr, 0.99,
+         5, false, ignore_pressure);
    }
    else
    // nwp data
-   if (meteogram_mode == "no_aws")
+   if (meteogram_str == "no_aws")
    {
       // draw nwp
       const Real alpha = 0.3;
@@ -3580,7 +3598,7 @@ Twiin::render_meteogram (const RefPtr<Context>& cr,
    }
    else
    // aws data
-   if (meteogram_mode == "no_nwp" || aws_repository_ptr != NULL)
+   if (meteogram_str == "no_nwp" || aws_repository_ptr != NULL)
    {
       // draw aws
       //const Real alpha = 0.999;
