@@ -341,7 +341,7 @@ Model::Product::get_tick_tuple () const
       case Model::Product::THETA_V:
       {
          //return Tuple ("0:10:20:30:40:50:60");
-         return Tuple ("10:20:30:40");
+         return Tuple ("10:20:30:40:50:60");
       }
 
       case Model::Product::THETA_MONOCHROME:
@@ -469,7 +469,7 @@ Model::Product::get_tick_tuple () const
       case Model::Product::SCORER_A:
       case Model::Product::SCORER_B:
       {
-         return Tuple ("1e-8:1e-7:1e-6:1e-5:1e-4");
+         return Tuple ("1e-8:3.2e-8:1e-7:1e-6:1e-5");
       }
 
       default:
@@ -553,9 +553,18 @@ Model::Stage::get_color (const Model::Product& product,
 */
          const Real celsius = datum - K;
          const Real c = floor (celsius / 2) * 2;
-         const Real saturation = Domain_1D (35, 20).normalize (c);
-         const Real brightness = Domain_1D (5, 35).normalize (c);
-         return Color::hsb (0.02, saturation, brightness);
+         if (celsius < 35)
+         {
+            const Real saturation = Domain_1D (35, 20).normalize (c);
+            const Real brightness = Domain_1D (-5, 35).normalize (c);
+            return Color::hsb (0.65, saturation, brightness);
+         }
+         else
+         {
+            const Real saturation = Domain_1D (35, 50).normalize (c);
+            const Real brightness = Domain_1D (75, 35).normalize (c);
+            return Color::hsb (0.02, saturation, brightness);
+         }
       }
 
       case Model::Product::THETA_MONOCHROME:

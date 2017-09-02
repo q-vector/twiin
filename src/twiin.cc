@@ -2623,10 +2623,10 @@ Twiin::render_color_bar (const RefPtr<Context>& cr,
        product.enumeration == Model::Product::THETA_S_ADVECTION ||
        product.enumeration == Model::Product::THETA_N_ADVECTION ||
        product.enumeration == Model::Product::THETA_SV_ADVECTION ||
-       product.enumeration == Model::Product::THETA_NV_ADVECTION ||
-       product.enumeration == Model::Product::SCORER ||
-       product.enumeration == Model::Product::SCORER_A ||
-       product.enumeration == Model::Product::SCORER_B)
+       product.enumeration == Model::Product::THETA_NV_ADVECTION)
+       //product.enumeration == Model::Product::SCORER ||
+       //product.enumeration == Model::Product::SCORER_A ||
+       //product.enumeration == Model::Product::SCORER_B)
    {
       const Index_2D p_index_2d (bar_x, bar_y);
       const Index_2D n_index_2d (bar_x, bar_y + bar_height / 2);
