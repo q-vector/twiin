@@ -295,7 +295,7 @@ Model::Product::get_unit () const
       case Product::THETA_N_ADVECTION:  return "K s\u207b\u00b9";
       case Product::THETA_SV_ADVECTION: return "K s\u207b\u00b9";
       case Product::THETA_NV_ADVECTION: return "K s\u207b\u00b9";
-      case Product::SPEED_HIGHER:       return "knots";
+      case Product::SPEED_HIGHER:       return "m s\u207b\u00b9";
       case Product::SPEED:              return "knots";
       case Product::ALONG_SPEED:        return "knots";
       case Product::NORMAL_SPEED:       return "knots";
@@ -406,7 +406,8 @@ Model::Product::get_tick_tuple () const
 
       case Model::Product::SPEED_HIGHER:
       {
-         return Tuple ("0:5:15:25:35:45:55:65:75:85:95:105:115:125");
+         //return Tuple ("0:5:15:25:35:45:55:65:75:85:95:105:115:125");
+         return Tuple (11, 0.0, 50.0);
       }
 
       case Model::Product::SPEED:
@@ -699,6 +700,7 @@ Model::Stage::get_color (const Model::Product& product,
 
       case Model::Product::SPEED_HIGHER:
       {
+/*
          const Real knots = datum * 3.6/1.852;
          const Real m0 = modulo (knots, 5.0) / 5.0 * 0.15 + 0.85;
          const Real m = modulo (knots - 5, 10.0) / 10.0 * 0.15 + 0.85;
@@ -716,6 +718,22 @@ Model::Stage::get_color (const Model::Product& product,
          else if (knots < 115) { return Color::hsb (0.016, 0.45*m, 0.80*m); }
          else if (knots < 125) { return Color::hsb (0.000, 0.50*m, 0.95*m); }
          else                  { return Color (1.000, 1.000, 1.000); }
+*/
+         const Real m = modulo (datum, 5.0) / 5.0 * 0.15 + 0.85;
+              if (datum <  5) { return Color::hsb (0.000, 0.00*m, 1.00*m); }
+         else if (datum < 10) { return Color::hsb (0.167, 0.30*m, 1.00*m); }
+         else if (datum < 15) { return Color::hsb (0.150, 0.35*m, 0.95*m); }
+         else if (datum < 20) { return Color::hsb (0.133, 0.40*m, 0.90*m); }
+         else if (datum < 25) { return Color::hsb (0.333, 0.40*m, 0.95*m); }
+         else if (datum < 30) { return Color::hsb (0.333, 0.40*m, 0.75*m); }
+         else if (datum < 35) { return Color::hsb (0.333, 0.40*m, 0.65*m); }
+         else if (datum < 40) { return Color::hsb (0.600, 0.40*m, 1.00*m); }
+         else if (datum < 45) { return Color::hsb (0.633, 0.40*m, 0.90*m); }
+         else if (datum < 50) { return Color::hsb (0.667, 0.40*m, 0.80*m); }
+         else if (datum < 55) { return Color::hsb (0.033, 0.40*m, 0.65*m); }
+         else if (datum < 60) { return Color::hsb (0.016, 0.45*m, 0.80*m); }
+         else if (datum < 65) { return Color::hsb (0.000, 0.50*m, 0.95*m); }
+         else                 { return Color (1.000, 1.000, 1.000); }
       }
 
       case Model::Product::SPEED:
@@ -997,6 +1015,12 @@ Model::Stage::get_color (const Model::Product& product,
    if (unit == "\u00b0C")
    {
       return get_color (product, datum + K);
+   }
+   else
+   if (unit == "ms\u207b\u00b9" ||
+       unit == "m s\u207b\u00b9")
+   {
+      return get_color (product, datum);
    }
    else
    if (unit == "knots")
