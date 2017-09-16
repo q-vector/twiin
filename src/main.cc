@@ -27,7 +27,8 @@ main (int argc,
       { "polygon",                      1, 0, 'B' },
       { "bludge",                       0, 0, 'b' },
       { "color-bar",                    1, 0, 'C' },
-      { "c",                            1, 0, 'c' },
+      { "contour",                      1, 0, 'c' },
+      { "dump",                         1, 0, 'd' },
       { "eulerian",                     0, 0, 'E' },
       { "filename",                     1, 0, 'F' },
       { "format",                       1, 0, 'f' },
@@ -106,264 +107,264 @@ main (int argc,
    int option_index = 0;
    char optstring[] = "A:a:B:bC:c:d:EF:f:Gg:h:IiJ:j:K:L:l:M:m:O:o:Pp:r:Ss:T:t:u:vVWXxz:?";
    while ((c = getopt_long (argc, argv, optstring,
-          long_options, &option_index)) != -1)
+	  long_options, &option_index)) != -1)
    {
 
       switch (c)
       {
 
-         case 'A':
-         {
-            azimuth = stof (Dstring (optarg));
-            break;
-         }
+	 case 'A':
+	 {
+	    azimuth = stof (Dstring (optarg));
+	    break;
+	 }
 
-         case 'a':
-         {
-            annotation_tokens.push_back (Dstring (optarg));
-            break;
-         }
+	 case 'a':
+	 {
+	    annotation_tokens.push_back (Dstring (optarg));
+	    break;
+	 }
 
-         case 'B':
-         {
-            polygon_tokens.push_back (Dstring (optarg));
-            break;
-         }
+	 case 'B':
+	 {
+	    polygon_tokens.push_back (Dstring (optarg));
+	    break;
+	 }
 
-         case 'b':
-         {
-            is_bludge = true;
-            break;
-         }
+	 case 'b':
+	 {
+	    is_bludge = true;
+	    break;
+	 }
 
-         case 'C':
-         {
-            color_bar_str = Dstring (optarg);
-            break;
-         }
+	 case 'C':
+	 {
+	    color_bar_str = Dstring (optarg);
+	    break;
+	 }
 
-         case 'c':
-         {
-            contour_tokens.push_back (Dstring (optarg));
-            break;
-         }
+	 case 'c':
+	 {
+	    contour_tokens.push_back (Dstring (optarg));
+	    break;
+	 }
 
-         case 'd':
-         {
-            distance = stof (Dstring (optarg));
-            break;
-         }
+	 case 'd':
+	 {
+	    distance = stof (Dstring (optarg));
+	    break;
+	 }
 
-         case 'E':
-         {
-            eulerian = false;
-            break;
-         }
+	 case 'E':
+	 {
+	    eulerian = false;
+	    break;
+	 }
 
-         case 'F':
-         {
-            filename = (Dstring (optarg));
-            break;
-         }
+	 case 'F':
+	 {
+	    filename = (Dstring (optarg));
+	    break;
+	 }
 
-         case 'f':
-         {
-            format = (Dstring (optarg));
-            break;
-         }
+	 case 'f':
+	 {
+	    format = (Dstring (optarg));
+	    break;
+	 }
 
-         case 'G':
-         {
-            is_gui = true;
-            break;
-         }
+	 case 'G':
+	 {
+	    is_gui = true;
+	    break;
+	 }
 
-         case 'g':
-         {
-            const Tokens tokens (Dstring (optarg), "x");
-            size_2d.i = stof (tokens[0]);
-            size_2d.j = stof (tokens[1]);
-            break;
-         }
+	 case 'g':
+	 {
+	    const Tokens tokens (Dstring (optarg), "x");
+	    size_2d.i = stof (tokens[0]);
+	    size_2d.j = stof (tokens[1]);
+	    break;
+	 }
 
-         case 'h':
-         {
-            height = stof (Dstring (optarg));
-            break;
-         }
+	 case 'h':
+	 {
+	    height = stof (Dstring (optarg));
+	    break;
+	 }
 
-         case 'I':
-         {
-            track_id_initial = true;
-            break;
-         }
+	 case 'I':
+	 {
+	    track_id_initial = true;
+	    break;
+	 }
 
-         case 'i':
-         {
-            is_interactive = true;
-            break;
-         }
+	 case 'i':
+	 {
+	    is_interactive = true;
+	    break;
+	 }
 
-         case 'J':
-         {
-            const Tokens tokens (Dstring (optarg), ":");
-            for (auto iterator = tokens.begin ();
-                 iterator != tokens.end (); iterator++)
-            {
-               const Dstring& journey_str = *(iterator);
-               journey_tokens.push_back (journey_str);
-            }
-            break;
-         }
+	 case 'J':
+	 {
+	    const Tokens tokens (Dstring (optarg), ":");
+	    for (auto iterator = tokens.begin ();
+		 iterator != tokens.end (); iterator++)
+	    {
+	       const Dstring& journey_str = *(iterator);
+	       journey_tokens.push_back (journey_str);
+	    }
+	    break;
+	 }
 
-         case 'j':
-         {
-            track_id_str = Dstring (optarg);
-            break;
-         }
+	 case 'j':
+	 {
+	    track_id_str = Dstring (optarg);
+	    break;
+	 }
 
-         case 'K':
-         {
-            scale_bar_str = Dstring (optarg);
-            break;
-         }
+	 case 'K':
+	 {
+	    scale_bar_str = Dstring (optarg);
+	    break;
+	 }
 
-         case 'l':
-         {
-            level_str = (Dstring (optarg));
-            break;
-         }
+	 case 'l':
+	 {
+	    level_str = (Dstring (optarg));
+	    break;
+	 }
 
-         case 'M':
-         {
-            const Dstring file_path (optarg);
-            igzstream file (file_path);
-            if (!file.is_open ())
-            {
-               throw IO_Exception ("Can't open " + file_path);
-            }
-            track_map.ingest (file);
-            file.close ();
-            break;
-         }
+	 case 'M':
+	 {
+	    const Dstring file_path (optarg);
+	    igzstream file (file_path);
+	    if (!file.is_open ())
+	    {
+	       throw IO_Exception ("Can't open " + file_path);
+	    }
+	    track_map.ingest (file);
+	    file.close ();
+	    break;
+	 }
 
-         case 'm':
-         {
-            is_gui = false;
-            is_interactive = false;
-            is_meteogram = true;
-            meteogram_str = optarg;
-            break;
-         }
+	 case 'm':
+	 {
+	    is_gui = false;
+	    is_interactive = false;
+	    is_meteogram = true;
+	    meteogram_str = optarg;
+	    break;
+	 }
 
-         case 'O':
-         {
-            location_str = (Dstring (optarg));
-            break;
-         }
+	 case 'O':
+	 {
+	    location_str = (Dstring (optarg));
+	    break;
+	 }
 
-         case 'o':
-         {
-            output_dir = (Dstring (optarg));
-            break;
-         }
+	 case 'o':
+	 {
+	    output_dir = (Dstring (optarg));
+	    break;
+	 }
 
-         case 'P':
-         {
-            ignore_pressure = true;
-            break;
-         }
+	 case 'P':
+	 {
+	    ignore_pressure = true;
+	    break;
+	 }
 
-         case 'p':
-         {
-            product_str = (Dstring (optarg));
-            break;
-         }
+	 case 'p':
+	 {
+	    product_str = (Dstring (optarg));
+	    break;
+	 }
 
-         case 'r':
-         {
-            rc_file_path = (Dstring (optarg));
-            break;
-         }
+	 case 'r':
+	 {
+	    rc_file_path = (Dstring (optarg));
+	    break;
+	 }
 
-         case 'S':
-         {
-            no_stage = true;
-            break;
-         }
+	 case 'S':
+	 {
+	    no_stage = true;
+	    break;
+	 }
 
-         case 's':
-         {
-            stage_str = (Dstring (optarg));
-            break;
-         }
+	 case 's':
+	 {
+	    stage_str = (Dstring (optarg));
+	    break;
+	 }
 
-         case 'T':
-         {
-            title_tokens = Tokens (Dstring (optarg), ":");
-            break;
-         }
+	 case 'T':
+	 {
+	    title_tokens = Tokens (Dstring (optarg), ":");
+	    break;
+	 }
 
-         case 't':
-         {
-            time_str = (Dstring (optarg));
-            break;
-         }
+	 case 't':
+	 {
+	    time_str = (Dstring (optarg));
+	    break;
+	 }
 
-         case 'u':
-         {
-            u_bg = stof (Dstring (optarg));
-            break;
-         }
+	 case 'u':
+	 {
+	    u_bg = stof (Dstring (optarg));
+	    break;
+	 }
 
-         case 'v':
-         {
-            is_gui = false;
-            is_interactive = false;
-            is_vertical_profile = true;
-            break;
-         }
+	 case 'v':
+	 {
+	    is_gui = false;
+	    is_interactive = false;
+	    is_vertical_profile = true;
+	    break;
+	 }
 
-         case 'W':
-         {
-            no_wind_barb = true;
-            break;
-         }
+	 case 'W':
+	 {
+	    no_wind_barb = true;
+	    break;
+	 }
 
-         case 'x':
-         {
-            is_gui = false;
-            is_interactive = false;
-            is_cross_section = true;
-            break;
-         }
+	 case 'x':
+	 {
+	    is_gui = false;
+	    is_interactive = false;
+	    is_cross_section = true;
+	    break;
+	 }
 
-         case 'X':
-         {
-            is_gui = false;
-            is_interactive = false;
-            is_time_cross = true;
-            break;
-         }
+	 case 'X':
+	 {
+	    is_gui = false;
+	    is_interactive = false;
+	    is_time_cross = true;
+	    break;
+	 }
 
-         case 'z':
-         {
-            zoom_str = (Dstring (optarg));
-            break;
-         }
+	 case 'z':
+	 {
+	    zoom_str = (Dstring (optarg));
+	    break;
+	 }
 
-         case '?':
-         {
-            Twiin::usage ();
-            exit (0);
-            break;
-         }
+	 case '?':
+	 {
+	    Twiin::usage ();
+	    exit (0);
+	    break;
+	 }
 
-         default:
-         {
-            cerr << "Error options " << c << endl;
-            break;
-         }
+	 default:
+	 {
+	    cerr << "Error options " << c << endl;
+	    break;
+	 }
 
       }
 
@@ -382,32 +383,32 @@ main (int argc,
 
       if (is_interactive)
       {
-         Twiin::Andrea andrea (rc_file);
-         andrea.loop ();
+	 Twiin::Andrea andrea (rc_file);
+	 andrea.loop ();
       }
       else
       if (is_gui)
       {
 #ifndef ENABLE_GTKMM
-         cerr << "GUI mode not available" << endl;
+	 cerr << "GUI mode not available" << endl;
 #else /* ENABLE_GTKMM */
-         Gtk::Main gtk_main (argc, argv);
-         twiin.gui (stage_str, product_str, (level_specified ? level_str
-            : "Surface"), time_str, journey_tokens, zoom_str);
+	 Gtk::Main gtk_main (argc, argv);
+	 twiin.gui (stage_str, product_str, (level_specified ? level_str
+	    : "Surface"), time_str, journey_tokens, zoom_str);
 #endif /* ENABLE_GTKMM */
       }
       else
       {
 
-         if (is_cross_section)
-         {
-            const bool no_arrows = no_wind_barb;
-            if (journey_specified)
-            {
-               twiin.cross_section (stage_str, product_str, contour_tokens,
-                  journey_tokens, time_str, height, format, title_tokens,
-                  filename, u_bg, no_arrows, is_bludge);
-            }
+	 if (is_cross_section)
+	 {
+	    const bool no_arrows = no_wind_barb;
+	    if (journey_specified)
+	    {
+	       twiin.cross_section (stage_str, product_str, contour_tokens,
+		  journey_tokens, time_str, height, format, title_tokens,
+		  filename, u_bg, no_arrows, is_bludge);
+	    }
             if (track_specified)
             {
                twiin.cross_section (stage_str, product_str, contour_tokens,
@@ -456,6 +457,12 @@ main (int argc,
          }
          else
          {
+            if (location_specified && level_specified)
+            {
+               twiin.dump (stage_str, product_str, level_str,
+                  time_str, location_str, filename);
+            }
+            else
             if (level_specified)
             {
                twiin.plan (stage_str, product_str, level_str, time_str,

@@ -1621,8 +1621,21 @@ Model::Acncrjbf::get_valid_uppers_time_set () const
 }
 
 const set<Dtime>&
+Model::Acncrjbf::get_valid_time_set (const Level& level) const
+{
+   if (level.type == Level::SURFACE)
+   {
+      return get_valid_surface_time_set ();
+   }
+   else
+   {
+      return get_valid_uppers_time_set ();
+   }
+}
+
+const set<Dtime>&
 Model::Acncrjbf::get_valid_time_set (const Product& product,
-                                  const Level& level) const
+                                     const Level& level) const
 {
 
    switch (product.enumeration)
@@ -1701,6 +1714,25 @@ Model::Acncrjbf::get_valid_time_set (const Product& product,
       }
 
    }
+
+}
+
+vector<Dtime>
+Model::Acncrjbf::get_valid_time_vector (const Level& level,
+                                        const Dtime::Set& time_set) const
+{
+
+   vector<Dtime> valid_time_vector;
+   auto valid_time_set = get_valid_time_set (level);
+
+   for (auto l = valid_time_set.begin ();
+        l != valid_time_set.end (); l++)
+   {
+      const Dtime& dtime = *(l);
+      if (time_set.match (dtime)) { valid_time_vector.push_back (dtime); }
+   }
+
+   return valid_time_vector;
 
 }
 
@@ -3306,6 +3338,11 @@ Model::Acncrjbf::get_color (const Product& product,
    switch (product.enumeration)
    {
 
+      case Product::NIL:
+      {
+         return Color::white ();
+      }
+
       case Product::WIND:
       {
          const Real u = evaluate (U, lat_long, l);
@@ -3373,8 +3410,10 @@ Model::Acncrjbf::get_value (const Product& product,
       {
          const Real u = evaluate (U, lat_long, l);
          const Real v = evaluate (V, lat_long, l);
+         const Real theta = atan2 (-u, -v);
          const Real speed = sqrt (u*u + v*v);
-         return speed;
+         const Real direction = theta * RADIAN_TO_DEGREE;
+         return direction;
       }
 
       case Product::Q_TENDENCY:

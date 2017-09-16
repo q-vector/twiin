@@ -1229,6 +1229,81 @@ Twiin::time_cross (const Dstring& stage_str,
 }
 
 void
+Twiin::dump (const Dstring& stage_str,
+             const Dstring& product_str,
+             const Dstring& level_str,
+             const Dstring& time_str,
+             const Dstring& location_str,
+             const Dstring& filename) const
+{
+
+   const Dtime::Set time_set (time_str);
+   const Tokens product_tokens (product_str, ":");
+
+   const Data data (rc_file);
+   const Model& model = data.get_model ();
+   const Station::Map& station_map = data.get_station_map ();
+   const Aws::Repository& aws_repository = data.get_aws_repository ();
+
+   const Location location (location_str, station_map);
+   const Level level (level_str);
+   const Model::Stage& stage = model.get_stage (stage_str);
+   const Model::Product product (product_str);
+
+   if (stage.out_of_bounds (location)) { return; }
+
+   const vector<Dtime>& valid_time_vector =
+      stage.get_valid_time_vector (level, time_set);
+
+   for (Integer t = 0; t < valid_time_vector.size (); t++)
+   {
+           
+      const Dtime& dtime = valid_time_vector.at (t);
+      cout << dtime.get_string ("%Y%m%d%H%M:");
+
+      for (Tokens::const_iterator j = product_tokens.begin ();
+           j != product_tokens.end (); j++)
+      {
+
+         const Model::Product product (*j);
+
+         try
+         {
+
+            if (product.enumeration == Model::Product::TERRAIN)
+            {
+               const Real datum = stage.get_topography (location);
+               cout << datum << ":";
+            }
+            else
+            if (level.type == Level::SURFACE ||
+                product.enumeration == Model::Product::FFDI ||
+                product.enumeration == Model::Product::MSLP ||
+                product.enumeration == Model::Product::PRECIP_RATE)
+            {
+               const size_t l = stage.get_surface_l (dtime);
+               const Real datum = stage.get_value (product, location, l);
+               cout << datum << ":";
+            }
+            else
+            {
+               const size_t l = stage.get_uppers_l (dtime);
+               const Real datum = stage.get_value (product, location, level, l);
+               cout << datum << ":";
+            }
+
+         }
+         catch (...) { }
+
+      }
+
+      cout << endl;
+
+   }
+
+}
+
+void
 Twiin::meteogram (const Dstring& stage_str,
                   const Dstring& location_str,
                   const Dstring& time_str,

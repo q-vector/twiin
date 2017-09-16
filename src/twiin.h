@@ -222,6 +222,14 @@ namespace twiin
                      const bool is_bludge) const;
 
          void
+         dump (const Dstring& stage_str,
+               const Dstring& product_str,
+               const Dstring& level_str,
+               const Dstring& time_str,
+               const Dstring& location_str,
+               const Dstring& filename) const;
+
+         void
          meteogram (const Dstring& stage_str,
                     const Dstring& location_str,
                     const Dstring& time_str,

@@ -134,8 +134,15 @@ namespace twiin
                out_of_bounds (const Lat_Long& lat_long) const = 0;
 
                virtual const set<Dtime>&
+               get_valid_time_set (const Level& level) const = 0;
+
+               virtual const set<Dtime>&
                get_valid_time_set (const Product& product,
                                    const Level& level) const = 0;
+
+               virtual vector<Dtime>
+               get_valid_time_vector (const Level& level,
+                                      const Dtime::Set& time_set) const = 0;
 
                virtual vector<Dtime>
                get_valid_time_vector (const Product& product,
@@ -144,6 +151,35 @@ namespace twiin
 
                virtual Real
                get_topography (const Lat_Long& lat_long) const = 0;
+
+               virtual Real
+               get_topography (const size_t i,
+                               const size_t j) const = 0;
+
+               virtual Color
+               get_color (const Product& product,
+                          const Lat_Long& lat_long,
+                          const size_t l) const = 0;
+
+               virtual Real
+               get_value (const Product& product,
+                          const Lat_Long& lat_long,
+                          const size_t l) const = 0;
+
+               virtual Color
+               get_color (const Product& product,
+                          const Lat_Long& lat_long,
+                          const Level& level,
+                          const size_t l) const = 0;
+
+               virtual Real
+               get_value (const Product& product,
+                          const Lat_Long& lat_long,
+                          const Level& level,
+                          const size_t l) const = 0;
+
+               virtual size_t
+               get_surface_l (const Dtime& dtime) const = 0;
 
                virtual size_t
                get_uppers_l (const Dtime& dtime) const = 0;
@@ -428,8 +464,15 @@ namespace twiin
                get_valid_uppers_time_set () const;
 
                const set<Dtime>&
+               get_valid_time_set (const Level& level) const;
+
+               const set<Dtime>&
                get_valid_time_set (const Product& product,
                                    const Level& level) const;
+
+               vector<Dtime>
+               get_valid_time_vector (const Level& level,
+                                      const Dtime::Set& time_set) const;
 
                vector<Dtime>
                get_valid_time_vector (const Product& product,
