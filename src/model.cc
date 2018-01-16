@@ -297,8 +297,8 @@ Model::Product::get_unit () const
       case Product::THETA_NV_ADVECTION: return "K s\u207b\u00b9";
       case Product::SPEED_HIGHER:       return "m s\u207b\u00b9";
       case Product::SPEED:              return "knots";
-      case Product::ALONG_SPEED:        return "knots";
-      case Product::NORMAL_SPEED:       return "knots";
+      case Product::ALONG_SPEED:        return "m s\u207b\u00b9";
+      case Product::NORMAL_SPEED:       return "m s\u207b\u00b9";
       case Product::VORTICITY:          return "10\u207b\u00b3 s\u207b\u00b9";
       case Product::FFDI:               return "";
       case Product::MSLP:               return "hPa";
@@ -418,7 +418,8 @@ Model::Product::get_tick_tuple () const
       case Model::Product::ALONG_SPEED:
       case Model::Product::NORMAL_SPEED:
       {
-         return Tuple (26, -125.0, 125.0);
+         //return Tuple (26, -125.0, 125.0);
+         return Tuple (11, 0.0, 50.0);
       }
 
       case Model::Product::VORTICITY:
@@ -637,6 +638,7 @@ Model::Stage::get_color (const Model::Product& product,
 
       case Model::Product::W:
       {
+/*
          const Real hue = (datum < 0 ? 0.667 : 0.000);
          const Real absolute = fabs (datum);
          const Real quantized = floor (absolute / 0.1) * 0.1;
@@ -647,6 +649,12 @@ Model::Stage::get_color (const Model::Product& product,
          const Real fluc_mag = 0.2;
          const Real fluctuation = fluc_mag * cos (datum * M_PI / 0.5);
          const Real brightness = 0.75 + fluctuation;
+         return Color::hsb (hue, saturation, brightness);
+*/
+         const Real hue = (datum < 0 ? 0.667 : 0.000);
+         const Real absolute = fabs (datum);
+         const Real saturation = Domain_1D (0, 3.5).normalize (floor (fabs (datum) + 0.5) - 0.5) * 0.8;
+         const Real brightness = 1.0;
          return Color::hsb (hue, saturation, brightness);
       }
 
@@ -759,6 +767,7 @@ Model::Stage::get_color (const Model::Product& product,
       case Model::Product::ALONG_SPEED:
       case Model::Product::NORMAL_SPEED:
       {
+/*
          const bool negative = (datum < 0);
          const Real knots = fabs (datum * 3.6/1.852);
          const Real m0 = modulo (knots, 5.0) / 5.0 * 0.15 + 0.85;
@@ -797,6 +806,22 @@ Model::Stage::get_color (const Model::Product& product,
             else if (knots < 125){ return Color::hsb (0.000, 0.40*m, 0.75*m); }
             else                 { return Color (1.000, 1.000, 1.000); }
          }
+*/
+         const Real m = modulo (fabs (datum), 5.0) / 5.0 * 0.15 + 0.85;
+              if (datum <  5) { return Color::hsb (0.000, 0.00*m, 1.00*m); }
+         else if (datum < 10) { return Color::hsb (0.167, 0.30*m, 1.00*m); }
+         else if (datum < 15) { return Color::hsb (0.150, 0.35*m, 0.95*m); }
+         else if (datum < 20) { return Color::hsb (0.133, 0.40*m, 0.90*m); }
+         else if (datum < 25) { return Color::hsb (0.333, 0.40*m, 0.95*m); }
+         else if (datum < 30) { return Color::hsb (0.333, 0.40*m, 0.75*m); }
+         else if (datum < 35) { return Color::hsb (0.333, 0.40*m, 0.65*m); }
+         else if (datum < 40) { return Color::hsb (0.600, 0.40*m, 1.00*m); }
+         else if (datum < 45) { return Color::hsb (0.633, 0.40*m, 0.90*m); }
+         else if (datum < 50) { return Color::hsb (0.667, 0.40*m, 0.80*m); }
+         else if (datum < 55) { return Color::hsb (0.033, 0.40*m, 0.65*m); }
+         else if (datum < 60) { return Color::hsb (0.016, 0.45*m, 0.80*m); }
+         else if (datum < 65) { return Color::hsb (0.000, 0.50*m, 0.95*m); }
+         else                 { return Color (1.000, 1.000, 1.000); }
       }
 
       case Model::Product::VORTICITY:

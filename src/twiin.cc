@@ -2438,8 +2438,8 @@ Twiin::render_wind_barbs (const RefPtr<Context>& cr,
    Real& latitude = lat_long.latitude;
    Real& longitude = lat_long.longitude;
 
-   const Real wind_barb_size = 15;
-   const Real h = wind_barb_size * 1.01;
+   const Real wind_barb_size = 20;
+   const Real h = wind_barb_size * 1.05;
 
    const Real start_x = Real (0);
    const Real start_y = Real (0);
@@ -2788,6 +2788,8 @@ Twiin::render_annotation (const RefPtr<Context>& cr,
        genre == "j" ||
        genre == "r")
    {
+   
+/*
       Journey journey;
       bool annotated = true;
       for (auto iterator = tokens.begin ();
@@ -2799,7 +2801,29 @@ Twiin::render_annotation (const RefPtr<Context>& cr,
          const Location location (token);
          journey.push_back (location);
       }
-      journey.cairo (cr, transform, annotated);
+      //journey.cairo (cr, transform, annotated);
+*/
+      
+      bool annotated = true;
+      Simple_Polyline simple_polyline;
+      for (auto iterator = tokens.begin ();
+           iterator != tokens.end (); iterator++)
+      {
+         if (iterator == tokens.begin ()) { continue; }
+         const Dstring& token = *(iterator);
+         if (token == "plain") { annotated = false; continue; }
+         const Location location (token);
+         simple_polyline.add (transform.transform (location));
+      }
+
+      cr->save ();
+      cr->set_line_width (4);
+      //Color (0.3, 0.3, 0.8, 0.9).cairo (cr);
+      Color (210.0/255.0, 105.0/255.0, 30/255.0, 0.8).cairo (cr);
+      simple_polyline.cairo (cr);
+      cr->stroke ();
+      cr->restore ();
+
    }
 
 }

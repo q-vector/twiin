@@ -159,7 +159,7 @@ Location::Location (const Dstring& str,
       const Tokens tokens (str, ",");
       this->latitude = stof (tokens[0]);
       this->longitude = stof (tokens[1]);
-      this->str = Lat_Long::get_string (false, Dstring ("%.4f"));
+      this->str = Lat_Long::get_string (4, true, true, true);
    }
    else
    {
